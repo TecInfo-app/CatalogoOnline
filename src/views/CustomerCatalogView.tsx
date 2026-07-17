@@ -1069,11 +1069,11 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       {productToView && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-full">
-            <div className="relative aspect-video bg-slate-50 flex items-center justify-center shrink-0">
+            <div className="relative h-48 sm:h-56 bg-slate-50 flex items-center justify-center shrink-0">
               <img 
                 src={productToView.imageUrl} 
                 alt={productToView.name} 
-                className="h-full w-full object-contain mix-blend-multiply" 
+                className="h-full w-full object-contain mix-blend-multiply p-4" 
                 referrerPolicy="no-referrer" 
               />
               <button 
