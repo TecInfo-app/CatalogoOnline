@@ -74,16 +74,19 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         }
       });
       
-      if (response.status === 401) {
-        const errData = await response.clone().json().catch(() => null);
-        if (errData?.error === 'API key version mismatch') {
-          response = await fetch(`${baseUrl}/v1/store/get`, {
-            method: 'GET',
-            headers: {
-              'Authorization': `Bearer ${profile.abacatePayApiKey}`,
-              'Content-Type': 'application/json'
-            }
-          });
+      if (!response.ok) {
+        // Fallback to v1 if v2 fails for any reason (e.g. 400 Not found, 401 Version mismatch)
+        const v1Response = await fetch(`${baseUrl}/v1/store/get`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${profile.abacatePayApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        // If v1 succeeds or returns a clear auth error, use its response instead
+        if (v1Response.ok || v1Response.status === 401) {
+          response = v1Response;
         }
       }
 

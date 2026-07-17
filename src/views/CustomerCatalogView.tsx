@@ -1959,11 +1959,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                             })
                           });
 
-                          if (prodRes.status === 401) {
-                            const errData = await prodRes.clone().json().catch(() => null);
-                            if (errData?.error === 'API key version mismatch') {
-                              isV2 = false;
-                            }
+                          if (!prodRes.ok) {
+                            isV2 = false;
                           }
 
                           if (isV2) {
