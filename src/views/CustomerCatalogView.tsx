@@ -627,9 +627,17 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
   const handleResetCatalog = () => {
     setCart([]);
-    setClientName('');
-    setCnpjCpf('');
-    setPhone('');
+    if (loggedInClient) {
+      setClientName(loggedInClient.name);
+      setPhone(loggedInClient.phones?.[0] || '');
+      setCnpjCpf(loggedInClient.cnpj || '');
+      setBirthday(loggedInClient.birthday || '');
+    } else {
+      setClientName('');
+      setCnpjCpf('');
+      setPhone('');
+      setBirthday('');
+    }
     setNotes('');
     setOrderSuccess(null);
     setIsCartOpen(false);
@@ -1493,7 +1501,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       type="date" 
                       value={birthday}
                       onChange={(e) => setBirthday(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                      disabled={!!loggedInClient?.birthday}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -1813,7 +1822,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         type="date" 
                         value={confirmBirthday}
                         onChange={(e) => setConfirmBirthday(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                        disabled={!!loggedInClient?.birthday}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
