@@ -75,7 +75,16 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       });
 
       if (!response.ok) {
-        throw new Error(`Erro na API (${response.status})`);
+        let errorMsg = `Erro na API (${response.status})`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.error) {
+            errorMsg = `Falha na Autenticação: ${errData.error === 'Invalid or inactive API key' ? 'Chave de API inválida ou inativa. Verifique se copiou a chave corretamente.' : errData.error}`;
+          }
+        } catch(e) {
+          // ignore
+        }
+        throw new Error(errorMsg);
       }
 
       const result = await response.json();
