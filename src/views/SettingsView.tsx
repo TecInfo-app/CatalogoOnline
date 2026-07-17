@@ -65,7 +65,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
     try {
       // Direct call to AbacatePay store endpoint or Worker proxy
-      const endpoint = 'https://vercos.iranildo-jobs.workers.dev/v1/store';
+      const endpoint = 'https://vercos.iranildo-jobs.workers.dev/v2/store/get';
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {

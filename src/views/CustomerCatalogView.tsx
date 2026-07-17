@@ -1942,7 +1942,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         try {
                           // First create a temporary product
                           const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-                          const prodRes = await fetch(`${baseUrl}/v1/products`, {
+                          const prodRes = await fetch(`${baseUrl}/v2/products/create`, {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
@@ -1963,7 +1963,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
                           if (abacateProductId) {
                             const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-                            const checkoutRes = await fetch(`${baseUrl}/v1/checkouts`, {
+                            const checkoutRes = await fetch(`${baseUrl}/v2/checkouts/create`, {
                               method: 'POST',
                               headers: {
                                 'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
