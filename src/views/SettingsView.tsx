@@ -45,6 +45,13 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     }));
   };
 
+  const handleWorkerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setProfile(prev => ({
+      ...prev,
+      abacatePayWorkerUrl: e.target.value
+    }));
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveStoreProfile(userEmail, profile);
@@ -64,8 +71,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     setTestStatus({ status: 'loading', message: 'Testando conexão...' });
 
     try {
-      // Direct call to AbacatePay store endpoint
-      const response = await fetch('https://api.abacatepay.com/v1/store', {
+      // Direct call to AbacatePay store endpoint or Worker proxy
+      const endpoint = profile.abacatePayWorkerUrl ? `${profile.abacatePayWorkerUrl}/v1/store` : 'https://api.abacatepay.com/v1/store';
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${profile.abacatePayApiKey}`,
@@ -159,37 +167,58 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             </div>
 
             {/* API KEY INPUT */}
-            <div className={`space-y-1.5 transition-all duration-300 ${profile.abacatePayEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
-              <div className="flex justify-between items-center">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Chave de API (Bearer Token)
-                </label>
-                <a 
-                  href="https://abacatepay.com" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-[10px] font-bold text-[#4c3780] hover:underline"
-                >
-                  Obter chave no painel do AbacatePay &rarr;
-                </a>
-              </div>
-              
-              <div className="relative flex items-center">
-                <div className="absolute left-3.5 text-slate-400">
-                  <Key size={14} />
+            <div className={`space-y-4 transition-all duration-300 ${profile.abacatePayEnabled ? 'opacity-100' : 'opacity-50 pointer-events-none'}`}>
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                    Chave de API (Bearer Token)
+                  </label>
+                  <a 
+                    href="https://abacatepay.com" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-bold text-[#4c3780] hover:underline"
+                  >
+                    Obter chave no painel do AbacatePay &rarr;
+                  </a>
                 </div>
-                <input
-                  type="password"
-                  value={profile.abacatePayApiKey || ''}
-                  onChange={handleApiKeyChange}
-                  disabled={!profile.abacatePayEnabled}
-                  placeholder="Insira sua Chave de API Bearer Token (api_abc...)"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
-                />
+                
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 text-slate-400">
+                    <Key size={14} />
+                  </div>
+                  <input
+                    type="password"
+                    value={profile.abacatePayApiKey || ''}
+                    onChange={handleApiKeyChange}
+                    disabled={!profile.abacatePayEnabled}
+                    placeholder="Insira sua Chave de API Bearer Token (api_abc...)"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  />
+                </div>
               </div>
-              <p className="text-[9px] text-slate-400 leading-relaxed font-semibold">
-                Sua chave de API é criptografada e salva localmente de forma segura. Nunca compartilhe esta chave com ninguém.
-              </p>
+
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                  URL do Cloudflare Worker (Opcional, evita erros de CORS)
+                </label>
+                <div className="relative flex items-center">
+                  <div className="absolute left-3.5 text-slate-400">
+                    <ExternalLink size={14} />
+                  </div>
+                  <input
+                    type="url"
+                    value={profile.abacatePayWorkerUrl || ''}
+                    onChange={handleWorkerUrlChange}
+                    disabled={!profile.abacatePayEnabled}
+                    placeholder="Ex: https://meu-worker.workers.dev"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  />
+                </div>
+                <p className="text-[9px] text-slate-400 leading-relaxed font-semibold">
+                  Se você tiver problemas de CORS ao testar ou finalizar compras, use o script de proxy do Cloudflare Worker.
+                </p>
+              </div>
             </div>
 
             {/* CONNECTION TEST BUTTON */}

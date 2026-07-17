@@ -1069,11 +1069,11 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       {productToView && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-full">
-            <div className="relative h-48 sm:h-56 bg-slate-50 flex items-center justify-center shrink-0">
+            <div className="relative h-32 sm:h-40 bg-slate-50 flex items-center justify-center shrink-0">
               <img 
                 src={productToView.imageUrl} 
                 alt={productToView.name} 
-                className="h-full w-full object-contain mix-blend-multiply p-4" 
+                className="h-full w-full object-contain mix-blend-multiply p-2" 
                 referrerPolicy="no-referrer" 
               />
               <button 
@@ -1941,7 +1941,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       const tryCreateRealCheckout = async () => {
                         try {
                           // First create a temporary product
-                          const prodRes = await fetch('https://api.abacatepay.com/v1/products', {
+                          const baseUrl = storeProfile.abacatePayWorkerUrl || 'https://api.abacatepay.com';
+                          const prodRes = await fetch(`${baseUrl}/v1/products`, {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
@@ -1961,7 +1962,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           const abacateProductId = prodData?.data?.id || prodData?.id;
 
                           if (abacateProductId) {
-                            const checkoutRes = await fetch('https://api.abacatepay.com/v1/checkouts', {
+                            const baseUrl = storeProfile.abacatePayWorkerUrl || 'https://api.abacatepay.com';
+                            const checkoutRes = await fetch(`${baseUrl}/v1/checkouts`, {
                               method: 'POST',
                               headers: {
                                 'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,

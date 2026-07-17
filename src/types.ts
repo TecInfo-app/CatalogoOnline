@@ -91,6 +91,7 @@ export interface StoreProfile {
   logoUrl?: string;
   abacatePayEnabled?: boolean;
   abacatePayApiKey?: string;
+  abacatePayWorkerUrl?: string;
 }
 
 export interface Coupon {
