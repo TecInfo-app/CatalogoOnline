@@ -452,10 +452,31 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
     const promoNames = appliedPromotionsList.map(p => p.name).join(', ');
 
+    // Pre-determine client ID to link to order correctly
+    const clients = getClients(sellerEmail);
+    const normalizedNewName = finalName.toLowerCase();
+    const cleanCnpj = finalCnpjCpf;
+
+    let targetClientId = loggedInClient?.id;
+    
+    const existingClient = clients.find(c => {
+      if (cleanCnpj && c.cnpj && c.cnpj.replace(/\D/g, '') === cleanCnpj.replace(/\D/g, '')) {
+        return true;
+      }
+      return c.name.toLowerCase() === normalizedNewName || c.legalName.toLowerCase() === normalizedNewName;
+    });
+
+    if (existingClient) {
+      targetClientId = existingClient.id;
+    } else if (!targetClientId) {
+      targetClientId = `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    }
+
     const newOrder: Order = {
       id: `ord-${Math.floor(100000 + Math.random() * 900000)}`,
       orderNumber: orderNum,
       clientName: finalName,
+      clientId: targetClientId,
       date: formattedDate,
       itemsCount: cartItemsCount,
       subtotal: subtotal,
@@ -463,7 +484,13 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       discountNotes: promoNames || undefined,
       total: cartTotal,
       status: isPaid ? 'completed' : 'budget',
-      paymentMethod: isPaid ? 'AbacatePay (Pix/Cartão)' : undefined
+      paymentMethod: isPaid ? 'AbacatePay (Pix/Cartão)' : undefined,
+      items: cart.map(item => ({
+        productId: item.product.id,
+        name: item.product.name,
+        quantity: item.quantity,
+        price: item.product.price
+      }))
     };
 
     // Save order in Seller storage
@@ -471,20 +498,9 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
     // Automatically register client if they don't exist yet
     try {
-      const clients = getClients(sellerEmail);
-      const normalizedNewName = finalName.toLowerCase();
-      const cleanCnpj = finalCnpjCpf;
-
-      const clientExists = clients.some(c => {
-        if (cleanCnpj && c.cnpj && c.cnpj.replace(/\D/g, '') === cleanCnpj.replace(/\D/g, '')) {
-          return true;
-        }
-        return c.name.toLowerCase() === normalizedNewName || c.legalName.toLowerCase() === normalizedNewName;
-      });
-
-      if (!clientExists) {
+      if (!existingClient) {
         const newClient: Client = {
-          id: `cli-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          id: targetClientId,
           type: cleanCnpj.replace(/\D/g, '').length <= 11 ? 'Pessoa Física' : 'Pessoa Jurídica',
           name: finalName,
           legalName: finalName,
@@ -503,13 +519,6 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(newClient));
       } else {
         // Find existing client to update details or auto-login
-        const existingClient = clients.find(c => {
-          if (cleanCnpj && c.cnpj && c.cnpj.replace(/\D/g, '') === cleanCnpj.replace(/\D/g, '')) {
-            return true;
-          }
-          return c.name.toLowerCase() === normalizedNewName || c.legalName.toLowerCase() === normalizedNewName;
-        });
-        
         if (existingClient) {
           const updated: Client = {
             ...existingClient,
