@@ -1,0 +1,132 @@
+@import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body-sm: "Hanken Grotesk";
+  --font-label-md: "Hanken Grotesk";
+  --font-headline-md: "Hanken Grotesk";
+  --font-headline-lg: "Hanken Grotesk";
+  --font-body-md: "Hanken Grotesk";
+  --font-headline-lg-mobile: "Hanken Grotesk";
+  --font-headline-sm: "Hanken Grotesk";
+  --font-body-lg: "Hanken Grotesk";
+
+  --color-surface: #f8f9ff;
+  --color-surface-dim: #cbdbf5;
+  --color-surface-bright: #f8f9ff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #eff4ff;
+  --color-surface-container: #e5eeff;
+  --color-surface-container-high: #dce9ff;
+  --color-surface-container-highest: #d3e4fe;
+  --color-on-surface: #0b1c30;
+  --color-on-surface-variant: #494550;
+  --color-inverse-surface: #213145;
+  --color-inverse-on-surface: #eaf1ff;
+  --color-outline: #7a7582;
+  --color-outline-variant: #cbc4d2;
+  --color-surface-tint: #6850a2;
+  
+  --color-primary: #33186b;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #4a3182;
+  --color-on-primary-container: #b99ff8;
+  --color-inverse-primary: #d1bcff;
+  --color-primary-fixed: #e9ddff;
+  --color-primary-fixed-dim: #d1bcff;
+  --color-on-primary-fixed: #23005b;
+  --color-on-primary-fixed-variant: #503788;
+  
+  --color-secondary: #006c49;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #6cf8bb;
+  --color-on-secondary-container: #00714d;
+  --color-secondary-fixed: #6ffbbe;
+  --color-secondary-fixed-dim: #4edea3;
+  --color-on-secondary-fixed: #002113;
+  --color-on-secondary-fixed-variant: #005236;
+  
+  --color-tertiary: #0e009a;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #2825b9;
+  --color-on-tertiary-container: #a2a5ff;
+  --color-tertiary-fixed: #e1e0ff;
+  --color-tertiary-fixed-dim: #c0c1ff;
+  --color-on-tertiary-fixed: #07006c;
+  --color-on-tertiary-fixed-variant: #2f2ebe;
+  
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+  
+  --color-background: #f8f9ff;
+  --color-on-background: #0b1c30;
+
+  --spacing-base: 4px;
+  --spacing-xs: 4px;
+  --spacing-stack-tight: 12px;
+  --spacing-edge-margin: 16px;
+}
+
+/* Custom utilities for fonts based on the JSON spec */
+@utility text-body-sm {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 400;
+}
+@utility text-label-md {
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+@utility text-headline-md {
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 600;
+}
+@utility text-headline-lg {
+  font-size: 28px;
+  line-height: 34px;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+@utility text-body-md {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 400;
+}
+@utility text-headline-lg-mobile {
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+}
+@utility text-headline-sm {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 600;
+}
+@utility text-body-lg {
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-on-background);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

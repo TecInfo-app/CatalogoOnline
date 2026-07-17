@@ -1,0 +1,140 @@
+import { useState, useEffect } from 'react';
+import { getClients, addClient, updateClient, deleteClient } from '../lib/store';
+import { Client } from '../types';
+import { ClientList } from '../components/clients/ClientList';
+import { ClientForm } from '../components/clients/ClientForm';
+import { ClientDetail } from '../components/clients/ClientDetail';
+
+type ViewState = 'list' | 'create' | 'detail';
+
+export function ClientsView({ userEmail }: { userEmail: string }) {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [viewState, setViewState] = useState<ViewState>('list');
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
+  const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadClients();
+  }, [userEmail]);
+
+  const loadClients = () => {
+    setClients(getClients(userEmail));
+  };
+
+  const handleCreateNew = () => {
+    setClientToEdit(null);
+    setViewState('create');
+  };
+
+  const handleEditClient = (client: Client) => {
+    setClientToEdit(client);
+    setViewState('create');
+  };
+
+  const handleSaveClient = (partialClient: Partial<Client>) => {
+    if (clientToEdit) {
+      // Edit mode
+      const updated = { ...clientToEdit, ...partialClient } as Client;
+      updateClient(userEmail, updated);
+      loadClients();
+      setViewState('list');
+      setClientToEdit(null);
+      setSelectedClient(null);
+    } else {
+      // Create mode
+      const newClient = partialClient as Client;
+      addClient(userEmail, newClient);
+      loadClients();
+      setViewState('list');
+    }
+  };
+
+  const handleClientClick = (client: Client) => {
+    setSelectedClient(client);
+    setViewState('detail');
+  };
+
+  const handleUpdateClient = (client: Client) => {
+    updateClient(userEmail, client);
+    loadClients();
+    setSelectedClient(client);
+  };
+
+  const handleDeleteClient = (id: string) => {
+    setClientToDelete(id);
+  };
+
+  const handleConfirmDelete = () => {
+    if (clientToDelete) {
+      deleteClient(userEmail, clientToDelete);
+      loadClients();
+      if (selectedClient?.id === clientToDelete) {
+        setViewState('list');
+        setSelectedClient(null);
+      }
+      setClientToDelete(null);
+    }
+  };
+
+  const handleBackToList = () => {
+    setViewState('list');
+    setSelectedClient(null);
+    setClientToEdit(null);
+  };
+
+  return (
+    <div className="h-full bg-slate-50/50 p-6 overflow-y-auto">
+      {viewState === 'list' && (
+        <ClientList 
+          clients={clients} 
+          onCreateNew={handleCreateNew} 
+          onClientClick={handleClientClick}
+          onEditClient={handleEditClient}
+          onDeleteClient={handleDeleteClient}
+        />
+      )}
+
+      {viewState === 'create' && (
+        <ClientForm 
+          clientToEdit={clientToEdit}
+          onSave={handleSaveClient} 
+          onCancel={handleBackToList} 
+        />
+      )}
+
+      {viewState === 'detail' && selectedClient && (
+        <ClientDetail 
+          client={selectedClient} 
+          onBack={handleBackToList}
+          onUpdate={handleUpdateClient}
+          onEdit={handleEditClient}
+        />
+      )}
+
+      {/* Custom Confirmation Modal to bypass native confirm() iframe constraints */}
+      {clientToDelete && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg max-w-sm w-full p-6 space-y-4 shadow-xl">
+            <h3 className="font-bold text-slate-800 text-base">Confirmar Exclusão</h3>
+            <p className="text-slate-600 text-xs">Tem certeza que deseja excluir este cliente? Esta ação não pode ser desfeita.</p>
+            <div className="flex justify-end gap-3 pt-2">
+              <button 
+                onClick={() => setClientToDelete(null)}
+                className="px-4 py-2 text-slate-600 border border-slate-300 rounded text-xs font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button 
+                onClick={handleConfirmDelete}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

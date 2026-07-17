@@ -1,0 +1,81 @@
+import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings } from 'lucide-react';
+import { cn } from '../../lib/utils';
+import { getStoreProfile } from '../../lib/store';
+
+interface SidebarProps {
+  currentTab: string;
+  onTabChange: (tab: string) => void;
+  userEmail?: string;
+  onLogout?: () => void;
+  profileVersion?: number;
+}
+
+export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileVersion }: SidebarProps) {
+  const profile = userEmail ? getStoreProfile(userEmail) : null;
+  const shopName = profile?.shopName || 'Vercos';
+  const userName = profile?.name || userEmail?.split('@')[0] || 'Iranildo';
+  const userDisplayEmail = profile?.email || userEmail || 'iranildo.jobs@gmail.com';
+  const logoUrl = profile?.logoUrl;
+
+  const tabs = [
+    { id: 'indicators', label: 'Indicadores', icon: BarChart2 },
+    { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'products', label: 'Produtos', icon: Package },
+    { id: 'portal', label: 'Portal', icon: Network },
+    { id: 'agenda', label: 'Tarefas', icon: ClipboardList },
+    { id: 'profile', label: 'Perfil', icon: UserCircle },
+    { id: 'settings', label: 'Configurações', icon: Settings },
+  ];
+
+  return (
+    <nav className="hidden md:flex fixed inset-y-0 left-0 z-40 flex-col py-lg bg-surface h-full w-72 border-r border-outline-variant shadow-xl mt-14 md:mt-0">
+      <div className="px-edge_margin mb-8 pt-4 md:pt-0">
+        <h1 className="text-headline-md font-bold text-primary mb-4 hidden md:block flex items-center gap-2">
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={shopName} 
+              className="w-8 h-8 rounded-full object-cover border border-outline-variant"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <span className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-black text-sm shrink-0">
+              {shopName.charAt(0).toUpperCase()}
+            </span>
+          )}
+          <span className="truncate">{shopName}</span>
+        </h1>
+      </div>
+      <div className="flex-1 overflow-y-auto px-2 space-y-1">
+        {tabs.map((tab) => {
+          const isActive = currentTab === tab.id;
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => onTabChange(tab.id)}
+              className={cn(
+                "flex items-center w-full gap-3 px-4 py-3 rounded-full mx-2 transition-all",
+                isActive 
+                  ? "bg-primary-container text-on-primary-container font-semibold translate-x-1" 
+                  : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              )}
+            >
+              <Icon size={20} className={cn(isActive && "fill-current")} />
+              <span className="text-body-md">{tab.label}</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="px-edge_margin mt-auto pb-4 flex items-center justify-between">
+        <span className="text-body-sm text-on-surface-variant">v4.2.0</span>
+        {onLogout && (
+          <button onClick={onLogout} className="text-body-sm text-error hover:underline transition-colors">
+            Sair
+          </button>
+        )}
+      </div>
+    </nav>
+  );
+}
