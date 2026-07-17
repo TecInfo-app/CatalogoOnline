@@ -5,37 +5,38 @@ export default {
       return new Response(null, {
         headers: {
           "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type",
+          "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization",
         },
       });
-    }
-
-    if (request.method !== "POST") {
-      return new Response("Method not allowed", { status: 405 });
     }
 
     try {
-      const body = await request.json();
+      const url = new URL(request.url);
+      
+      // Target AbacatePay API URL
+      const targetUrl = new URL(url.pathname + url.search, "https://api.abacatepay.com");
+      
+      // We take the request headers and pass them forward
+      // The frontend will send the Authorization header directly
+      const newHeaders = new Headers(request.headers);
+      newHeaders.set("Host", "api.abacatepay.com");
 
-      // Calling AbacatePay API
-      const response = await fetch("https://api.abacatepay.com/v1/billing/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${env.ABACATEPAY_API_KEY}`
-        },
-        body: JSON.stringify(body),
+      const response = await fetch(targetUrl.toString(), {
+        method: request.method,
+        headers: newHeaders,
+        body: request.method !== "GET" && request.method !== "HEAD" ? request.body : null,
+        redirect: "follow"
       });
 
-      const data = await response.json();
+      // Prepare response headers, ensuring CORS is maintained
+      const corsHeaders = new Headers(response.headers);
+      corsHeaders.set("Access-Control-Allow-Origin", "*");
 
-      return new Response(JSON.stringify(data), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        status: response.status
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: corsHeaders
       });
 
     } catch (error) {
