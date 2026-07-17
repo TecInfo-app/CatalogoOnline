@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles } from 'lucide-react';
-import { getProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
+import { getProducts, saveProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
 import { Product, Order, Client, Coupon } from '../types';
 import { cn } from '../lib/utils';
 import { AbacatePayCheckoutView } from './AbacatePayCheckoutView';
@@ -501,22 +501,62 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         // Log them in automatically
         setLoggedInClient(newClient);
         localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(newClient));
-      } else if (loggedInClient) {
-        // If they are logged in, we update their details if they changed them
-        const updated: Client = {
-          ...loggedInClient,
-          name: finalName,
-          legalName: finalName,
-          cnpj: finalCnpjCpf,
-          phones: [finalPhone],
-          birthday: finalBirthday || undefined
-        };
-        updateClient(sellerEmail, updated);
-        setLoggedInClient(updated);
-        localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(updated));
+      } else {
+        // Find existing client to update details or auto-login
+        const existingClient = clients.find(c => {
+          if (cleanCnpj && c.cnpj && c.cnpj.replace(/\D/g, '') === cleanCnpj.replace(/\D/g, '')) {
+            return true;
+          }
+          return c.name.toLowerCase() === normalizedNewName || c.legalName.toLowerCase() === normalizedNewName;
+        });
+        
+        if (existingClient) {
+          const updated: Client = {
+            ...existingClient,
+            name: finalName,
+            legalName: finalName,
+            cnpj: finalCnpjCpf,
+            phones: [finalPhone],
+            birthday: existingClient.birthday || finalBirthday || undefined
+          };
+          updateClient(sellerEmail, updated);
+          setLoggedInClient(updated);
+          localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(updated));
+        }
       }
     } catch (err) {
       console.error('Erro ao auto-cadastrar/atualizar cliente do catalogo:', err);
+    }
+
+    // Deduct stock for products sold in catalog
+    try {
+      const currentProducts = getProducts(sellerEmail);
+      let updatedAnyProduct = false;
+      cart.forEach(cartItem => {
+        const prodIndex = currentProducts.findIndex(p => p.id === cartItem.product.id);
+        if (prodIndex !== -1) {
+          const prod = currentProducts[prodIndex];
+          const newStock = Math.max(0, (prod.stock || 0) - cartItem.quantity);
+          prod.stock = newStock;
+          
+          if (newStock <= 0) {
+            prod.status = 'out_of_stock';
+          } else if (newStock <= 5) {
+            prod.status = 'low_stock';
+          } else {
+            prod.status = 'in_stock';
+          }
+          currentProducts[prodIndex] = prod;
+          updatedAnyProduct = true;
+        }
+      });
+      if (updatedAnyProduct) {
+        saveProducts(sellerEmail, currentProducts);
+        // Trigger catalog state update with active products
+        setProducts(currentProducts.filter(p => p.isActive !== false));
+      }
+    } catch (err) {
+      console.error('Erro ao abater estoque dos produtos vendidos:', err);
     }
 
     // Set checkout form states to final values so WhatsApp matches

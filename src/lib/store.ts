@@ -32,6 +32,10 @@ export const getProducts = (email: string): Product[] => {
   return initialProducts;
 };
 
+export const saveProducts = (email: string, products: Product[]): void => {
+  localStorage.setItem(getStorageKey(email, 'products'), JSON.stringify(products));
+};
+
 export const getCoupons = (email: string): Coupon[] => {
   const data = localStorage.getItem(getStorageKey(email, 'coupons'));
   if (data) return JSON.parse(data);
