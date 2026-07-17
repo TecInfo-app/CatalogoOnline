@@ -5,7 +5,7 @@ import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    base: '/CatalogoOnline/', // Permite que os arquivos sejam carregados corretamente no GitHub Pages
+    base: '/CatalogoOnline/', // Caminho correto para o repositório no GitHub Pages
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {
