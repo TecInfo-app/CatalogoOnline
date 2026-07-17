@@ -1941,31 +1941,80 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       const tryCreateRealCheckout = async () => {
                         try {
                           const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-                          const checkoutRes = await fetch(`${baseUrl}/v1/billing/create`, {
+                          
+                          // Tenta V2 primeiro
+                          let isV2 = true;
+                          let prodRes = await fetch(`${baseUrl}/v2/products/create`, {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
                               'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                              frequency: 'ONE_TIME',
-                              methods: ['PIX'],
-                              products: [{
-                                externalId: orderNum,
-                                name: `Pedido #${orderNum}`,
-                                quantity: 1,
-                                price: Math.round(cartTotal * 100),
-                                description: `Compra de ${confirmName}`
-                              }],
-                              returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
-                              completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                              externalId: orderNum,
+                              name: `Pedido #${orderNum}`,
+                              price: Math.round(cartTotal * 100),
+                              currency: 'BRL',
+                              description: `Compra de ${confirmName}`
                             })
                           });
-                          
-                          const checkoutData = await checkoutRes.json();
-                          const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
-                          if (checkoutUrl) {
-                            return checkoutUrl;
+
+                          if (prodRes.status === 401) {
+                            const errData = await prodRes.clone().json().catch(() => null);
+                            if (errData?.error === 'API key version mismatch') {
+                              isV2 = false;
+                            }
+                          }
+
+                          if (isV2) {
+                            if (!prodRes.ok) throw new Error('Failed v2 product creation');
+                            const prodData = await prodRes.json();
+                            const productId = prodData?.data?.id || prodData?.id;
+                            
+                            if (productId) {
+                              const checkoutRes = await fetch(`${baseUrl}/v2/checkouts/create`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
+                                  'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                  items: [{ id: productId, quantity: 1 }],
+                                  returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                                  completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                                })
+                              });
+                              const checkoutData = await checkoutRes.json();
+                              const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
+                              if (checkoutUrl) return checkoutUrl;
+                            }
+                          } else {
+                            // Fallback para V1
+                            const checkoutRes = await fetch(`${baseUrl}/v1/billing/create`, {
+                              method: 'POST',
+                              headers: {
+                                'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
+                                'Content-Type': 'application/json'
+                              },
+                              body: JSON.stringify({
+                                frequency: 'ONE_TIME',
+                                methods: ['PIX'],
+                                products: [{
+                                  externalId: orderNum,
+                                  name: `Pedido #${orderNum}`,
+                                  quantity: 1,
+                                  price: Math.round(cartTotal * 100),
+                                  description: `Compra de ${confirmName}`
+                                }],
+                                returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                                completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                              })
+                            });
+                            const checkoutData = await checkoutRes.json();
+                            const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
+                            if (checkoutUrl) {
+                              return checkoutUrl;
+                            }
                           }
                         } catch (err) {
                           console.log('Skipping real checkout redirection (likely CORS or Sandbox API Key): ', err);

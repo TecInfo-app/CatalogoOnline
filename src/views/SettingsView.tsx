@@ -65,14 +65,27 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
     try {
       // Direct call to AbacatePay store endpoint or Worker proxy
-      const endpoint = 'https://vercos.iranildo-jobs.workers.dev/v1/store/get';
-      const response = await fetch(endpoint, {
+      const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
+      let response = await fetch(`${baseUrl}/v2/store/get`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${profile.abacatePayApiKey}`,
           'Content-Type': 'application/json'
         }
       });
+      
+      if (response.status === 401) {
+        const errData = await response.clone().json().catch(() => null);
+        if (errData?.error === 'API key version mismatch') {
+          response = await fetch(`${baseUrl}/v1/store/get`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${profile.abacatePayApiKey}`,
+              'Content-Type': 'application/json'
+            }
+          });
+        }
+      }
 
       if (!response.ok) {
         let errorMsg = `Erro na API (${response.status})`;
