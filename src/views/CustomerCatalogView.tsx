@@ -1940,49 +1940,32 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       // Try to call the real AbacatePay API to create a checkout (fails gracefully to simulated sandbox)
                       const tryCreateRealCheckout = async () => {
                         try {
-                          // First create a temporary product
                           const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-                          const prodRes = await fetch(`${baseUrl}/v2/products/create`, {
+                          const checkoutRes = await fetch(`${baseUrl}/v1/billing/create`, {
                             method: 'POST',
                             headers: {
                               'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
                               'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                              externalId: orderNum,
-                              name: `Pedido #${orderNum}`,
-                              price: Math.round(cartTotal * 100),
-                              currency: 'BRL',
-                              description: `Compra de ${confirmName}`
+                              frequency: 'ONE_TIME',
+                              methods: ['PIX'],
+                              products: [{
+                                externalId: orderNum,
+                                name: `Pedido #${orderNum}`,
+                                quantity: 1,
+                                price: Math.round(cartTotal * 100),
+                                description: `Compra de ${confirmName}`
+                              }],
+                              returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                              completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
                             })
                           });
                           
-                          if (!prodRes.ok) throw new Error('Failed product creation');
-                          const prodData = await prodRes.json();
-                          const abacateProductId = prodData?.data?.id || prodData?.id;
-
-                          if (abacateProductId) {
-                            const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-                            const checkoutRes = await fetch(`${baseUrl}/v2/checkouts/create`, {
-                              method: 'POST',
-                              headers: {
-                                'Authorization': `Bearer ${storeProfile.abacatePayApiKey}`,
-                                'Content-Type': 'application/json'
-                              },
-                              body: JSON.stringify({
-                                frequency: 'ONE_TIME',
-                                methods: ['PIX', 'CARD'],
-                                products: [{ id: abacateProductId, quantity: 1 }],
-                                returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
-                                completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
-                              })
-                            });
-                            
-                            const checkoutData = await checkoutRes.json();
-                            const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
-                            if (checkoutUrl) {
-                              return checkoutUrl;
-                            }
+                          const checkoutData = await checkoutRes.json();
+                          const checkoutUrl = checkoutData?.data?.url || checkoutData?.url;
+                          if (checkoutUrl) {
+                            return checkoutUrl;
                           }
                         } catch (err) {
                           console.log('Skipping real checkout redirection (likely CORS or Sandbox API Key): ', err);
