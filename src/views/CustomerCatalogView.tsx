@@ -203,6 +203,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       });
     }
 
+    const stockLimit = product.stock !== undefined && product.stock !== null ? product.stock : Infinity;
+
     setCart(prev => {
       // Find if item is already in cart with identical variations
       const existingIdx = prev.findIndex(item => 
@@ -215,9 +217,19 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
       if (existingIdx > -1) {
         const updated = [...prev];
-        updated[existingIdx].quantity += finalQuantity;
+        const newQty = updated[existingIdx].quantity + finalQuantity;
+        if (newQty > stockLimit) {
+          alert(`Quantidade total limitada ao estoque disponível (${stockLimit} unidades)`);
+          updated[existingIdx].quantity = stockLimit;
+        } else {
+          updated[existingIdx].quantity = newQty;
+        }
         return updated;
       } else {
+        if (finalQuantity > stockLimit) {
+          alert(`Quantidade total limitada ao estoque disponível (${stockLimit} unidades)`);
+          return [...prev, { product, quantity: stockLimit, selectedVariations: finalVars }];
+        }
         return [...prev, { product, quantity: finalQuantity, selectedVariations: finalVars }];
       }
     });
@@ -233,7 +245,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       return;
     }
     const updated = [...cart];
-    updated[idx].quantity = newQty;
+    const product = updated[idx].product;
+    const stockLimit = product.stock !== undefined && product.stock !== null ? product.stock : Infinity;
+
+    if (newQty > stockLimit) {
+      alert(`Quantidade limitada ao estoque disponível (${stockLimit} unidades)`);
+      updated[idx].quantity = stockLimit;
+    } else {
+      updated[idx].quantity = newQty;
+    }
     setCart(updated);
   };
 
@@ -1194,7 +1214,14 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               )}
 
               <div className="space-y-2 pt-4 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-700 block uppercase tracking-wider">Quantidade</label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-700 block uppercase tracking-wider">Quantidade</label>
+                  {productToView.stock !== undefined && productToView.stock !== null && (
+                    <span className="text-[10px] font-extrabold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                      Disponível: {productToView.stock} {productToView.unit || 'unidades'}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-1 border border-slate-200 rounded-xl p-1 bg-slate-50">
                     <button
@@ -1209,7 +1236,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setSelectedQuantity(selectedQuantity + (productToView.multiple || 1))}
+                      onClick={() => {
+                        const nextQty = selectedQuantity + (productToView.multiple || 1);
+                        const stockLimit = productToView.stock !== undefined && productToView.stock !== null ? productToView.stock : Infinity;
+                        if (nextQty <= stockLimit) {
+                          setSelectedQuantity(nextQty);
+                        } else {
+                          alert(`Quantidade limitada ao estoque disponível (${stockLimit} unidades)`);
+                        }
+                      }}
                       className="w-8 h-8 flex items-center justify-center text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
                     >
                       <Plus size={14} />
