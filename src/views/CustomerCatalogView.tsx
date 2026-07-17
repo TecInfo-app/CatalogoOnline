@@ -1941,7 +1941,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       const tryCreateRealCheckout = async () => {
                         try {
                           // First create a temporary product
-                          const baseUrl = storeProfile.abacatePayWorkerUrl || 'https://api.abacatepay.com';
+                          const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
                           const prodRes = await fetch(`${baseUrl}/v1/products`, {
                             method: 'POST',
                             headers: {
@@ -1962,7 +1962,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           const abacateProductId = prodData?.data?.id || prodData?.id;
 
                           if (abacateProductId) {
-                            const baseUrl = storeProfile.abacatePayWorkerUrl || 'https://api.abacatepay.com';
+                            const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
                             const checkoutRes = await fetch(`${baseUrl}/v1/checkouts`, {
                               method: 'POST',
                               headers: {

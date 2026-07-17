@@ -45,13 +45,6 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     }));
   };
 
-  const handleWorkerUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setProfile(prev => ({
-      ...prev,
-      abacatePayWorkerUrl: e.target.value
-    }));
-  };
-
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     saveStoreProfile(userEmail, profile);
@@ -72,7 +65,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
     try {
       // Direct call to AbacatePay store endpoint or Worker proxy
-      const endpoint = profile.abacatePayWorkerUrl ? `${profile.abacatePayWorkerUrl}/v1/store` : 'https://api.abacatepay.com/v1/store';
+      const endpoint = 'https://vercos.iranildo-jobs.workers.dev/v1/store';
       const response = await fetch(endpoint, {
         method: 'GET',
         headers: {
@@ -196,27 +189,8 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
                   />
                 </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                  URL do Cloudflare Worker (Opcional, evita erros de CORS)
-                </label>
-                <div className="relative flex items-center">
-                  <div className="absolute left-3.5 text-slate-400">
-                    <ExternalLink size={14} />
-                  </div>
-                  <input
-                    type="url"
-                    value={profile.abacatePayWorkerUrl || ''}
-                    onChange={handleWorkerUrlChange}
-                    disabled={!profile.abacatePayEnabled}
-                    placeholder="Ex: https://meu-worker.workers.dev"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
-                  />
-                </div>
                 <p className="text-[9px] text-slate-400 leading-relaxed font-semibold">
-                  Se você tiver problemas de CORS ao testar ou finalizar compras, use o script de proxy do Cloudflare Worker.
+                  Sua chave de API é criptografada e salva localmente de forma segura. Nunca compartilhe esta chave com ninguém.
                 </p>
               </div>
             </div>
