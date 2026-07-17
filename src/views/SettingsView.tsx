@@ -64,9 +64,9 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     setTestStatus({ status: 'loading', message: 'Testando conexão...' });
 
     try {
-      // Direct call to AbacatePay store endpoint or Worker proxy
+      // Direct call to AbacatePay customers endpoint or Worker proxy
       const baseUrl = 'https://vercos.iranildo-jobs.workers.dev';
-      let response = await fetch(`${baseUrl}/v2/store/get`, {
+      let response = await fetch(`${baseUrl}/v2/customers/list`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${profile.abacatePayApiKey}`,
@@ -76,7 +76,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       
       if (!response.ok) {
         // Fallback to v1 if v2 fails for any reason (e.g. 400 Not found, 401 Version mismatch)
-        const v1Response = await fetch(`${baseUrl}/v1/store/get`, {
+        const v1Response = await fetch(`${baseUrl}/v1/customer/list`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${profile.abacatePayApiKey}`,
@@ -103,19 +103,11 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
         throw new Error(errorMsg);
       }
 
-      const result = await response.json();
-      const storeData = result?.data || result;
-      if (storeData && storeData.name) {
-        setTestStatus({
-          status: 'success',
-          message: `Conectado com sucesso! Loja: ${storeData.name || 'AbacatePay'}`
-        });
-      } else {
-        setTestStatus({
-          status: 'error',
-          message: result?.error || 'A API retornou uma resposta inválida.'
-        });
-      }
+      // Instead of storeData.name, we just get success since it's a list endpoint
+      setTestStatus({
+        status: 'success',
+        message: 'Conectado com sucesso! Chave de API verificada.'
+      });
     } catch (err: any) {
       console.error('AbacatePay connection test failed', err);
       // Let's provide a friendly notice since client-side calls might hit CORS or network blockages in preview

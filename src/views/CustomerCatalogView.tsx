@@ -87,6 +87,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         const parsed = JSON.parse(sessionData);
         setVerificationSession(parsed);
         
+        // Hydrate checkout state
+        if (parsed.cart) setCart(parsed.cart);
+        if (parsed.clientName) setClientName(parsed.clientName);
+        if (parsed.phone) setPhone(parsed.phone);
+        if (parsed.cnpjCpf) setCnpjCpf(parsed.cnpjCpf);
+        if (parsed.birthday) setBirthday(parsed.birthday);
+        if (parsed.notes) setNotes(parsed.notes);
+        if (parsed.appliedCoupon) setAppliedCoupon(parsed.appliedCoupon);
+        
         setVerificationStatus('loading');
         setVerificationMessage('Validando assinatura digital e status de transação com AbacatePay...');
         
