@@ -15,7 +15,8 @@ export function PortalView({ userEmail }: PortalViewProps) {
   const [totalProductsCount, setTotalProductsCount] = useState(0);
 
   // Generate the catalog sharing link dynamically
-  const catalogUrl = `${window.location.origin}/?view=catalog&seller=${encodeURIComponent(userEmail)}`;
+  const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+  const catalogUrl = `${window.location.origin}${basePath}?view=catalog&seller=${encodeURIComponent(userEmail)}`;
 
   useEffect(() => {
     const products = getProducts(userEmail);

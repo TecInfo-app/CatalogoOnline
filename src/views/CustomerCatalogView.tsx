@@ -812,7 +812,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             Você está visualizando o catálogo como cliente.
           </div>
           <button 
-            onClick={() => window.location.href = '/'}
+            onClick={() => window.location.href = window.location.pathname}
             className="bg-white/10 hover:bg-white/20 px-3 py-1 rounded transition-colors flex items-center gap-1"
           >
             <ArrowLeft size={12} />
