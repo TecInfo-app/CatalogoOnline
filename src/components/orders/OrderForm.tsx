@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { Order, Product, Client } from '../../types';
 import { Building2, Package, Info, Search, Plus, List, Edit2, Send, Check, UserSquare2, X, Printer } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { getClients, getProducts } from '../../lib/store';
+import { getClients, getProducts, getStoreProfile } from '../../lib/store';
 
 interface OrderFormProps {
   userEmail: string;
@@ -13,6 +13,7 @@ interface OrderFormProps {
 }
 
 export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate }: OrderFormProps) {
+  const storeProfile = useMemo(() => getStoreProfile(userEmail), [userEmail]);
   const [searchTerm, setSearchTerm] = useState('');
   const [clientSearchTerm, setClientSearchTerm] = useState('');
   
@@ -232,10 +233,14 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             </h3>
           </div>
           <div className="pl-7">
-            <div className="text-sm font-medium text-[#4c3780]">perfumaria - perfumaria</div>
-            <div className="text-sm text-slate-500 mt-1 flex items-center gap-2 border-l-2 border-blue-400 pl-2 ml-1">
-              (81) 99971-2618
+            <div className="text-sm font-medium text-[#4c3780]">
+              {storeProfile.shopName || storeProfile.name || 'Minha Loja'}
             </div>
+            {storeProfile.phone && (
+              <div className="text-sm text-slate-500 mt-1 flex items-center gap-2 border-l-2 border-blue-400 pl-2 ml-1">
+                {storeProfile.phone}
+              </div>
+            )}
           </div>
         </div>
 
@@ -497,6 +502,99 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         >
           <Send size={16} /> Enviar por whatsapp
         </button>
+      </div>
+
+      {/* AREA DE IMPRESSÃO EXCLUSIVA */}
+      <div id="printable-order-receipt" className="hidden print:block bg-white p-6 text-black font-sans text-xs">
+        {/* CABEÇALHO DA LOJA */}
+        <div className="text-center border-b border-dashed border-slate-300 pb-4 mb-4">
+          <h2 className="text-lg font-black uppercase tracking-wide">{storeProfile.shopName || storeProfile.name || 'Minha Loja'}</h2>
+          {storeProfile.phone && <p className="text-xs text-slate-600 mt-1">Contato: {storeProfile.phone}</p>}
+          {storeProfile.email && <p className="text-xs text-slate-500">{storeProfile.email}</p>}
+          <div className="mt-3 inline-block bg-slate-100 px-3 py-1 rounded font-bold uppercase tracking-wider text-[10px]">
+            COMPROVANTE DE PEDIDO
+          </div>
+        </div>
+
+        {/* INFORMAÇÕES DO PEDIDO */}
+        <div className="grid grid-cols-2 gap-4 mb-4 text-xs border-b border-slate-100 pb-3">
+          <div>
+            <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">Identificação</p>
+            <p className="font-bold text-sm text-slate-800 mt-0.5">Pedido #{orderNumber || 'Auto'}</p>
+            <p className="text-slate-600 mt-1">Data: {new Date().toLocaleDateString('pt-BR')}</p>
+            <p className="text-slate-600">Tipo: <span className="font-semibold">{orderType}</span></p>
+          </div>
+          <div className="text-right">
+            <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">Vendedor</p>
+            <p className="font-semibold text-slate-700 mt-0.5">{storeProfile.name || 'Vendedor'}</p>
+            <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#4c3780]">{paymentMethod || 'Não informado'}</span></p>
+          </div>
+        </div>
+
+        {/* DADOS DO CLIENTE */}
+        <div className="bg-slate-50 p-3 rounded-lg mb-4 text-xs border border-slate-100">
+          <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider mb-1.5">Dados do Cliente</p>
+          <div className="space-y-1">
+            <p className="text-slate-800"><strong className="text-slate-600">Nome:</strong> {selectedClient?.name || 'Não informado'}</p>
+            {selectedClient?.cnpj && <p className="text-slate-800"><strong className="text-slate-600">CPF/CNPJ:</strong> {selectedClient.cnpj}</p>}
+            {selectedClient?.phones?.[0] && <p className="text-slate-800"><strong className="text-slate-600">Telefone:</strong> {selectedClient.phones[0]}</p>}
+            <p className="text-slate-800"><strong className="text-slate-600">Endereço de Entrega:</strong> {selectedClient?.location && selectedClient.location !== 'Não informada' ? selectedClient.location : 'Endereço principal do cliente'}</p>
+          </div>
+        </div>
+
+        {/* ITENS DO PEDIDO */}
+        <div className="mb-4">
+          <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider mb-2">Produtos / Itens</p>
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-600 font-bold">
+                <th className="py-2">Item/Descrição</th>
+                <th className="py-2 text-center w-16">Qtd</th>
+                <th className="py-2 text-right w-24">Unitário</th>
+                <th className="py-2 text-right w-24">Subtotal</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orderItems.map((item, idx) => (
+                <tr key={item.product.id || idx} className="border-b border-slate-100">
+                  <td className="py-2 font-medium text-slate-800">
+                    {item.product.name}
+                    {item.product.sku && <span className="block text-[10px] text-slate-400 font-normal">REF: {item.product.sku}</span>}
+                  </td>
+                  <td className="py-2 text-center text-slate-700">{item.quantity}</td>
+                  <td className="py-2 text-right text-slate-700">R$ {item.product.price.toFixed(2).replace('.', ',')}</td>
+                  <td className="py-2 text-right font-bold text-slate-800">R$ {(item.product.price * item.quantity).toFixed(2).replace('.', ',')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* RESUMO DE VALORES */}
+        <div className="border-t border-dashed border-slate-300 pt-3 flex flex-col items-end text-xs space-y-1">
+          <div className="flex justify-between w-48 text-slate-600">
+            <span>Subtotal:</span>
+            <span>R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+          </div>
+          <div className="flex justify-between w-48 text-slate-600">
+            <span>Frete:</span>
+            <span>R$ 0,00</span>
+          </div>
+          <div className="flex justify-between w-48 text-slate-600">
+            <span>Descontos:</span>
+            <span>R$ 0,00</span>
+          </div>
+          <div className="flex justify-between w-48 text-base font-black text-slate-800 border-t border-slate-100 pt-1.5 mt-1">
+            <span>TOTAL:</span>
+            <span>R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+          </div>
+        </div>
+
+        {/* RODAPÉ DO COMPROVANTE */}
+        <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-6 mt-8">
+          <p>Obrigado pela preferência!</p>
+          <p className="mt-1">Sistema de Gestão Vercos</p>
+        </div>
       </div>
 
     </div>
