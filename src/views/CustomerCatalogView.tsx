@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles } from 'lucide-react';
+import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy } from 'lucide-react';
 import { getProducts, saveProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
 import { Product, Order, Client, Coupon } from '../types';
 import { cn } from '../lib/utils';
 import { AbacatePayCheckoutView } from './AbacatePayCheckoutView';
+import { loadStoreData } from '../lib/firebase-sync';
 
 interface CustomerCatalogViewProps {
   sellerEmail: string;
@@ -41,6 +42,12 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
   const [loginName, setLoginName] = useState('');
   const [loginPhone, setLoginPhone] = useState('');
   const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [asaasPayments, setAsaasPayments] = useState<any[]>([]);
+  const [isLoadingAsaasPayments, setIsLoadingAsaasPayments] = useState(false);
+  const [activeHistoryTab, setActiveHistoryTab] = useState<'orders' | 'invoices'>('orders');
+  const [copiedPaymentId, setCopiedPaymentId] = useState<string | null>(null);
+  const [isFetchingAction, setIsFetchingAction] = useState<string | null>(null);
 
   // Orders History modal
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
@@ -166,6 +173,157 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
     };
   }, [sellerEmail]);
 
+  const fetchAsaasPayments = async () => {
+    if (!loggedInClient || !storeProfile.asaasEnabled || !storeProfile.asaasApiKey) return;
+    setIsLoadingAsaasPayments(true);
+    try {
+      const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+      const pathPrefix = storeProfile.asaasEnvironment === 'production' 
+        ? '/asaas-production'
+        : '/asaas-sandbox';
+      const baseUrl = `${workerUrl}${pathPrefix}`;
+
+      let asaasCustomerId = '';
+      const cleanCpfCnpj = loggedInClient.cnpj ? loggedInClient.cnpj.replace(/\D/g, '') : '';
+
+      // 1. Search by CPF/CNPJ
+      if (cleanCpfCnpj) {
+        const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpfCnpj}`, {
+          method: 'GET',
+          headers: {
+            'access_token': storeProfile.asaasApiKey,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData.data && searchData.data.length > 0) {
+            asaasCustomerId = searchData.data[0].id;
+          }
+        }
+      }
+
+      // 2. Fallback search by email/name
+      if (!asaasCustomerId) {
+        const nameQuery = encodeURIComponent(loggedInClient.name);
+        const searchRes = await fetch(`${baseUrl}/customers?name=${nameQuery}`, {
+          method: 'GET',
+          headers: {
+            'access_token': storeProfile.asaasApiKey,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (searchRes.ok) {
+          const searchData = await searchRes.json();
+          if (searchData.data && searchData.data.length > 0) {
+            asaasCustomerId = searchData.data[0].id;
+          }
+        }
+      }
+
+      // 3. Fetch payments if found
+      if (asaasCustomerId) {
+        const payRes = await fetch(`${baseUrl}/payments?customer=${asaasCustomerId}&limit=50`, {
+          method: 'GET',
+          headers: {
+            'access_token': storeProfile.asaasApiKey,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (payRes.ok) {
+          const payData = await payRes.json();
+          if (payData.data) {
+            // Sort by due date (vencimento)
+            const sorted = payData.data.sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+            setAsaasPayments(sorted);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching client Asaas payments:", err);
+    } finally {
+      setIsLoadingAsaasPayments(false);
+    }
+  };
+
+  const handleCopyPix = async (paymentId: string) => {
+    setIsFetchingAction(`pix-${paymentId}`);
+    try {
+      const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+      const pathPrefix = storeProfile.asaasEnvironment === 'production' 
+        ? '/asaas-production'
+        : '/asaas-sandbox';
+      const baseUrl = `${workerUrl}${pathPrefix}`;
+
+      const res = await fetch(`${baseUrl}/payments/${paymentId}/pixQrCode`, {
+        method: 'GET',
+        headers: {
+          'access_token': storeProfile.asaasApiKey || '',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.payload) {
+          await navigator.clipboard.writeText(data.payload);
+          setCopiedPaymentId(`pix-${paymentId}`);
+          setTimeout(() => setCopiedPaymentId(null), 3000);
+        } else {
+          alert('Código PIX Copia e Cola não disponível para esta fatura no momento.');
+        }
+      } else {
+        alert('Não foi possível obter o código PIX.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao copiar PIX.');
+    } finally {
+      setIsFetchingAction(null);
+    }
+  };
+
+  const handleCopyBarcode = async (paymentId: string) => {
+    setIsFetchingAction(`barcode-${paymentId}`);
+    try {
+      const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+      const pathPrefix = storeProfile.asaasEnvironment === 'production' 
+        ? '/asaas-production'
+        : '/asaas-sandbox';
+      const baseUrl = `${workerUrl}${pathPrefix}`;
+
+      const res = await fetch(`${baseUrl}/payments/${paymentId}/identificationField`, {
+        method: 'GET',
+        headers: {
+          'access_token': storeProfile.asaasApiKey || '',
+          'Content-Type': 'application/json'
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.identificationField) {
+          await navigator.clipboard.writeText(data.identificationField);
+          setCopiedPaymentId(`barcode-${paymentId}`);
+          setTimeout(() => setCopiedPaymentId(null), 3000);
+        } else {
+          alert('Linha digitável não disponível para esta fatura.');
+        }
+      } else {
+        alert('Não foi possível obter a linha digitável.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao copiar linha digitável.');
+    } finally {
+      setIsFetchingAction(null);
+    }
+  };
+
+  useEffect(() => {
+    if (isOrdersModalOpen && loggedInClient) {
+      fetchAsaasPayments();
+    }
+  }, [isOrdersModalOpen, loggedInClient]);
+
   // Filter products by search & category
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -264,8 +422,9 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
     const clientNameNorm = loggedInClient.name.toLowerCase().trim();
     const clientLegalNameNorm = loggedInClient.legalName?.toLowerCase().trim() || '';
 
-    // Filter orders by matching names
+    // Filter orders by matching ID first, then fallback to name matching
     return allOrders.filter(o => {
+      if (o.clientId && o.clientId === loggedInClient.id) return true;
       if (!o.clientName) return false;
       const oNameNorm = o.clientName.toLowerCase().trim();
       return oNameNorm === clientNameNorm || oNameNorm === clientLegalNameNorm;
@@ -600,48 +759,76 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
   };
 
   // Client Catalog Login handler
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
+    setIsLoggingIn(true);
 
-    if (!loginName.trim() || !loginPhone.trim()) {
-      setLoginError('Por favor, preencha o nome e celular.');
-      return;
-    }
+    try {
+      if (!loginName.trim() || !loginPhone.trim()) {
+        setLoginError('Por favor, preencha o nome e celular.');
+        setIsLoggingIn(false);
+        return;
+      }
 
-    const clients = getClients(sellerEmail);
-    const normalizedInputName = loginName.trim().toLowerCase();
-    const digitsInputPhone = loginPhone.replace(/\D/g, '');
+      // Sync latest data from Firestore to ensure manual additions are present
+      await loadStoreData(sellerEmail);
 
-    // Strict search by name and phone digits
-    let found = clients.find(c => {
-      const matchesName = c.name.toLowerCase() === normalizedInputName || 
-                          c.legalName.toLowerCase() === normalizedInputName;
-      
-      const matchesPhone = c.phones && c.phones.some(p => {
-        const digitsP = p.replace(/\D/g, '');
-        return digitsP.includes(digitsInputPhone) || digitsInputPhone.includes(digitsP);
+      const clients = getClients(sellerEmail);
+      const normalizedInputName = loginName.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const digitsInputPhone = loginPhone.replace(/\D/g, '');
+
+      // Strict search by name and phone digits
+      let found = clients.find(c => {
+        const cNameNorm = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const cLegalNameNorm = (c.legalName || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        const matchesName = cNameNorm === normalizedInputName || cLegalNameNorm === normalizedInputName;
+        
+        const matchesPhone = c.phones && c.phones.some(p => {
+          const digitsP = p.replace(/\D/g, '');
+          return digitsP.includes(digitsInputPhone) || digitsInputPhone.includes(digitsP);
+        });
+
+        return matchesName && matchesPhone;
       });
 
-      return matchesName && matchesPhone;
-    });
-
-    // Helpful fallback: if strict matching fails, check name match alone
-    if (!found) {
-      const nameMatches = clients.filter(c => c.name.toLowerCase() === normalizedInputName || c.legalName.toLowerCase() === normalizedInputName);
-      if (nameMatches.length > 0) {
-        found = nameMatches[0];
+      // Fallback 1: check name match alone (ignoring accents)
+      if (!found) {
+        const nameMatches = clients.filter(c => {
+          const cNameNorm = c.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+          const cLegalNameNorm = (c.legalName || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+          return cNameNorm === normalizedInputName || cLegalNameNorm === normalizedInputName;
+        });
+        if (nameMatches.length > 0) {
+          found = nameMatches[0];
+        }
       }
-    }
 
-    if (found) {
-      setLoggedInClient(found);
-      localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(found));
-      setIsLoginModalOpen(false);
-      setLoginName('');
-      setLoginPhone('');
-    } else {
-      setLoginError('Cadastro não encontrado com os dados informados. Verifique se o nome e celular são exatamente os mesmos de sua ficha cadastral ou de pedidos passados.');
+      // Fallback 2: check if we can find a client by phone match alone (highly reliable since phone is unique)
+      if (!found && digitsInputPhone.length >= 8) {
+        const phoneMatches = clients.filter(c => c.phones && c.phones.some(p => {
+          const digitsP = p.replace(/\D/g, '');
+          return digitsP.endsWith(digitsInputPhone) || digitsInputPhone.endsWith(digitsP) || digitsP.includes(digitsInputPhone) || digitsInputPhone.includes(digitsP);
+        }));
+        if (phoneMatches.length > 0) {
+          found = phoneMatches[0];
+        }
+      }
+
+      if (found) {
+        setLoggedInClient(found);
+        localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(found));
+        setIsLoginModalOpen(false);
+        setLoginName('');
+        setLoginPhone('');
+      } else {
+        setLoginError('Cadastro não encontrado. Verifique se o nome e celular são correspondentes com o cadastrado na plataforma.');
+      }
+    } catch (err) {
+      console.error('Error during client login sync:', err);
+      setLoginError('Ocorreu um erro ao sincronizar os dados. Por favor, tente novamente.');
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -1697,9 +1884,17 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
               <button
                 type="submit"
-                className="w-full mt-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                disabled={isLoggingIn}
+                className="w-full mt-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Entrar e Buscar Cadastro
+                {isLoggingIn ? (
+                  <>
+                    <Loader2 size={14} className="animate-spin" />
+                    Sincronizando & Buscando...
+                  </>
+                ) : (
+                  'Entrar e Buscar Cadastro'
+                )}
               </button>
             </form>
           </div>
@@ -1714,7 +1909,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               <div className="flex items-center gap-2 text-[#4c3780]">
                 <History size={16} />
                 <div>
-                  <h3 className="text-sm font-extrabold uppercase tracking-wider">Histórico de Pedidos</h3>
+                  <h3 className="text-sm font-extrabold uppercase tracking-wider">Histórico de Pedidos & Faturas</h3>
                   <p className="text-[10px] text-slate-500 font-semibold">{loggedInClient.name}</p>
                 </div>
               </div>
@@ -1727,54 +1922,208 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               </button>
             </div>
 
+            {/* Tabs selector */}
+            <div className="flex border-b border-slate-100 bg-slate-50/50 p-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveHistoryTab('orders')}
+                className={cn(
+                  "flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                  activeHistoryTab === 'orders'
+                    ? "bg-[#4c3780] text-white shadow-xs"
+                    : "bg-white hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700"
+                )}
+              >
+                <ClipboardList size={14} />
+                Meus Pedidos ({getClientOrders().length})
+              </button>
+              {storeProfile.asaasEnabled && (
+                <button
+                  type="button"
+                  onClick={() => setActiveHistoryTab('invoices')}
+                  className={cn(
+                    "flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                    activeHistoryTab === 'invoices'
+                      ? "bg-[#4c3780] text-white shadow-xs"
+                      : "bg-white hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700"
+                  )}
+                >
+                  <CreditCard size={14} />
+                  Carnê & Boletos Asaas ({asaasPayments.length})
+                </button>
+              )}
+            </div>
+
             <div className="p-6 overflow-y-auto space-y-4 bg-slate-50/50">
-              {getClientOrders().length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
-                  <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center">
-                    <ClipboardList size={22} />
+              {activeHistoryTab === 'orders' ? (
+                getClientOrders().length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center">
+                      <ClipboardList size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-600">Nenhum pedido encontrado</p>
+                      <p className="text-[10px] text-slate-400 max-w-[240px] mx-auto">Assim que você enviar seu primeiro orçamento, ele aparecerá listado aqui.</p>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-xs font-bold text-slate-600">Nenhum pedido encontrado</p>
-                    <p className="text-[10px] text-slate-400 max-w-[240px] mx-auto">Assim que você enviar seu primeiro orçamento, ele aparecerá listado aqui.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {getClientOrders().reverse().map((order) => {
+                      const statusConfig = {
+                        budget: { label: 'Orçamento', styles: 'bg-amber-50 text-amber-700 border-amber-200' },
+                        completed: { label: 'Finalizado', styles: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                        canceled: { label: 'Cancelado', styles: 'bg-rose-50 text-rose-700 border-rose-200' },
+                      }[order.status || 'budget'];
+
+                      return (
+                        <div key={order.id} className="bg-white border border-slate-100/95 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-black text-slate-800">#{order.orderNumber}</span>
+                              <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.styles)}>
+                                {statusConfig.label}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-3 text-[10px] text-slate-400 font-semibold font-mono">
+                              <span className="flex items-center gap-1">
+                                <Calendar size={11} /> {order.date}
+                              </span>
+                              <span>&bull;</span>
+                              <span>{order.itemsCount} {order.itemsCount === 1 ? 'item' : 'itens'}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-50">
+                            <span className="text-[10px] text-slate-400 font-medium sm:hidden">Total do Pedido</span>
+                            <span className="text-sm font-extrabold text-[#4c3780]">
+                              R$ {order.total.toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
+                )
               ) : (
-                <div className="space-y-3">
-                  {getClientOrders().reverse().map((order) => {
-                    const statusConfig = {
-                      budget: { label: 'Orçamento', styles: 'bg-amber-50 text-amber-700 border-amber-200' },
-                      completed: { label: 'Finalizado', styles: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                      canceled: { label: 'Cancelado', styles: 'bg-rose-50 text-rose-700 border-rose-200' },
-                    }[order.status || 'budget'];
+                /* Asaas real-time installments / payments list */
+                isLoadingAsaasPayments ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
+                    <Loader2 size={24} className="animate-spin text-[#4c3780]" />
+                    <p className="text-xs font-bold text-slate-600">Buscando carnês e faturas...</p>
+                    <p className="text-[10px] text-slate-400">Consultando o sistema do Asaas em tempo real.</p>
+                  </div>
+                ) : asaasPayments.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 text-slate-300 flex items-center justify-center">
+                      <CreditCard size={22} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-slate-600">Nenhuma fatura encontrada</p>
+                      <p className="text-[10px] text-slate-400 max-w-[245px] mx-auto">Não encontramos parcelas ou faturas de boleto/PIX geradas no Asaas para o seu CPF/CNPJ ou Nome.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    {asaasPayments.map((payment) => {
+                      const statusText = {
+                        PENDING: 'Pendente',
+                        RECEIVED: 'Pago',
+                        CONFIRMED: 'Pago',
+                        OVERDUE: 'Vencido',
+                        REFUNDED: 'Estornado',
+                        SIMULATED: 'Simulada'
+                      }[payment.status as string] || payment.status;
 
-                    return (
-                      <div key={order.id} className="bg-white border border-slate-100/95 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-black text-slate-800">#{order.orderNumber}</span>
-                            <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.styles)}>
-                              {statusConfig.label}
+                      const statusStyles = {
+                        PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+                        RECEIVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        CONFIRMED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
+                        REFUNDED: 'bg-slate-100 text-slate-600 border-slate-200',
+                        SIMULATED: 'bg-blue-50 text-blue-700 border-blue-200'
+                      }[payment.status as string] || 'bg-slate-50 border-slate-200';
+
+                      const isPending = payment.status === 'PENDING' || payment.status === 'OVERDUE';
+                      const payUrl = payment.invoiceUrl || payment.bankSlipUrl;
+
+                      return (
+                        <div key={payment.id} className="bg-white border border-slate-100/90 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all space-y-3">
+                          <div className="flex items-start justify-between">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-800">
+                                  {payment.description || `Fatura #${payment.id.substring(3, 10).toUpperCase()}`}
+                                </span>
+                                <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusStyles)}>
+                                  {statusText}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                                <Calendar size={11} className="text-slate-400" />
+                                <span>Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}</span>
+                                {payment.installmentNumber && (
+                                  <span className="bg-slate-100 text-slate-600 text-[9px] font-extrabold px-1.5 py-0.2 rounded">
+                                    Parcela {payment.installmentNumber}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm font-extrabold text-[#4c3780]">
+                              R$ {payment.value.toFixed(2).replace('.', ',')}
                             </span>
                           </div>
-                          <div className="flex items-center gap-3 text-[10px] text-slate-400 font-semibold font-mono">
-                            <span className="flex items-center gap-1">
-                              <Calendar size={11} /> {order.date}
-                            </span>
-                            <span>&bull;</span>
-                            <span>{order.itemsCount} {order.itemsCount === 1 ? 'item' : 'itens'}</span>
-                          </div>
-                        </div>
 
-                        <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-50">
-                          <span className="text-[10px] text-slate-400 font-medium sm:hidden">Total do Pedido</span>
-                          <span className="text-sm font-extrabold text-[#4c3780]">
-                            R$ {order.total.toFixed(2).replace('.', ',')}
-                          </span>
+                          {/* Payment Actions */}
+                          {isPending && (
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100/60">
+                              {payUrl && (
+                                <a
+                                  href={payUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="px-3 py-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-[10px] font-extrabold text-center transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                >
+                                  <FileText size={11} />
+                                  Abrir Boleto / PDF
+                                </a>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => handleCopyPix(payment.id)}
+                                disabled={isFetchingAction !== null}
+                                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 rounded-xl text-[10px] font-extrabold transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
+                              >
+                                {isFetchingAction === `pix-${payment.id}` ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : copiedPaymentId === `pix-${payment.id}` ? (
+                                  <Check size={11} className="text-emerald-600 animate-in zoom-in" />
+                                ) : (
+                                  <Sparkles size={11} />
+                                )}
+                                {copiedPaymentId === `pix-${payment.id}` ? 'Copiado!' : 'Copiar Pix Copia/Cola'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleCopyBarcode(payment.id)}
+                                disabled={isFetchingAction !== null}
+                                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[10px] font-extrabold transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
+                              >
+                                {isFetchingAction === `barcode-${payment.id}` ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : copiedPaymentId === `barcode-${payment.id}` ? (
+                                  <Check size={11} className="text-emerald-600 animate-in zoom-in" />
+                                ) : (
+                                  <Copy size={11} />
+                                )}
+                                {copiedPaymentId === `barcode-${payment.id}` ? 'Copiado!' : 'Copiar Código Barras'}
+                              </button>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )
               )}
             </div>
 
@@ -1782,7 +2131,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               <button
                 type="button"
                 onClick={() => setIsOrdersModalOpen(false)}
-                className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors"
+                className="px-4 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-600 transition-colors cursor-pointer"
               >
                 Fechar
               </button>
