@@ -144,9 +144,12 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         const cleanCpfCnpj = selectedClient.cnpj ? selectedClient.cnpj.replace(/\D/g, '') : '';
         
         if (storeProfile.asaasEnabled && storeProfile.asaasApiKey) {
-          const baseUrl = storeProfile.asaasEnvironment === 'production' 
-            ? 'https://www.asaas.com/api/v3'
-            : 'https://sandbox.asaas.com/api/v3';
+          const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+          const pathPrefix = storeProfile.asaasEnvironment === 'production' 
+            ? '/asaas-production'
+            : '/asaas-sandbox';
+
+          const baseUrl = `${workerUrl}${pathPrefix}`;
 
           setAsaasStatusMsg("Verificando cadastro de cliente no Asaas...");
           let customerId = '';

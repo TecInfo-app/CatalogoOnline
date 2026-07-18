@@ -98,12 +98,13 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
     setAsaasTestStatus({ status: 'loading', message: 'Testando conexão com Asaas...' });
 
     try {
-      const baseUrl = profile.asaasEnvironment === 'production' 
-        ? 'https://www.asaas.com/api/v3'
-        : 'https://sandbox.asaas.com/api/v3';
+      const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+      const pathPrefix = profile.asaasEnvironment === 'production' 
+        ? '/asaas-production'
+        : '/asaas-sandbox';
 
-      // Attempt to query payments list or customers list (just a small request to check authorization)
-      const response = await fetch(`${baseUrl}/customers?limit=1`, {
+      // Call Asaas customers through the Cloudflare Worker proxy
+      const response = await fetch(`${workerUrl}${pathPrefix}/customers?limit=1`, {
         method: 'GET',
         headers: {
           'access_token': profile.asaasApiKey,
@@ -117,15 +118,13 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
 
       setAsaasTestStatus({
         status: 'success',
-        message: 'Conectado ao Asaas com sucesso! Chave de API verificada.'
+        message: 'Conectado ao Asaas com sucesso através do proxy! Chave de API verificada.'
       });
     } catch (err: any) {
       console.error('Asaas connection test failed', err);
-      // Friendly notice regarding CORS block or actual invalid key
       setAsaasTestStatus({
-        status: 'success', // We return success with simulated message if we suspect cors or just general preview context, or error if we want to be strict.
-        // Let's explain friendly:
-        message: `Conexão configurada! (Chave salva. Se houver bloqueio de CORS pelo navegador em ambiente de testes, a emissão funcionará no servidor ou via simulação inteligente).`
+        status: 'error',
+        message: `Falha na conexão: ${err.message || 'Verifique se a chave de API está correta e se o seu Cloudflare Worker está atualizado com suporte ao Asaas.'}`
       });
     }
   };
