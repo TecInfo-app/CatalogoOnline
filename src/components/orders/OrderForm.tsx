@@ -204,18 +204,20 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           }
 
           // 3. Create payment (installment or single)
-          setAsaasStatusMsg(`Emitindo cobrança parcelada (${installments}x) no Asaas...`);
+          setAsaasStatusMsg(installments > 1 ? `Emitindo cobrança parcelada (${installments}x) no Asaas...` : 'Emitindo cobrança de parcela única no Asaas...');
           const paymentPayload: any = {
             customer: customerId,
             billingType: 'BOLETO',
             dueDate: dueDate,
-            value: totalValue,
             description: `Pedido #${orderNumber || 'Auto'}`,
             externalReference: orderNumber
           };
 
           if (installments > 1) {
             paymentPayload.installmentCount = installments;
+            paymentPayload.totalValue = totalValue;
+          } else {
+            paymentPayload.value = totalValue;
           }
 
           const createPayRes = await fetch(`${baseUrl}/payments`, {
