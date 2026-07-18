@@ -178,10 +178,11 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           // 2. Create customer if not found
           if (!customerId) {
             setAsaasStatusMsg("Cadastrando novo cliente no Asaas...");
+            const safeEmail = selectedClient.email || `${selectedClient.name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "")}@exemplo.com`;
             const customerPayload = {
               name: selectedClient.name,
               cpfCnpj: cleanCpfCnpj || undefined,
-              email: selectedClient.email || `${selectedClient.name.toLowerCase().replace(/\s+/g, '')}@exemplo.com`,
+              email: safeEmail,
               phone: selectedClient.phones?.[0] || undefined
             };
 
