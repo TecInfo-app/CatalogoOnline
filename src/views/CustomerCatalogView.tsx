@@ -1148,7 +1148,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
       {/* FOOTER BAR FOR SELLER CONVENIENCE */}
       <footer className="bg-white border-t border-slate-100 py-4 px-6 text-center text-[10px] text-slate-400 font-medium">
-        <p>Vercos Catálogo do Cliente &bull; Todos os direitos reservados.</p>
+        <p>Vercos Catálogo do Cliente &bull; Fornecido em modo de teste e visualização.</p>
       </footer>
 
       {/* PRODUCT SELECTION MODAL */}

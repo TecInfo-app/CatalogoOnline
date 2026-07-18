@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign } from 'lucide-react';
+import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
 import { getOrders, getClients, getProducts } from '../lib/store';
 
@@ -44,6 +44,24 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
   const [endDate, setEndDate] = useState(lastDayOfMonth);
 
   const [chartData, setChartData] = useState<{name: string, current: number | null, goal: number | null, previsao: number | null, vendidoDia: number | null, previsaoDia: number | null}[]>([]);
+
+  const [activeModal, setActiveModal] = useState<'carteira' | 'positivacao' | 'b2b' | null>(null);
+
+  // Carteira Detailed Data
+  const [carteiraAtivosList, setCarteiraAtivosList] = useState<{id: string, name: string, phone: string, lastOrder: string, totalOrders: number}[]>([]);
+  const [carteiraInativosRecentesList, setCarteiraInativosRecentesList] = useState<{id: string, name: string, phone: string, lastOrder: string, totalOrders: number}[]>([]);
+  const [carteiraInativosAntigosList, setCarteiraInativosAntigosList] = useState<{id: string, name: string, phone: string, lastOrder: string, totalOrders: number}[]>([]);
+  const [carteiraProspectsList, setCarteiraProspectsList] = useState<{id: string, name: string, phone: string, date: string}[]>([]);
+
+  // Positivação Detailed Data
+  const [positivadosNovosList, setPositivadosNovosList] = useState<{id: string, name: string, phone: string, orderDate: string, amount: number}[]>([]);
+  const [positivadosAtivosList, setPositivadosAtivosList] = useState<{id: string, name: string, phone: string, orderDate: string, amount: number, previousOrderDate: string}[]>([]);
+  const [positivadosInativosRecentesList, setPositivadosInativosRecentesList] = useState<{id: string, name: string, phone: string, orderDate: string, amount: number, previousOrderDate: string}[]>([]);
+  const [positivadosInativosAntigosList, setPositivadosInativosAntigosList] = useState<{id: string, name: string, phone: string, orderDate: string, amount: number, previousOrderDate: string}[]>([]);
+
+  // B2B Catalog Detailed Data
+  const [b2bComPedidosList, setB2bComPedidosList] = useState<{id: string, name: string, phone: string, ordersCount: number, totalSpent: number, lastOrderDate: string}[]>([]);
+  const [b2bSemPedidosList, setB2bSemPedidosList] = useState<{id: string, name: string, phone: string, location: string}[]>([]);
 
   const reportData = useMemo(() => {
     const orders = getOrders(userEmail);
@@ -237,12 +255,205 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
       };
     });
 
+    // Group orders by client
+    const clientOrdersMap = new Map<string, typeof orders>();
+    orders.forEach(order => {
+      if (order.clientId) {
+        const existing = clientOrdersMap.get(order.clientId) || [];
+        existing.push(order);
+        clientOrdersMap.set(order.clientId, existing);
+      } else if (order.clientName) {
+        const matchedClient = clients.find(c => c.name.toLowerCase() === order.clientName?.toLowerCase() || c.legalName.toLowerCase() === order.clientName?.toLowerCase());
+        if (matchedClient) {
+          const existing = clientOrdersMap.get(matchedClient.id) || [];
+          existing.push(order);
+          clientOrdersMap.set(matchedClient.id, existing);
+        }
+      }
+    });
+
+    const nowTime = new Date().getTime();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+
+    const tempAtivos: typeof carteiraAtivosList = [];
+    const tempInativosRecentes: typeof carteiraInativosRecentesList = [];
+    const tempInativosAntigos: typeof carteiraInativosAntigosList = [];
+    const tempProspects: typeof carteiraProspectsList = [];
+
+    const tempPosNovos: typeof positivadosNovosList = [];
+    const tempPosAtivos: typeof positivadosAtivosList = [];
+    const tempPosInativosRecentes: typeof positivadosInativosRecentesList = [];
+    const tempPosInativosAntigos: typeof positivadosInativosAntigosList = [];
+
+    const tempB2bComPedidos: typeof b2bComPedidosList = [];
+    const tempB2bSemPedidos: typeof b2bSemPedidosList = [];
+
+    clients.forEach(client => {
+      const clientOrders = clientOrdersMap.get(client.id) || [];
+      const completedOrders = clientOrders.filter(o => o.status === 'completed');
+      
+      // Calculate latest order
+      let latestOrder: typeof orders[0] | null = null;
+      let latestOrderDate: Date | null = null;
+      
+      completedOrders.forEach(o => {
+        const d = parseOrderDate(o.date, today.getFullYear());
+        if (d) {
+          if (!latestOrderDate || d > latestOrderDate) {
+            latestOrderDate = d;
+            latestOrder = o;
+          }
+        }
+      });
+
+      const phone = client.phones?.[0] || 'Sem telefone';
+
+      // 1. CARTEIRA CLASSIFICATION
+      if (completedOrders.length === 0) {
+        tempProspects.push({
+          id: client.id,
+          name: client.name || client.legalName,
+          phone,
+          date: 'Sem pedidos'
+        });
+      } else if (latestOrderDate) {
+        const age = nowTime - (latestOrderDate as Date).getTime();
+        const info = {
+          id: client.id,
+          name: client.name || client.legalName,
+          phone,
+          lastOrder: latestOrder ? (latestOrder as any).date : 'N/A',
+          totalOrders: completedOrders.length
+        };
+        if (age <= thirtyDaysMs) {
+          tempAtivos.push(info);
+        } else if (age <= ninetyDaysMs) {
+          tempInativosRecentes.push(info);
+        } else {
+          tempInativosAntigos.push(info);
+        }
+      }
+
+      // 2. POSITIVAÇÃO IN THIS PERIOD (start to end)
+      const periodCompletedOrders = completedOrders.filter(o => {
+        const d = parseOrderDate(o.date, today.getFullYear());
+        return d && d >= start && d <= end;
+      });
+
+      if (periodCompletedOrders.length > 0) {
+        let firstPeriodOrder = periodCompletedOrders[0];
+        let firstPeriodOrderDate = parseOrderDate(firstPeriodOrder.date, today.getFullYear()) || new Date();
+        periodCompletedOrders.forEach(o => {
+          const d = parseOrderDate(o.date, today.getFullYear());
+          if (d && d < firstPeriodOrderDate) {
+            firstPeriodOrderDate = d;
+            firstPeriodOrder = o;
+          }
+        });
+
+        const ordersBefore = completedOrders.filter(o => {
+          const d = parseOrderDate(o.date, today.getFullYear());
+          return d && d < firstPeriodOrderDate;
+        });
+
+        const periodOrderTotal = periodCompletedOrders.reduce((acc, o) => acc + o.total, 0);
+
+        if (ordersBefore.length === 0) {
+          tempPosNovos.push({
+            id: client.id,
+            name: client.name || client.legalName,
+            phone,
+            orderDate: firstPeriodOrder.date,
+            amount: periodOrderTotal
+          });
+        } else {
+          let latestBefore: typeof orders[0] | null = null;
+          let latestBeforeDate: Date | null = null;
+          ordersBefore.forEach(o => {
+            const d = parseOrderDate(o.date, today.getFullYear());
+            if (d) {
+              if (!latestBeforeDate || d > latestBeforeDate) {
+                latestBeforeDate = d;
+                latestBefore = o;
+              }
+            }
+          });
+
+          if (latestBeforeDate) {
+            const ageBefore = firstPeriodOrderDate.getTime() - latestBeforeDate.getTime();
+            const posInfo = {
+              id: client.id,
+              name: client.name || client.legalName,
+              phone,
+              orderDate: firstPeriodOrder.date,
+              amount: periodOrderTotal,
+              previousOrderDate: latestBefore ? (latestBefore as any).date : 'N/A'
+            };
+
+            if (ageBefore <= thirtyDaysMs) {
+              tempPosAtivos.push(posInfo);
+            } else if (ageBefore <= ninetyDaysMs) {
+              tempPosInativosRecentes.push(posInfo);
+            } else {
+              tempPosInativosAntigos.push(posInfo);
+            }
+          } else {
+            tempPosNovos.push({
+              id: client.id,
+              name: client.name || client.legalName,
+              phone,
+              orderDate: firstPeriodOrder.date,
+              amount: periodOrderTotal
+            });
+          }
+        }
+      }
+
+      // 3. B2B CATALOG ENGAGEMENT
+      const isB2bClient = client.location === 'Cadastro via Catálogo' || clientOrders.some(o => o.orderNumber && o.orderNumber.includes('CAT-'));
+      if (isB2bClient) {
+        const catalogOrders = clientOrders.filter(o => o.orderNumber && o.orderNumber.includes('CAT-'));
+        if (catalogOrders.length > 0) {
+          const totalSpent = catalogOrders.reduce((acc, o) => acc + o.total, 0);
+          tempB2bComPedidos.push({
+            id: client.id,
+            name: client.name || client.legalName,
+            phone,
+            ordersCount: catalogOrders.length,
+            totalSpent,
+            lastOrderDate: latestOrder ? (latestOrder as any).date : 'N/A'
+          });
+        } else {
+          tempB2bSemPedidos.push({
+            id: client.id,
+            name: client.name || client.legalName,
+            phone,
+            location: client.location || 'Cadastro via Catálogo'
+          });
+        }
+      }
+    });
+
+    setCarteiraAtivosList(tempAtivos);
+    setCarteiraInativosRecentesList(tempInativosRecentes);
+    setCarteiraInativosAntigosList(tempInativosAntigos);
+    setCarteiraProspectsList(tempProspects);
+
+    setPositivadosNovosList(tempPosNovos);
+    setPositivadosAtivosList(tempPosAtivos);
+    setPositivadosInativosRecentesList(tempPosInativosRecentes);
+    setPositivadosInativosAntigosList(tempPosInativosAntigos);
+
+    setB2bComPedidosList(tempB2bComPedidos);
+    setB2bSemPedidosList(tempB2bSemPedidos);
+
     setTotalVendidoMes(mes);
     setTotalVendidoHoje(hoje);
     setTotalPrevisao(previsaoTotal);
     setTotalClients(clients.length);
-    setPositivados(clientsPosIds.size);
-    setCatalogClientsCount(catalogClientsIds.size);
+    setPositivados(tempPosNovos.length + tempPosAtivos.length + tempPosInativosRecentes.length + tempPosInativosAntigos.length);
+    setCatalogClientsCount(tempB2bComPedidos.length);
     setChartData(newChartData);
   }, [userEmail, startDate, endDate]);
 
@@ -414,9 +625,48 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
             {[
-              { title: 'Carteira de Clientes', period: 'MÊS ATUAL', total: totalClients, subtitle: 'Clientes', btn: 'Detalhar carteira', items: [{c: 'bg-secondary', t: `${totalClients} ativos`}, {c: 'bg-amber-400', t: '0 inativos recentes'}, {c: 'bg-error', t: '0 inativos antigos'}, {c: 'bg-outline', t: '0 prospects'}] },
-              { title: 'Positivação', period: 'MÊS ATUAL', total: positivados, subtitle: 'Clientes positivados', emptyText: positivados === 0 ? 'Nenhum cliente foi positivado neste mês' : '', btn: 'Detalhar positivação', items: [{c: 'bg-primary', t: `${positivados} novos`}, {c: 'bg-secondary', t: '0 ativos'}, {c: 'bg-amber-400', t: '0 inativos recentes'}, {c: 'bg-error', t: '0 inativos antigos'}] },
-              { title: 'Catálogo Online B2B', period: 'PERÍODO SELECIONADO', total: catalogClientsCount, subtitle: 'Clientes', emptyText: catalogClientsCount === 0 ? 'Nenhum pedido no catálogo neste período' : '', btn: 'Detalhar clientes B2B', items: [{c: 'bg-primary', t: `${catalogClientsCount} clientes com pedidos`}, {c: 'bg-outline', t: '0 sem pedidos'}] }
+              { 
+                id: 'carteira' as const,
+                title: 'Carteira de Clientes', 
+                period: 'MÊS ATUAL', 
+                total: totalClients, 
+                subtitle: 'Clientes', 
+                btn: 'Detalhar carteira', 
+                items: [
+                  {c: 'bg-secondary', t: `${carteiraAtivosList.length} ativos`}, 
+                  {c: 'bg-amber-400', t: `${carteiraInativosRecentesList.length} inativos rec.`}, 
+                  {c: 'bg-error', t: `${carteiraInativosAntigosList.length} inativos ant.`}, 
+                  {c: 'bg-outline', t: `${carteiraProspectsList.length} prospects`}
+                ] 
+              },
+              { 
+                id: 'positivacao' as const,
+                title: 'Positivação', 
+                period: 'MÊS ATUAL', 
+                total: positivados, 
+                subtitle: 'Clientes positivados', 
+                emptyText: positivados === 0 ? 'Nenhum cliente foi positivado neste mês' : '', 
+                btn: 'Detalhar positivação', 
+                items: [
+                  {c: 'bg-primary', t: `${positivadosNovosList.length} novos`}, 
+                  {c: 'bg-secondary', t: `${positivadosAtivosList.length} ativos`}, 
+                  {c: 'bg-amber-400', t: `${positivadosInativosRecentesList.length} inativos rec.`}, 
+                  {c: 'bg-error', t: `${positivadosInativosAntigosList.length} inativos ant.`}
+                ] 
+              },
+              { 
+                id: 'b2b' as const,
+                title: 'Catálogo Online B2B', 
+                period: 'PERÍODO SELECIONADO', 
+                total: b2bComPedidosList.length + b2bSemPedidosList.length, 
+                subtitle: 'Clientes B2B', 
+                emptyText: (b2bComPedidosList.length + b2bSemPedidosList.length) === 0 ? 'Nenhum cliente B2B cadastrado' : '', 
+                btn: 'Detalhar clientes B2B', 
+                items: [
+                  {c: 'bg-primary', t: `${b2bComPedidosList.length} com pedidos`}, 
+                  {c: 'bg-outline', t: `${b2bSemPedidosList.length} sem pedidos`}
+                ] 
+              }
             ].map((card, i) => (
               <div key={i} className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/30 p-4 flex flex-col h-full">
                 <div className="flex justify-between items-center mb-4">
@@ -438,16 +688,19 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                   {card.emptyText && <p className="text-body-sm text-outline mt-4 text-center">{card.emptyText}</p>}
                 </div>
                 
-                <div className={`grid gap-2 text-body-sm text-on-surface-variant mt-auto ${card.items.length === 3 ? 'flex flex-col pl-8' : 'grid-cols-2'}`}>
+                <div className="grid gap-2 text-body-sm text-on-surface-variant mt-auto grid-cols-2">
                   {card.items.map((item, j) => (
-                    <div key={j} className="flex items-center gap-1">
+                    <div key={j} className="flex items-center gap-1 text-[11px] font-medium">
                       <span className={`w-2 h-2 rounded-full flex-shrink-0 ${item.c}`}></span> {item.t}
                     </div>
                   ))}
                 </div>
                 
                 <div className="mt-4 pt-3 border-t border-outline-variant/30 text-center">
-                  <button className="text-primary text-label-md hover:underline inline-flex items-center gap-1">
+                  <button 
+                    onClick={() => setActiveModal(card.id)}
+                    className="text-primary text-label-md hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
                     <BarChart2 size={16} />
                     {card.btn}
                   </button>
@@ -806,6 +1059,390 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Detalhamento Modals */}
+      {activeModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart2 className="text-primary animate-pulse" size={22} />
+                  {activeModal === 'carteira' && 'Detalhamento da Carteira de Clientes'}
+                  {activeModal === 'positivacao' && 'Detalhamento do Indicador de Positivação'}
+                  {activeModal === 'b2b' && 'Detalhamento do Catálogo Online B2B'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Dados integrados e atualizados em tempo real com o sistema
+                </p>
+              </div>
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-all cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* Context Explanation */}
+              <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl">
+                <p className="text-sm text-slate-700 leading-relaxed">
+                  {activeModal === 'carteira' && (
+                    <>
+                      O indicador de situação da carteira classifica os clientes em:
+                      <br /><span className="font-bold text-slate-900">● Prospects</span>: clientes cadastrados que ainda não efetuaram nenhum pedido;
+                      <br /><span className="font-bold text-slate-900">● Clientes ativos</span>: clientes que compraram no último ciclo de vendas;
+                      <br /><span className="font-bold text-slate-900">● Clientes inativos</span>: clientes que estão há um tempo sem comprar.
+                      <br /><br />
+                      Essa classificação pode ser utilizada para priorizar o atendimento dos clientes e identificar oportunidades para vender ainda mais, sobretudo na parcela de clientes inativos.
+                    </>
+                  )}
+                  {activeModal === 'positivacao' && (
+                    <>
+                      Com o indicador de positivação você poderá identificar o número de clientes que fizeram pedido no mês e qual era a situação desses clientes antes de serem positivados.
+                      <br /><br />
+                      No gráfico também é apresentado o percentual de clientes que estavam ativos no final do mês anterior e foram positivados no mês. Esse percentual lhe ajudará a entender se o volume de clientes ativos atendidos é suficiente para manter a sua carteira de clientes saudável.
+                    </>
+                  )}
+                  {activeModal === 'b2b' && (
+                    <>
+                      Acompanhe o engajamento de seus clientes com o seu Catálogo Online B2B. Veja quais clientes já realizaram pedidos diretamente pelo canal online e quais ainda não efetuaram pedidos.
+                      <br /><br />
+                      Isso permite direcionar estratégias de marketing ou realizar contatos ativos para incentivar o uso da plataforma de autoatendimento pelos clientes que ainda estão "sem pedidos".
+                    </>
+                  )}
+                </p>
+              </div>
+
+              {/* Dynamic Lists Tabulation */}
+              {activeModal === 'carteira' && (
+                <div className="space-y-4">
+                  {/* Summary grid */}
+                  <div className="grid grid-cols-4 gap-2 text-center">
+                    <div className="p-3 bg-green-50 border border-green-100 rounded-xl">
+                      <div className="text-xl font-black text-green-700">{carteiraAtivosList.length}</div>
+                      <div className="text-[10px] font-bold text-green-600 uppercase">Ativos</div>
+                    </div>
+                    <div className="p-3 bg-amber-50 border border-amber-100 rounded-xl">
+                      <div className="text-xl font-black text-amber-700">{carteiraInativosRecentesList.length}</div>
+                      <div className="text-[10px] font-bold text-amber-600 uppercase">Inat. Recentes</div>
+                    </div>
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl">
+                      <div className="text-xl font-black text-red-700">{carteiraInativosAntigosList.length}</div>
+                      <div className="text-[10px] font-bold text-red-600 uppercase">Inat. Antigos</div>
+                    </div>
+                    <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                      <div className="text-xl font-black text-slate-700">{carteiraProspectsList.length}</div>
+                      <div className="text-[10px] font-bold text-slate-600 uppercase">Prospects</div>
+                    </div>
+                  </div>
+
+                  {/* Lists */}
+                  <div className="space-y-4 pt-2">
+                    <h4 className="text-sm font-bold text-slate-900 border-b pb-2">Clientes por Categoria</h4>
+                    
+                    {/* Active */}
+                    {carteiraAtivosList.length > 0 && (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-green-50/50 px-4 py-2 text-xs font-bold text-green-800 border-b border-slate-100">
+                          Clientes Ativos ({carteiraAtivosList.length}) - Compraram nos últimos 30 dias
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                          {carteiraAtivosList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-slate-500">Última compra: <span className="font-semibold text-slate-700">{c.lastOrder}</span></p>
+                                <p className="text-[9px] font-bold text-green-700">{c.totalOrders} pedido(s) no total</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inactive Recentes */}
+                    {carteiraInativosRecentesList.length > 0 && (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-amber-50/50 px-4 py-2 text-xs font-bold text-amber-800 border-b border-slate-100">
+                          Clientes Inativos Recentes ({carteiraInativosRecentesList.length}) - Compraram entre 30 e 90 dias atrás
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                          {carteiraInativosRecentesList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-slate-500">Última compra: <span className="font-semibold text-slate-700">{c.lastOrder}</span></p>
+                                <p className="text-[9px] font-bold text-amber-700">{c.totalOrders} pedido(s) no total</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inactive Antigos */}
+                    {carteiraInativosAntigosList.length > 0 && (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-red-50/50 px-4 py-2 text-xs font-bold text-red-800 border-b border-slate-100">
+                          Clientes Inativos Antigos ({carteiraInativosAntigosList.length}) - Compraram há mais de 90 dias
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                          {carteiraInativosAntigosList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-slate-500">Última compra: <span className="font-semibold text-slate-700">{c.lastOrder}</span></p>
+                                <p className="text-[9px] font-bold text-red-700">{c.totalOrders} pedido(s) no total</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Prospects */}
+                    {carteiraProspectsList.length > 0 && (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-slate-100 px-4 py-2 text-xs font-bold text-slate-800 border-b border-slate-100">
+                          Prospects ({carteiraProspectsList.length}) - Clientes cadastrados sem pedidos efetuados
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-48 overflow-y-auto">
+                          {carteiraProspectsList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded border border-slate-100">Sem histórico</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {activeModal === 'positivacao' && (
+                <div className="space-y-4">
+                  {/* Percentual calculation */}
+                  {(() => {
+                    const totalPos = positivadosNovosList.length + positivadosAtivosList.length + positivadosInativosRecentesList.length + positivadosInativosAntigosList.length;
+                    const prevActivesCount = carteiraAtivosList.length + positivadosAtivosList.length; 
+                    const recoveredInactives = positivadosInativosRecentesList.length + positivadosInativosAntigosList.length;
+                    const retentionRate = prevActivesCount > 0 ? (positivadosAtivosList.length / prevActivesCount) * 100 : 0;
+                    
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                          <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl text-center">
+                            <p className="text-2xl font-black text-blue-700">{positivadosNovosList.length}</p>
+                            <p className="text-[10px] font-bold text-blue-600 uppercase mt-0.5">Novos Clientes</p>
+                          </div>
+                          <div className="p-4 bg-green-50 border border-green-100 rounded-2xl text-center">
+                            <p className="text-2xl font-black text-green-700">{positivadosAtivosList.length}</p>
+                            <p className="text-[10px] font-bold text-green-600 uppercase mt-0.5">Ativos Mantidos</p>
+                          </div>
+                          <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-center">
+                            <p className="text-2xl font-black text-amber-700">{positivadosInativosRecentesList.length}</p>
+                            <p className="text-[10px] font-bold text-amber-600 uppercase mt-0.5">Inat. Recentes Reativados</p>
+                          </div>
+                          <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-center">
+                            <p className="text-2xl font-black text-red-700">{positivadosInativosAntigosList.length}</p>
+                            <p className="text-[10px] font-bold text-red-600 uppercase mt-0.5">Inat. Antigos Reativados</p>
+                          </div>
+                        </div>
+
+                        {/* Health status widget */}
+                        <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <div>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Taxa de Positivação / Retenção</p>
+                            <p className="text-sm font-semibold text-slate-800 mt-1">
+                              Dos clientes que estavam ativos no final do mês anterior, <span className="text-green-700 font-bold">{retentionRate > 0 ? `${retentionRate.toFixed(1)}%` : '100%'}</span> foram positivados neste mês.
+                            </p>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Foram reativados <span className="font-bold text-amber-700">{recoveredInactives}</span> clientes que estavam inativos.
+                            </p>
+                          </div>
+                          <div className="text-center bg-white px-6 py-3 rounded-xl border border-slate-200 shrink-0 shadow-xs">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase">Total Positivados</p>
+                            <p className="text-3xl font-black text-slate-800">{totalPos}</p>
+                          </div>
+                        </div>
+
+                        {/* Client details lists */}
+                        <div className="space-y-4 pt-2">
+                          <h4 className="text-sm font-bold text-slate-900 border-b pb-2">Lista Detalhada de Positivações</h4>
+
+                          {/* Novos */}
+                          {positivadosNovosList.length > 0 && (
+                            <div className="border border-slate-100 rounded-xl overflow-hidden">
+                              <div className="bg-blue-50/50 px-4 py-2 text-xs font-bold text-blue-800 border-b border-slate-100">
+                                Novos Clientes ({positivadosNovosList.length}) - Primeiro pedido realizado neste período
+                              </div>
+                              <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                                {positivadosNovosList.map(c => (
+                                  <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                                    <div>
+                                      <p className="font-semibold text-slate-800">{c.name}</p>
+                                      <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-[10px] text-slate-500">Data Pedido: <span className="font-semibold text-slate-700">{c.orderDate}</span></p>
+                                      <p className="text-[10px] font-bold text-[#006c49]">R$ {c.amount.toFixed(2).replace('.', ',')}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Ativos Mantidos */}
+                          {positivadosAtivosList.length > 0 && (
+                            <div className="border border-slate-100 rounded-xl overflow-hidden">
+                              <div className="bg-green-50/50 px-4 py-2 text-xs font-bold text-green-800 border-b border-slate-100">
+                                Clientes Ativos Mantidos ({positivadosAtivosList.length}) - Mantiveram a recorrência de compras
+                              </div>
+                              <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                                {positivadosAtivosList.map(c => (
+                                  <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                                    <div>
+                                      <p className="font-semibold text-slate-800">{c.name}</p>
+                                      <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-[10px] text-slate-500">Pedido Atual: <span className="font-semibold text-slate-700">{c.orderDate}</span> (anterior: {c.previousOrderDate})</p>
+                                      <p className="text-[10px] font-bold text-[#006c49]">R$ {c.amount.toFixed(2).replace('.', ',')}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Inativos Reativados */}
+                          {(positivadosInativosRecentesList.length > 0 || positivadosInativosAntigosList.length > 0) && (
+                            <div className="border border-slate-100 rounded-xl overflow-hidden">
+                              <div className="bg-amber-50/50 px-4 py-2 text-xs font-bold text-amber-800 border-b border-slate-100">
+                                Clientes Reativados ({positivadosInativosRecentesList.length + positivadosInativosAntigosList.length}) - Voltaram a comprar após um período de inatividade
+                              </div>
+                              <div className="divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                                {[...positivadosInativosRecentesList, ...positivadosInativosAntigosList].map(c => (
+                                  <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                                    <div>
+                                      <p className="font-semibold text-slate-800">{c.name}</p>
+                                      <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-[10px] text-slate-500">Reativado em: <span className="font-semibold text-slate-700">{c.orderDate}</span> (compra anterior: {c.previousOrderDate})</p>
+                                      <p className="text-[10px] font-bold text-[#006c49]">R$ {c.amount.toFixed(2).replace('.', ',')}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {activeModal === 'b2b' && (
+                <div className="space-y-4">
+                  {/* Summary of B2B integration */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 bg-green-50 border border-green-100 rounded-2xl text-center">
+                      <p className="text-3xl font-black text-green-700">{b2bComPedidosList.length}</p>
+                      <p className="text-xs font-bold text-green-600 uppercase mt-0.5">Clientes Com Pedidos</p>
+                    </div>
+                    <div className="p-4 bg-slate-50 border border-slate-100 rounded-2xl text-center">
+                      <p className="text-3xl font-black text-slate-700">{b2bSemPedidosList.length}</p>
+                      <p className="text-xs font-bold text-slate-600 uppercase mt-0.5">Clientes Sem Pedidos</p>
+                    </div>
+                  </div>
+
+                  {/* List details */}
+                  <div className="space-y-4 pt-2">
+                    <h4 className="text-sm font-bold text-slate-900 border-b pb-2">Engajamento de Clientes B2B</h4>
+
+                    {/* B2B com pedidos */}
+                    {b2bComPedidosList.length > 0 ? (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-green-50/50 px-4 py-2 text-xs font-bold text-green-800 border-b border-slate-100">
+                          Clientes que realizaram pedidos via Catálogo ({b2bComPedidosList.length})
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
+                          {b2bComPedidosList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[10px] text-slate-500">Qtd Pedidos Online: <span className="font-bold text-slate-800">{c.ordersCount}</span></p>
+                                <p className="text-[10px] font-bold text-green-700">Total: R$ {c.totalSpent.toFixed(2).replace('.', ',')}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 text-center py-4 bg-slate-50 border border-dashed rounded-xl">Nenhum cliente realizou pedidos via Catálogo Online ainda.</p>
+                    )}
+
+                    {/* B2B sem pedidos */}
+                    {b2bSemPedidosList.length > 0 ? (
+                      <div className="border border-slate-100 rounded-xl overflow-hidden">
+                        <div className="bg-slate-50 px-4 py-2 text-xs font-bold text-slate-700 border-b border-slate-100">
+                          Clientes cadastrados no Catálogo sem pedidos ({b2bSemPedidosList.length})
+                        </div>
+                        <div className="divide-y divide-slate-100 max-h-56 overflow-y-auto">
+                          {b2bSemPedidosList.map(c => (
+                            <div key={c.id} className="p-3 flex justify-between items-center text-xs">
+                              <div>
+                                <p className="font-semibold text-slate-800">{c.name}</p>
+                                <p className="text-[10px] text-slate-400">Tel: {c.phone}</p>
+                              </div>
+                              <span className="text-[9px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100 uppercase tracking-wide">Sem compras online</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-500 text-center py-4 bg-slate-50 border border-dashed rounded-xl">Todos os clientes cadastrados no Catálogo realizaram pedidos!</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setActiveModal(null)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl transition-all shadow-xs cursor-pointer"
+              >
+                Fechar Detalhamento
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
