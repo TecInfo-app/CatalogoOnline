@@ -109,6 +109,25 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
                 </div>
               </div>
             </div>
+
+            {order.paymentMethod === 'Boleto' && order.asaasUrl && (
+              <div className="flex items-center gap-2 mt-2 bg-blue-50/70 border border-blue-100/60 p-2.5 rounded-lg">
+                <Receipt size={14} className="text-blue-600 shrink-0" />
+                <div className="flex-1 min-w-0 font-sans">
+                  <span className="text-[10px] font-bold text-blue-800 block uppercase tracking-wider">Boleto Parcelado Asaas</span>
+                  <span className="text-[9px] text-slate-500 block font-medium">Vencimento: {order.dueDate ? new Date(order.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '---'} &bull; {order.installments || 1}x</span>
+                </div>
+                <a
+                  href={order.asaasUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded text-[9px] font-extrabold transition-colors shrink-0 uppercase tracking-wide flex items-center gap-1"
+                >
+                  Ver Boleto
+                </a>
+              </div>
+            )}
             
             <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100">
               <div className="flex items-center gap-1 text-sm text-slate-500">

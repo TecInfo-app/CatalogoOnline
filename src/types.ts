@@ -69,6 +69,11 @@ export interface Order {
   subtotal?: number;
   discount?: number;
   discountNotes?: string;
+  dueDate?: string;
+  installments?: number;
+  asaasPaymentId?: string;
+  asaasUrl?: string;
+  asaasStatus?: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED';
 }
 
 export interface PlannedRoute {
@@ -92,6 +97,9 @@ export interface StoreProfile {
   abacatePayEnabled?: boolean;
   abacatePayApiKey?: string;
   abacatePayWorkerUrl?: string;
+  asaasEnabled?: boolean;
+  asaasApiKey?: string;
+  asaasEnvironment?: 'sandbox' | 'production';
 }
 
 export interface Coupon {

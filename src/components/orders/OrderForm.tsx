@@ -31,6 +31,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const [orderNumber, setOrderNumber] = useState('');
   const [orderType, setOrderType] = useState('Venda');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [dueDate, setDueDate] = useState('');
+  const [installments, setInstallments] = useState(1);
   
   useEffect(() => {
     const loadedClients = getClients(userEmail);
@@ -50,6 +52,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       setOrderNumber(orderToEdit.orderNumber);
       setOrderType(orderToEdit.orderType || 'Venda');
       setPaymentMethod(orderToEdit.paymentMethod || '');
+      setDueDate(orderToEdit.dueDate || '');
+      setInstallments(orderToEdit.installments || 1);
       
       if (orderToEdit.items) {
         const itemsToSet = orderToEdit.items.map(i => {
@@ -63,6 +67,10 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       }
     } else {
       setOrderNumber(Math.floor(Math.random() * 10000).toString());
+      const nextMonth = new Date();
+      nextMonth.setDate(nextMonth.getDate() + 30);
+      setDueDate(nextMonth.toISOString().split('T')[0]);
+      setInstallments(1);
     }
   }, [userEmail, orderToEdit]);
 
@@ -107,8 +115,10 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   };
 
   const totalValue = orderItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+  const [isGeneratingAsaas, setIsGeneratingAsaas] = useState(false);
+  const [asaasStatusMsg, setAsaasStatusMsg] = useState('');
 
-  const handleGenerateOrder = () => {
+  const handleGenerateOrder = async () => {
     if (!selectedClient) {
       alert("Selecione um cliente para gerar o pedido.");
       return;
@@ -117,7 +127,146 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       alert("Adicione pelo menos um produto ao pedido.");
       return;
     }
-    
+
+    let asaasData = {
+      dueDate: undefined as string | undefined,
+      installments: undefined as number | undefined,
+      asaasPaymentId: undefined as string | undefined,
+      asaasUrl: undefined as string | undefined,
+      asaasStatus: undefined as 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED' | undefined
+    };
+
+    if (paymentMethod === 'Boleto') {
+      setIsGeneratingAsaas(true);
+      setAsaasStatusMsg(storeProfile.asaasEnabled ? "Conectando ao Asaas..." : "Iniciando simulação do Asaas...");
+
+      try {
+        const cleanCpfCnpj = selectedClient.cnpj ? selectedClient.cnpj.replace(/\D/g, '') : '';
+        
+        if (storeProfile.asaasEnabled && storeProfile.asaasApiKey) {
+          const baseUrl = storeProfile.asaasEnvironment === 'production' 
+            ? 'https://www.asaas.com/api/v3'
+            : 'https://sandbox.asaas.com/api/v3';
+
+          setAsaasStatusMsg("Verificando cadastro de cliente no Asaas...");
+          let customerId = '';
+
+          // 1. Search customer by CPF/CNPJ
+          if (cleanCpfCnpj) {
+            try {
+              const searchRes = await fetch(`${baseUrl}/customers?cpfCnpj=${cleanCpfCnpj}`, {
+                method: 'GET',
+                headers: {
+                  'access_token': storeProfile.asaasApiKey,
+                  'Content-Type': 'application/json'
+                }
+              });
+              if (searchRes.ok) {
+                const searchData = await searchRes.json();
+                if (searchData.data && searchData.data.length > 0) {
+                  customerId = searchData.data[0].id;
+                }
+              }
+            } catch (e) {
+              console.warn("Error searching customer", e);
+            }
+          }
+
+          // 2. Create customer if not found
+          if (!customerId) {
+            setAsaasStatusMsg("Cadastrando novo cliente no Asaas...");
+            const customerPayload = {
+              name: selectedClient.name,
+              cpfCnpj: cleanCpfCnpj || undefined,
+              email: selectedClient.email || `${selectedClient.name.toLowerCase().replace(/\s+/g, '')}@exemplo.com`,
+              phone: selectedClient.phones?.[0] || undefined
+            };
+
+            const createCustRes = await fetch(`${baseUrl}/customers`, {
+              method: 'POST',
+              headers: {
+                'access_token': storeProfile.asaasApiKey,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(customerPayload)
+            });
+
+            if (createCustRes.ok) {
+              const custData = await createCustRes.json();
+              customerId = custData.id;
+            } else {
+              throw new Error('Falha ao criar cliente no Asaas. Por favor, verifique se o CPF/CNPJ está correto.');
+            }
+          }
+
+          // 3. Create payment (installment or single)
+          setAsaasStatusMsg(`Emitindo cobrança parcelada (${installments}x) no Asaas...`);
+          const paymentPayload: any = {
+            customer: customerId,
+            billingType: 'BOLETO',
+            dueDate: dueDate,
+            value: totalValue,
+            description: `Pedido #${orderNumber || 'Auto'}`,
+            externalReference: orderNumber
+          };
+
+          if (installments > 1) {
+            paymentPayload.installmentCount = installments;
+          }
+
+          const createPayRes = await fetch(`${baseUrl}/payments`, {
+            method: 'POST',
+            headers: {
+              'access_token': storeProfile.asaasApiKey,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(paymentPayload)
+          });
+
+          if (!createPayRes.ok) {
+            const errorData = await createPayRes.json().catch(() => ({}));
+            const errorMsg = errorData.errors?.[0]?.description || 'Erro ao gerar cobrança no Asaas';
+            throw new Error(errorMsg);
+          }
+
+          const payData = await createPayRes.json();
+          asaasData = {
+            dueDate: dueDate,
+            installments: installments,
+            asaasPaymentId: payData.id || payData.installment || '',
+            asaasUrl: payData.invoiceUrl || payData.bankSlipUrl || `https://sandbox.asaas.com/simulado/fatura?id=${payData.id}`,
+            asaasStatus: 'PENDING'
+          };
+          
+          setAsaasStatusMsg("Cobrança gerada com sucesso!");
+        } else {
+          // Simulated Asaas response
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          asaasData = {
+            dueDate: dueDate,
+            installments: installments,
+            asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
+            asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}`,
+            asaasStatus: 'SIMULATED'
+          };
+          setAsaasStatusMsg("Simulação concluída!");
+        }
+      } catch (err: any) {
+        console.error("Asaas Payment Generation failed", err);
+        alert(`Não foi possível gerar a cobrança no Asaas de forma real devido a restrições de rede/CORS ou dados de cliente inválidos.\n\nDetalhe do erro: ${err.message || 'Sem conexão com Asaas'}\n\nO pedido será salvo normalmente com faturamento simulado para visualização.`);
+        
+        asaasData = {
+          dueDate: dueDate,
+          installments: installments,
+          asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
+          asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}`,
+          asaasStatus: 'SIMULATED'
+        };
+      } finally {
+        setIsGeneratingAsaas(false);
+      }
+    }
+
     onSave({
       id: orderToEdit ? orderToEdit.id : Date.now().toString(),
       orderNumber: orderNumber,
@@ -134,12 +283,23 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         name: item.product.name,
         quantity: item.quantity,
         price: item.product.price
-      }))
+      })),
+      ...asaasData
     });
   };
 
   return (
-    <div className="flex flex-col h-full animate-in fade-in duration-300">
+    <div className="flex flex-col h-full animate-in fade-in duration-300 relative">
+      {isGeneratingAsaas && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-2xl border border-slate-100">
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+            <h3 className="text-base font-black text-slate-800 uppercase tracking-wide">Integração Asaas</h3>
+            <p className="text-sm text-slate-600 font-semibold">{asaasStatusMsg}</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Aguarde, processando transação...</p>
+          </div>
+        </div>
+      )}
       
       {/* HEADER ACTIONS */}
       <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
@@ -379,14 +539,111 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
 
               <div>
                 <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 mb-4">Pagamento</h4>
-                <div className="w-full md:w-1/2">
-                  <label className="block text-xs font-bold text-slate-500 mb-1">* Condição de pagamento</label>
-                  <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780]">
-                    <option value="">Selecione...</option>
-                    <option value="Cartão">Cartão</option>
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="PIX">PIX</option>
-                  </select>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 mb-1">* Condição de pagamento</label>
+                      <select 
+                        value={paymentMethod} 
+                        onChange={e => setPaymentMethod(e.target.value)} 
+                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780]"
+                      >
+                        <option value="">Selecione...</option>
+                        <option value="Cartão">Cartão</option>
+                        <option value="Dinheiro">Dinheiro</option>
+                        <option value="PIX">PIX</option>
+                        <option value="Boleto">Boleto (Asaas)</option>
+                      </select>
+                    </div>
+
+                    {paymentMethod === 'Boleto' && (
+                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase">
+                            Configuração do Boleto
+                          </span>
+                          {!storeProfile.asaasEnabled && (
+                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase">
+                              Modo Simulação
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              * Vencimento (1ª)
+                            </label>
+                            <input 
+                              type="date" 
+                              required
+                              value={dueDate} 
+                              onChange={e => setDueDate(e.target.value)} 
+                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              * Parcelas
+                            </label>
+                            <select 
+                              value={installments} 
+                              onChange={e => setInstallments(parseInt(e.target.value) || 1)} 
+                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                            >
+                              {Array.from({ length: 12 }).map((_, i) => (
+                                <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-200">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                            Demonstrativo de Parcelas
+                          </span>
+                          <div className="space-y-1 max-h-36 overflow-y-auto">
+                            {Array.from({ length: installments }).map((_, i) => {
+                              const valuePerInstallment = totalValue / installments;
+                              const currentDueDate = new Date(dueDate + 'T12:00:00');
+                              currentDueDate.setMonth(currentDueDate.getMonth() + i);
+                              
+                              return (
+                                <div key={i} className="flex justify-between items-center text-xs font-semibold py-1 border-b border-dashed border-slate-100 last:border-0 text-slate-700">
+                                  <span>Parcela {i + 1}/{installments}</span>
+                                  <span className="text-slate-400 font-normal">Vencimento: {currentDueDate.toLocaleDateString('pt-BR')}</span>
+                                  <span className="text-blue-600 font-bold">R$ {valuePerInstallment.toFixed(2).replace('.', ',')}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+
+                          <div className="flex justify-between items-center text-xs font-black text-slate-800 border-t border-slate-200 pt-2.5 mt-2">
+                            <span>TOTAL DO PARCELAMENTO</span>
+                            <span className="text-sm text-blue-600 font-extrabold">R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {paymentMethod === 'Boleto' && (
+                    <div className="bg-blue-50/50 border border-blue-100/60 rounded-xl p-4 text-xs text-blue-800 space-y-2.5">
+                      <h5 className="font-bold uppercase tracking-wider text-[10px] text-blue-900">
+                        {storeProfile.asaasEnabled ? "💡 INTEGRAÇÃO ASAAS ATIVA" : "ℹ️ INFORMAÇÃO DA INTEGRAÇÃO"}
+                      </h5>
+                      <p className="leading-relaxed text-slate-600 font-medium">
+                        {storeProfile.asaasEnabled 
+                          ? `Ao confirmar este pedido, o sistema enviará os dados de ${selectedClient?.name || 'Cliente'} para o Asaas e gerará um parcelamento de ${installments}x de forma automatizada.`
+                          : "A API do Asaas não está configurada no painel de Configurações, então o sistema irá gerar uma fatura em modo de simulação inteligente para visualização e testes dos fluxos."
+                        }
+                      </p>
+                      <p className="leading-relaxed text-slate-500 font-medium">
+                        O cliente receberá o link da fatura contendo o código de barras do Boleto e o Pix de forma integrada para realizar o pagamento.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -430,8 +687,26 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <div className="space-y-4">
                 <div className="grid grid-cols-2">
                   <span className="text-slate-400">* Cond. de pagamento</span>
-                  <span className={cn("font-medium", paymentMethod ? "text-slate-800" : "text-slate-400")}>{paymentMethod || '---'}</span>
+                  <span className={cn("font-medium", paymentMethod ? "text-slate-800" : "text-slate-400")}>
+                    {paymentMethod === 'Boleto' ? `Boleto (${installments}x)` : (paymentMethod || '---')}
+                  </span>
                 </div>
+                {paymentMethod === 'Boleto' && (
+                  <>
+                    <div className="grid grid-cols-2">
+                      <span className="text-slate-400">1º Vencimento</span>
+                      <span className="text-slate-800 font-medium">
+                        {dueDate ? new Date(dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '---'}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2">
+                      <span className="text-slate-400">Valor da parcela</span>
+                      <span className="text-blue-600 font-bold">
+                        R$ {(totalValue / installments).toFixed(2).replace('.', ',')}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="space-y-4">
