@@ -2023,105 +2023,176 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3.5">
-                    {asaasPayments.map((payment) => {
-                      const statusText = {
-                        PENDING: 'Pendente',
-                        RECEIVED: 'Pago',
-                        CONFIRMED: 'Pago',
-                        OVERDUE: 'Vencido',
-                        REFUNDED: 'Estornado',
-                        SIMULATED: 'Simulada'
-                      }[payment.status as string] || payment.status;
+                  <div className="space-y-5">
+                    {(() => {
+                      const getOrderGroupKey = (p: any) => {
+                        if (p.externalReference) {
+                          return `Pedido #${p.externalReference}`;
+                        }
+                        if (p.description) {
+                          const match = p.description.match(/#([A-Za-z0-9-]+)/);
+                          if (match) {
+                            return `Pedido #${match[1]}`;
+                          }
+                          if (p.description.includes('Pedido #')) {
+                            const idx = p.description.indexOf('Pedido #');
+                            return p.description.substring(idx).trim();
+                          }
+                        }
+                        return "Faturas Diversas / Outros";
+                      };
 
-                      const statusStyles = {
-                        PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
-                        RECEIVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                        CONFIRMED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                        OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
-                        REFUNDED: 'bg-slate-100 text-slate-600 border-slate-200',
-                        SIMULATED: 'bg-blue-50 text-blue-700 border-blue-200'
-                      }[payment.status as string] || 'bg-slate-50 border-slate-200';
+                      const groupedPayments: { [key: string]: any[] } = {};
+                      asaasPayments.forEach(payment => {
+                        const key = getOrderGroupKey(payment);
+                        if (!groupedPayments[key]) {
+                          groupedPayments[key] = [];
+                        }
+                        groupedPayments[key].push(payment);
+                      });
 
-                      const isPending = payment.status === 'PENDING' || payment.status === 'OVERDUE';
-                      const payUrl = payment.invoiceUrl || payment.bankSlipUrl;
+                      const sortedGroupEntries = Object.entries(groupedPayments).sort((a, b) => {
+                        const aNum = parseInt(a[0].replace(/\D/g, '')) || 0;
+                        const bNum = parseInt(b[0].replace(/\D/g, '')) || 0;
+                        return bNum - aNum;
+                      });
 
-                      return (
-                        <div key={payment.id} className="bg-white border border-slate-100/90 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all space-y-3">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-1">
+                      return sortedGroupEntries.map(([groupTitle, payments]) => {
+                        const totalGroupVal = payments.reduce((sum: number, p: any) => sum + p.value, 0);
+
+                        return (
+                          <div key={groupTitle} className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs hover:shadow-xs transition-all">
+                            {/* Group Header */}
+                            <div className="bg-slate-50/70 px-4 py-3 border-b border-slate-100/80 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="text-xs font-black text-slate-800">
-                                  {payment.description || `Fatura #${payment.id.substring(3, 10).toUpperCase()}`}
-                                </span>
-                                <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusStyles)}>
-                                  {statusText}
-                                </span>
+                                <div className="w-7 h-7 rounded-full bg-[#4c3780]/10 text-[#4c3780] flex items-center justify-center">
+                                  <ClipboardList size={14} />
+                                </div>
+                                <div>
+                                  <h4 className="text-xs font-black text-slate-800">{groupTitle}</h4>
+                                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                                    {payments.length} {payments.length === 1 ? 'fatura / parcela' : 'parcelas no carnê'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
-                                <Calendar size={11} className="text-slate-400" />
-                                <span>Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}</span>
-                                {payment.installmentNumber && (
-                                  <span className="bg-slate-100 text-slate-600 text-[9px] font-extrabold px-1.5 py-0.2 rounded">
-                                    Parcela {payment.installmentNumber}
-                                  </span>
-                                )}
-                              </div>
+                              <span className="text-[10px] font-black text-[#4c3780] bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-3xs">
+                                Total: R$ {totalGroupVal.toFixed(2).replace('.', ',')}
+                              </span>
                             </div>
-                            <span className="text-sm font-extrabold text-[#4c3780]">
-                              R$ {payment.value.toFixed(2).replace('.', ',')}
-                            </span>
-                          </div>
 
-                          {/* Payment Actions */}
-                          {isPending && (
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-slate-100/60">
-                              {payUrl && (
-                                <a
-                                  href={payUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="px-3 py-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-[10px] font-extrabold text-center transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
-                                >
-                                  <FileText size={11} />
-                                  Abrir Boleto / PDF
-                                </a>
-                              )}
-                              <button
-                                type="button"
-                                onClick={() => handleCopyPix(payment.id)}
-                                disabled={isFetchingAction !== null}
-                                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 rounded-xl text-[10px] font-extrabold transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
-                              >
-                                {isFetchingAction === `pix-${payment.id}` ? (
-                                  <Loader2 size={11} className="animate-spin" />
-                                ) : copiedPaymentId === `pix-${payment.id}` ? (
-                                  <Check size={11} className="text-emerald-600 animate-in zoom-in" />
-                                ) : (
-                                  <Sparkles size={11} />
-                                )}
-                                {copiedPaymentId === `pix-${payment.id}` ? 'Copiado!' : 'Copiar Pix Copia/Cola'}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleCopyBarcode(payment.id)}
-                                disabled={isFetchingAction !== null}
-                                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[10px] font-extrabold transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
-                              >
-                                {isFetchingAction === `barcode-${payment.id}` ? (
-                                  <Loader2 size={11} className="animate-spin" />
-                                ) : copiedPaymentId === `barcode-${payment.id}` ? (
-                                  <Check size={11} className="text-emerald-600 animate-in zoom-in" />
-                                ) : (
-                                  <Copy size={11} />
-                                )}
-                                {copiedPaymentId === `barcode-${payment.id}` ? 'Copiado!' : 'Copiar Código Barras'}
-                              </button>
+                            {/* List of installments/payments inside this group */}
+                            <div className="p-4 divide-y divide-slate-100/60 space-y-4">
+                              {payments.map((payment, pIndex) => {
+                                const statusText = {
+                                  PENDING: 'Pendente',
+                                  RECEIVED: 'Pago',
+                                  CONFIRMED: 'Pago',
+                                  OVERDUE: 'Vencido',
+                                  REFUNDED: 'Estornado',
+                                  SIMULATED: 'Simulada'
+                                }[payment.status as string] || payment.status;
+
+                                const statusStyles = {
+                                  PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
+                                  RECEIVED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                  CONFIRMED: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                  OVERDUE: 'bg-rose-50 text-rose-700 border-rose-200',
+                                  REFUNDED: 'bg-slate-100 text-slate-600 border-slate-200',
+                                  SIMULATED: 'bg-blue-50 text-blue-700 border-blue-200'
+                                }[payment.status as string] || 'bg-slate-50 border-slate-200';
+
+                                const isPending = payment.status === 'PENDING' || payment.status === 'OVERDUE';
+                                const payUrl = payment.invoiceUrl || payment.bankSlipUrl;
+
+                                const getPaymentCleanTitle = (p: any) => {
+                                  if (p.installmentNumber) {
+                                    return `Parcela ${p.installmentNumber}${p.installmentCount ? ` de ${p.installmentCount}` : ''}`;
+                                  }
+                                  let desc = p.description || 'Parcela Única';
+                                  if (desc.includes('Pedido #')) {
+                                    desc = desc.split('Pedido #')[0].replace(/\.\s*$/, '').trim();
+                                  }
+                                  return desc || 'Parcela Única';
+                                };
+
+                                const cleanTitle = getPaymentCleanTitle(payment);
+
+                                return (
+                                  <div key={payment.id} className={cn("pt-4 space-y-3", pIndex === 0 ? "pt-0" : "")}>
+                                    <div className="flex items-start justify-between">
+                                      <div className="space-y-1">
+                                        <div className="flex items-center gap-2">
+                                          <span className="text-xs font-black text-slate-800">
+                                            {cleanTitle}
+                                          </span>
+                                          <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusStyles)}>
+                                            {statusText}
+                                          </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold">
+                                          <Calendar size={11} className="text-slate-400" />
+                                          <span>Vencimento: {new Date(payment.dueDate).toLocaleDateString('pt-BR')}</span>
+                                        </div>
+                                      </div>
+                                      <span className="text-xs font-black text-slate-800">
+                                        R$ {payment.value.toFixed(2).replace('.', ',')}
+                                      </span>
+                                    </div>
+
+                                    {/* Payment Actions */}
+                                    {isPending && (
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1.5">
+                                        {payUrl && (
+                                          <a
+                                            href={payUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="px-2.5 py-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-[9px] font-black text-center transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                          >
+                                            <FileText size={10} />
+                                            Abrir Boleto / PDF
+                                          </a>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCopyPix(payment.id)}
+                                          disabled={isFetchingAction !== null}
+                                          className="px-2.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 rounded-xl text-[9px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
+                                        >
+                                          {isFetchingAction === `pix-${payment.id}` ? (
+                                            <Loader2 size={10} className="animate-spin" />
+                                          ) : copiedPaymentId === `pix-${payment.id}` ? (
+                                            <Check size={10} className="text-emerald-600 animate-in zoom-in" />
+                                          ) : (
+                                            <Sparkles size={10} />
+                                          )}
+                                          {copiedPaymentId === `pix-${payment.id}` ? 'Copiado!' : 'Copiar Pix'}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleCopyBarcode(payment.id)}
+                                          disabled={isFetchingAction !== null}
+                                          className="px-2.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-[9px] font-black transition-all flex items-center justify-center gap-1 cursor-pointer disabled:opacity-60"
+                                        >
+                                          {isFetchingAction === `barcode-${payment.id}` ? (
+                                            <Loader2 size={10} className="animate-spin" />
+                                          ) : copiedPaymentId === `barcode-${payment.id}` ? (
+                                            <Check size={10} className="text-emerald-600 animate-in zoom-in" />
+                                          ) : (
+                                            <Copy size={10} />
+                                          )}
+                                          {copiedPaymentId === `barcode-${payment.id}` ? 'Copiado!' : 'Copiar Código'}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      });
+                    })()}
                   </div>
                 )
               )}
