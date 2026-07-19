@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, ChangeEvent } from 'react';
 import { Client } from '../../types';
-import { Search, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Link as LinkIcon, Info } from 'lucide-react';
+import { Search, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
 
@@ -10,11 +10,13 @@ interface ClientListProps {
   onClientClick: (client: Client) => void;
   onEditClient: (client: Client) => void;
   onDeleteClient: (id: string) => void;
+  onImport: (clients: Client[]) => void;
 }
 
-export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, onDeleteClient }: ClientListProps) {
+export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, onDeleteClient, onImport }: ClientListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'CLIENTES' | 'CONFIGURAÇÕES'>('CLIENTES');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredClients = useMemo(() => {
     if (!searchTerm) return clients;
@@ -42,6 +44,29 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
     { name: 'prospects', value: stats.prospects, color: '#d1d5db' }, // gray
   ];
 
+  const exportClients = () => {
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", "clientes.json");
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const importedClients = JSON.parse(content);
+      onImport(importedClients);
+    };
+    reader.readAsText(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300">
       <div className="flex border-b border-slate-200 mb-6 font-bold text-sm">
@@ -68,15 +93,22 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
             <div className="flex gap-2">
               <button 
                 onClick={onCreateNew}
-                className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors"
+                className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Cadastrar cliente
               </button>
-              <button className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors">
-                <Download size={16} /> Importar
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Upload size={16} /> Importar
               </button>
-              <button className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors">
-                <LinkIcon size={16} /> Vínculos e permissões
+              <button 
+                onClick={exportClients}
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+              >
+                <Download size={16} /> Exportar
               </button>
             </div>
             

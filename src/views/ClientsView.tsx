@@ -77,6 +77,11 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
     }
   };
 
+  const handleImport = (importedClients: Client[]) => {
+    importedClients.forEach(c => addClient(userEmail, c));
+    loadClients();
+  };
+
   const handleBackToList = () => {
     setViewState('list');
     setSelectedClient(null);
@@ -92,6 +97,7 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
           onClientClick={handleClientClick}
           onEditClient={handleEditClient}
           onDeleteClient={handleDeleteClient}
+          onImport={handleImport}
         />
       )}
 
