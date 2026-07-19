@@ -121,7 +121,7 @@ export default function App() {
       <TopBar userEmail={userEmail} onLogout={handleLogout} profileVersion={profileVersion} />
       <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} userEmail={userEmail} onLogout={handleLogout} profileVersion={profileVersion} />
       
-      <main className="flex-1 mt-14 md:mt-0 md:ml-72 p-edge_margin max-w-7xl mx-auto w-full pb-20 md:pb-8">
+      <main className="flex-1 mt-14 md:mt-0 md:ml-56 p-edge_margin max-w-7xl mx-auto w-full pb-20 md:pb-8">
         {renderView()}
       </main>
       <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />

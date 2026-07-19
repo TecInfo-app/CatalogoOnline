@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy } from 'lucide-react';
+import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy, ChevronRight } from 'lucide-react';
 import { getProducts, saveProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
 import { Product, Order, Client, Coupon } from '../types';
 import { cn } from '../lib/utils';
@@ -51,6 +51,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
   // Orders History modal
   const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+  const [selectedOrderForDetail, setSelectedOrderForDetail] = useState<any | null>(null);
 
   // Edit / Confirm Data modal before finalizing order
   const [isDataConfirmationOpen, setIsDataConfirmationOpen] = useState(false);
@@ -321,6 +322,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
   useEffect(() => {
     if (isOrdersModalOpen && loggedInClient) {
       fetchAsaasPayments();
+    } else if (!isOrdersModalOpen) {
+      setSelectedOrderForDetail(null);
     }
   }, [isOrdersModalOpen, loggedInClient]);
 
@@ -1904,7 +1907,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       {/* CUSTOMER ORDERS HISTORY MODAL */}
       {isOrdersModalOpen && loggedInClient && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
+          <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#4c3780]/5">
               <div className="flex items-center gap-2 text-[#4c3780]">
                 <History size={16} />
@@ -1976,8 +1979,13 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       }[order.status || 'budget'];
 
                       return (
-                        <div key={order.id} className="bg-white border border-slate-100/95 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-shadow flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                          <div className="space-y-1.5">
+                        <button
+                          key={order.id}
+                          type="button"
+                          onClick={() => setSelectedOrderForDetail(order)}
+                          className="w-full text-left bg-white border border-slate-100/95 hover:border-[#4c3780]/30 hover:bg-slate-50/50 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                        >
+                          <div className="space-y-1.5 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-black text-slate-800">#{order.orderNumber}</span>
                               <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.styles)}>
@@ -1993,13 +2001,16 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                             </div>
                           </div>
 
-                          <div className="flex sm:flex-col items-end justify-between sm:justify-center border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-50">
-                            <span className="text-[10px] text-slate-400 font-medium sm:hidden">Total do Pedido</span>
-                            <span className="text-sm font-extrabold text-[#4c3780]">
-                              R$ {order.total.toFixed(2).replace('.', ',')}
-                            </span>
+                          <div className="flex items-center gap-2.5">
+                            <div className="text-right">
+                              <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-wider">Total</span>
+                              <span className="text-sm font-extrabold text-[#4c3780]">
+                                R$ {order.total.toFixed(2).replace('.', ',')}
+                              </span>
+                            </div>
+                            <ChevronRight size={16} className="text-slate-300 group-hover:text-[#4c3780] group-hover:translate-x-0.5 transition-all" />
                           </div>
-                        </div>
+                        </button>
                       );
                     })}
                   </div>
@@ -2207,6 +2218,117 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 Fechar
               </button>
             </div>
+
+            {/* NESTED ORDER DETAIL SLIDE-OVER */}
+            {selectedOrderForDetail && (
+              <div className="absolute inset-0 bg-white z-[130] flex flex-col animate-in slide-in-from-right duration-250">
+                {/* Detail Header */}
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#4c3780]/5">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderForDetail(null)}
+                    className="flex items-center gap-1 text-xs font-bold text-[#4c3780] hover:text-[#3c2a68] transition-colors cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-slate-100 shadow-3xs"
+                  >
+                    <ArrowLeft size={13} />
+                    Voltar
+                  </button>
+                  <div className="text-right">
+                    <h4 className="text-xs font-black text-slate-800">#{selectedOrderForDetail.orderNumber}</h4>
+                    <p className="text-[10px] text-slate-400 font-semibold font-mono">{selectedOrderForDetail.date}</p>
+                  </div>
+                </div>
+
+                {/* Detail Scrollable Content */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-5 bg-slate-50/50 animate-in fade-in duration-200">
+                  {/* Status & Info Card */}
+                  <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-3xs space-y-3">
+                    <div className="flex items-center justify-between border-b border-slate-50 pb-2.5">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Status do Pedido</span>
+                      <span className={cn(
+                        "text-[10px] font-black px-2.5 py-0.5 rounded-full border uppercase tracking-wider",
+                        {
+                          budget: 'bg-amber-50 text-amber-700 border-amber-200',
+                          completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                          canceled: 'bg-rose-50 text-rose-700 border-rose-200',
+                        }[selectedOrderForDetail.status || 'budget']
+                      )}>
+                        {{
+                          budget: 'Orçamento',
+                          completed: 'Finalizado',
+                          canceled: 'Cancelado',
+                        }[selectedOrderForDetail.status || 'budget']}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs">
+                      <div>
+                        <span className="block text-[9px] text-slate-400 font-bold uppercase">Forma de Pagamento</span>
+                        <span className="font-extrabold text-slate-700 mt-0.5 block">
+                          {selectedOrderForDetail.paymentMethod || 'A combinar'}
+                        </span>
+                      </div>
+                      {selectedOrderForDetail.dueDate && (
+                        <div>
+                          <span className="block text-[9px] text-slate-400 font-bold uppercase">Vencimento</span>
+                          <span className="font-extrabold text-slate-700 mt-0.5 block">
+                            {new Date(selectedOrderForDetail.dueDate).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Items List */}
+                  <div className="space-y-2.5">
+                    <h5 className="text-[10px] text-slate-400 font-bold uppercase tracking-wider px-1">Itens do Pedido</h5>
+                    
+                    {selectedOrderForDetail.items && selectedOrderForDetail.items.length > 0 ? (
+                      <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden shadow-3xs divide-y divide-slate-50">
+                        {selectedOrderForDetail.items.map((item: any, idx: number) => (
+                          <div key={idx} className="p-3.5 flex items-center justify-between gap-3 bg-white hover:bg-slate-50/30 transition-colors">
+                            <div className="space-y-0.5 flex-1 min-w-0">
+                              <span className="block text-xs font-black text-slate-800 truncate">{item.name}</span>
+                              <span className="block text-[10px] text-slate-400 font-medium font-mono">
+                                {item.quantity} x R$ {item.price.toFixed(2).replace('.', ',')}
+                              </span>
+                            </div>
+                            <span className="text-xs font-black text-slate-700">
+                              R$ {(item.quantity * item.price).toFixed(2).replace('.', ',')}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-white border border-slate-100 rounded-2xl p-6 text-center text-slate-400 text-[11px] font-medium">
+                        Detalhes dos itens não disponíveis para este pedido.
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Totals Summary Footer */}
+                <div className="bg-white border-t border-slate-100 p-5 space-y-2.5 shadow-md">
+                  {selectedOrderForDetail.discount && selectedOrderForDetail.discount > 0 ? (
+                    <>
+                      <div className="flex items-center justify-between text-xs text-slate-500 font-semibold">
+                        <span>Subtotal:</span>
+                        <span>R$ {(selectedOrderForDetail.subtotal || selectedOrderForDetail.total + selectedOrderForDetail.discount).toFixed(2).replace('.', ',')}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-rose-500 font-semibold">
+                        <span>Desconto {selectedOrderForDetail.discountNotes && `(${selectedOrderForDetail.discountNotes})`}:</span>
+                        <span>- R$ {selectedOrderForDetail.discount.toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    </>
+                  ) : null}
+                  <div className="flex items-center justify-between border-t border-slate-100/85 pt-2.5">
+                    <span className="text-xs font-black text-slate-800">Valor Total:</span>
+                    <span className="text-base font-black text-[#4c3780]">
+                      R$ {selectedOrderForDetail.total.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

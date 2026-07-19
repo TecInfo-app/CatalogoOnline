@@ -752,16 +752,16 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       </div>
 
       {/* FOOTER ACTIONS */}
-      <div className="fixed bottom-0 left-0 right-0 lg:left-64 bg-slate-50 border-t border-slate-200 p-4 flex items-center gap-3 z-30">
+      <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-slate-50 border-t border-slate-200 p-4 flex flex-wrap gap-3 z-30 justify-between sm:justify-start items-center">
         <button 
           onClick={handleGenerateOrder}
-          className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-6 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm"
+          className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-6 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm shrink-0"
         >
           <Check size={16} /> {orderToEdit ? 'Salvar alterações' : 'Gerar pedido'}
         </button>
         <button 
           onClick={() => window.print()}
-          className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+          className="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shrink-0"
         >
           <Printer size={16} className="text-slate-400" /> Imprimir
         </button>
@@ -779,7 +779,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;
             window.open(url, '_blank');
           }}
-          className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+          className="bg-[#25D366] hover:bg-[#20bd5a] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shrink-0"
         >
           <Send size={16} /> Enviar por whatsapp
         </button>

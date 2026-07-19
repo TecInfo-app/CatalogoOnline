@@ -29,8 +29,8 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
   ];
 
   return (
-    <nav className="hidden md:flex fixed inset-y-0 left-0 z-40 flex-col py-lg bg-surface h-full w-72 border-r border-outline-variant shadow-xl mt-14 md:mt-0">
-      <div className="px-edge_margin mb-8 pt-4 md:pt-0">
+    <nav className="hidden md:flex fixed inset-y-0 left-0 z-40 flex-col py-lg bg-surface h-full w-56 border-r border-outline-variant shadow-xl mt-14 md:mt-0">
+      <div className="px-4 mb-6 pt-4 md:pt-0">
         <h1 className="text-headline-md font-bold text-primary mb-4 hidden md:block flex items-center gap-2">
           {logoUrl ? (
             <img 
@@ -47,7 +47,7 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
           <span className="truncate">{shopName}</span>
         </h1>
       </div>
-      <div className="flex-1 overflow-y-auto px-2 space-y-1">
+      <div className="flex-1 overflow-y-auto px-1.5 space-y-1">
         {tabs.map((tab) => {
           const isActive = currentTab === tab.id;
           const Icon = tab.icon;
@@ -56,19 +56,19 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex items-center w-full gap-3 px-4 py-3 rounded-full mx-2 transition-all",
+                "flex items-center w-full gap-3 px-3.5 py-2.5 rounded-full transition-all",
                 isActive 
-                  ? "bg-primary-container text-on-primary-container font-semibold translate-x-1" 
+                  ? "bg-primary-container text-on-primary-container font-semibold translate-x-0.5" 
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               )}
             >
-              <Icon size={20} className={cn(isActive && "fill-current")} />
-              <span className="text-body-md">{tab.label}</span>
+              <Icon size={18} className={cn(isActive && "fill-current", "shrink-0")} />
+              <span className="text-body-md truncate">{tab.label}</span>
             </button>
           );
         })}
       </div>
-      <div className="px-edge_margin mt-auto pb-4 flex items-center justify-between">
+      <div className="px-4 mt-auto pb-4 flex items-center justify-between">
         <span className="text-body-sm text-on-surface-variant">v4.2.0</span>
         {onLogout && (
           <button onClick={onLogout} className="text-body-sm text-error hover:underline transition-colors">
