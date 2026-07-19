@@ -2053,8 +2053,9 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         return "Faturas Diversas / Outros";
                       };
 
+                      const activePayments = asaasPayments.filter(p => p.status !== 'CANCELLED' && p.status !== 'REFUNDED');
                       const groupedPayments: { [key: string]: any[] } = {};
-                      asaasPayments.forEach(payment => {
+                      activePayments.forEach(payment => {
                         const key = getOrderGroupKey(payment);
                         if (!groupedPayments[key]) {
                           groupedPayments[key] = [];
