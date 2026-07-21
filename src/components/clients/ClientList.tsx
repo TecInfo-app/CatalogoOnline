@@ -1,11 +1,35 @@
-import React, { useState, useMemo, useRef, ChangeEvent } from 'react';
+import React, { useState, useEffect, useMemo, useRef, ChangeEvent } from 'react';
 import { Client } from '../../types';
-import { Search, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info } from 'lucide-react';
+import { Search, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info, Settings, Save, CheckCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
+import { getOrders, getIndicatorSettings, saveIndicatorSettings } from '../../lib/store';
+
+const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
+  if (!dateStr) return null;
+  if (dateStr.includes('/')) {
+    const [d, m, y] = dateStr.split('/');
+    return new Date(`${y}-${m}-${d}T12:00:00`);
+  } else {
+    const dayMatch = dateStr.match(/^(\d{1,2})/);
+    const ptMonths = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    const monthIndex = ptMonths.findIndex(m => dateStr.toLowerCase().includes(m));
+    
+    if (dayMatch && monthIndex !== -1) {
+      const d = parseInt(dayMatch[1], 10);
+      const m = monthIndex;
+      let y = currentYear;
+      const yearMatch = dateStr.match(/\d{4}/);
+      if (yearMatch) y = parseInt(yearMatch[0], 10);
+      return new Date(y, m, d, 12, 0, 0);
+    }
+  }
+  return null;
+};
 
 interface ClientListProps {
   clients: Client[];
+  userEmail?: string;
   onCreateNew: () => void;
   onClientClick: (client: Client) => void;
   onEditClient: (client: Client) => void;
@@ -13,10 +37,36 @@ interface ClientListProps {
   onImport: (clients: Client[]) => void;
 }
 
-export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, onDeleteClient, onImport }: ClientListProps) {
+export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onEditClient, onDeleteClient, onImport }: ClientListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'CLIENTES' | 'CONFIGURAÇÕES'>('CLIENTES');
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Configurations states
+  const [carteiraRecente, setCarteiraRecente] = useState(180);
+  const [carteiraAntigo, setCarteiraAntigo] = useState(365);
+  const [positivacaoRecente, setPositivacaoRecente] = useState(180);
+  const [positivacaoAntigo, setPositivacaoAntigo] = useState(365);
+  const [settingsSavedMessage, setSettingsSavedMessage] = useState('');
+
+  useEffect(() => {
+    const sets = getIndicatorSettings(userEmail || '');
+    setCarteiraRecente(sets.carteiraRecenteDias);
+    setCarteiraAntigo(sets.carteiraAntigoDias);
+    setPositivacaoRecente(sets.positivacaoRecenteDias);
+    setPositivacaoAntigo(sets.positivacaoAntigoDias);
+  }, [userEmail]);
+
+  const handleSaveSettings = () => {
+    saveIndicatorSettings(userEmail || '', {
+      carteiraRecenteDias: Number(carteiraRecente),
+      carteiraAntigoDias: Number(carteiraAntigo),
+      positivacaoRecenteDias: Number(positivacaoRecente),
+      positivacaoAntigoDias: Number(positivacaoAntigo),
+    });
+    setSettingsSavedMessage('Configurações salvas com sucesso!');
+    setTimeout(() => setSettingsSavedMessage(''), 3000);
+  };
 
   // Advanced Search states
   const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
@@ -176,20 +226,87 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
   }, [clients, searchTerm, showAdvancedSearch, appliedFilters]);
 
   const stats = useMemo(() => {
+    const orders = getOrders(userEmail || '');
+    const currentYear = new Date().getFullYear();
+    const nowTime = new Date().getTime();
+    
+    const carteiraRecenteMs = carteiraRecente * 24 * 60 * 60 * 1000;
+    const carteiraAntigoMs = carteiraAntigo * 24 * 60 * 60 * 1000;
+
+    // Group orders by client
+    const clientOrdersMap = new Map<string, typeof orders>();
+    orders.forEach(order => {
+      if (order.clientId) {
+        const existing = clientOrdersMap.get(order.clientId) || [];
+        existing.push(order);
+        clientOrdersMap.set(order.clientId, existing);
+      } else if (order.clientName) {
+        const matchedClient = clients.find(c => c.name.toLowerCase() === order.clientName?.toLowerCase() || c.legalName.toLowerCase() === order.clientName?.toLowerCase());
+        if (matchedClient) {
+          const existing = clientOrdersMap.get(matchedClient.id) || [];
+          existing.push(order);
+          clientOrdersMap.set(matchedClient.id, existing);
+        }
+      }
+    });
+
+    let ativos = 0;
+    let inativosRecentes = 0;
+    let inativosAntigos = 0;
+    let prospects = 0;
+
+    clients.forEach(client => {
+      if (client.status === 'prospect') {
+        prospects++;
+        return;
+      }
+
+      const clientOrders = clientOrdersMap.get(client.id) || [];
+      const completedOrders = clientOrders.filter(o => o.status === 'completed');
+
+      if (completedOrders.length === 0) {
+        prospects++;
+      } else {
+        let latestOrderDate: Date | null = null;
+        completedOrders.forEach(o => {
+          const d = parseOrderDate(o.date, currentYear);
+          if (d) {
+            if (!latestOrderDate || d > latestOrderDate) {
+              latestOrderDate = d;
+            }
+          }
+        });
+
+        if (latestOrderDate) {
+          const age = nowTime - (latestOrderDate as Date).getTime();
+          if (age <= carteiraRecenteMs) {
+            ativos++;
+          } else if (age <= carteiraAntigoMs) {
+            inativosRecentes++;
+          } else {
+            inativosAntigos++;
+          }
+        } else {
+          prospects++;
+        }
+      }
+    });
+
     return {
       total: clients.length,
-      ativos: clients.filter(c => c.status === 'active').length,
-      prospects: clients.filter(c => c.status === 'prospect').length,
-      inativos: clients.filter(c => c.status === 'inactive').length,
+      ativos,
+      inativosRecentes,
+      inativosAntigos,
+      prospects
     };
-  }, [clients]);
+  }, [clients, userEmail, carteiraRecente, carteiraAntigo]);
 
-  const chartData = [
+  const chartData = useMemo(() => [
     { name: 'ativos', value: stats.ativos, color: '#10b981' }, // green
-    { name: 'inativos antigos', value: stats.inativos, color: '#ef4444' }, // red
-    { name: 'inativos recentes', value: 0, color: '#eab308' }, // yellow
+    { name: 'inativos antigos', value: stats.inativosAntigos, color: '#ef4444' }, // red
+    { name: 'inativos recentes', value: stats.inativosRecentes, color: '#eab308' }, // yellow
     { name: 'prospects', value: stats.prospects, color: '#d1d5db' }, // gray
-  ];
+  ], [stats]);
 
   const exportClients = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients, null, 2));
@@ -233,7 +350,8 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
         </button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      {activeTab === 'CLIENTES' ? (
+        <div className="flex flex-col lg:flex-row gap-6">
         <div className="flex-1 bg-white border border-slate-200 rounded p-4 shadow-sm">
           
           <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
@@ -547,6 +665,121 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
           </div>
         </div>
       </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-6">
+            <Settings className="text-[#4c3780]" size={20} />
+            <h2 className="text-base font-bold text-slate-800">Configuração de Indicadores</h2>
+          </div>
+
+          <p className="text-xs text-slate-500 mb-6">
+            Configure as regras de inatividade para classificar os clientes nos indicadores de <span className="font-semibold text-slate-700">Carteira de Clientes</span> e <span className="font-semibold text-slate-700">Positivação</span>.
+          </p>
+
+          <div className="space-y-6">
+            {/* CARTEIRA DE CLIENTES SETTINGS */}
+            <div className="border border-slate-150 rounded-xl p-5 bg-slate-50/50">
+              <h3 className="text-sm font-bold text-[#4c3780] mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-3 rounded bg-[#4c3780] inline-block" />
+                Carteira de Clientes
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    INATIVOS RECENTES
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-slate-600 font-medium">Clientes que não compram há:</span>
+                    <input 
+                      type="number" 
+                      value={carteiraRecente}
+                      onChange={(e) => setCarteiraRecente(Math.max(1, Number(e.target.value)))}
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                    />
+                    <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    INATIVOS ANTIGOS
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-slate-600 font-medium">Clientes que não compram há:</span>
+                    <input 
+                      type="number" 
+                      value={carteiraAntigo}
+                      onChange={(e) => setCarteiraAntigo(Math.max(1, Number(e.target.value)))}
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                    />
+                    <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* POSITIVACAO SETTINGS */}
+            <div className="border border-slate-150 rounded-xl p-5 bg-slate-50/50">
+              <h3 className="text-sm font-bold text-[#4c3780] mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-3 rounded bg-[#4c3780] inline-block" />
+                Positivação
+              </h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    INATIVOS RECENTES
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-slate-600 font-medium">Clientes que não compram há:</span>
+                    <input 
+                      type="number" 
+                      value={positivacaoRecente}
+                      onChange={(e) => setPositivacaoRecente(Math.max(1, Number(e.target.value)))}
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                    />
+                    <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    INATIVOS ANTIGOS
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs text-slate-600 font-medium">Clientes que não compram há:</span>
+                    <input 
+                      type="number" 
+                      value={positivacaoAntigo}
+                      onChange={(e) => setPositivacaoAntigo(Math.max(1, Number(e.target.value)))}
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                    />
+                    <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 flex items-center justify-between pt-4 border-t border-slate-100">
+            <div>
+              {settingsSavedMessage && (
+                <div className="flex items-center gap-1 text-emerald-600 text-xs font-bold animate-in fade-in duration-300">
+                  <CheckCircle size={14} />
+                  {settingsSavedMessage}
+                </div>
+              )}
+            </div>
+            <button 
+              onClick={handleSaveSettings}
+              className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-5 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+            >
+              <Save size={14} /> Salvar Configurações
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

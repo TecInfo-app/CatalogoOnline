@@ -212,3 +212,35 @@ export const deleteOrder = (email: string, id: string) => {
   orders = orders.filter(o => o.id !== id);
   localStorage.setItem(getStorageKey(email, 'orders'), JSON.stringify(orders));
 };
+
+export interface IndicatorSettings {
+  carteiraRecenteDias: number;
+  carteiraAntigoDias: number;
+  positivacaoRecenteDias: number;
+  positivacaoAntigoDias: number;
+}
+
+export const getIndicatorSettings = (email: string): IndicatorSettings => {
+  const data = localStorage.getItem(getStorageKey(email, 'indicator_settings'));
+  if (data) {
+    try {
+      return JSON.parse(data);
+    } catch (e) {
+      // fallback
+    }
+  }
+  const defaultSettings: IndicatorSettings = {
+    carteiraRecenteDias: 180,
+    carteiraAntigoDias: 365,
+    positivacaoRecenteDias: 180,
+    positivacaoAntigoDias: 365,
+  };
+  localStorage.setItem(getStorageKey(email, 'indicator_settings'), JSON.stringify(defaultSettings));
+  return defaultSettings;
+};
+
+export const saveIndicatorSettings = (email: string, settings: IndicatorSettings): void => {
+  localStorage.setItem(getStorageKey(email, 'indicator_settings'), JSON.stringify(settings));
+  window.dispatchEvent(new Event('vercos_data_synced'));
+};
+

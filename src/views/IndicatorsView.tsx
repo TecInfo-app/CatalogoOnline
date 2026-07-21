@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-import { getOrders, getClients, getProducts } from '../lib/store';
+import { getOrders, getClients, getProducts, getIndicatorSettings } from '../lib/store';
 
 const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
   if (!dateStr) return null;
@@ -38,6 +38,8 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
     };
   }, []);
 
+  const settings = useMemo(() => getIndicatorSettings(userEmail), [userEmail, syncVersion]);
+
   const [activeTab, setActiveTab] = useState<'panel' | 'reports'>('panel');
   const [selectedReport, setSelectedReport] = useState<'summary' | 'clients' | 'products' | 'detailed'>('summary');
 
@@ -57,7 +59,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
 
   const [chartData, setChartData] = useState<{name: string, current: number | null, goal: number | null, previsao: number | null, vendidoDia: number | null, previsaoDia: number | null}[]>([]);
 
-  const [activeModal, setActiveModal] = useState<'carteira' | 'positivacao' | 'b2b' | null>(null);
+  const [activeModal, setActiveModal] = useState<'carteira' | 'positivacao' | 'b2b' | 'abc' | null>(null);
 
   // Carteira Detailed Data
   const [carteiraAtivosList, setCarteiraAtivosList] = useState<{id: string, name: string, phone: string, lastOrder: string, totalOrders: number}[]>([]);
@@ -188,6 +190,96 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
     };
   }, [userEmail, startDate, endDate, syncVersion]);
 
+  const [considerarImpostos, setConsiderarImpostos] = useState(true);
+
+  const curvaAbcData = useMemo(() => {
+    const orders = getOrders(userEmail);
+    const clients = getClients(userEmail);
+    const start = new Date(startDate + 'T00:00:00');
+    const end = new Date(endDate + 'T23:59:59');
+    const currentYear = today.getFullYear();
+
+    // Filter orders: completed only, in date range
+    const periodCompletedOrders = orders.filter(order => {
+      const oDate = parseOrderDate(order.date, currentYear);
+      return oDate && oDate >= start && oDate <= end && order.status === 'completed';
+    });
+
+    // Sum per client
+    const clientSums: { [clientId: string]: { id: string; name: string; total: number; phone: string; location: string } } = {};
+    
+    // Initialize all clients with 0 so they can be classified
+    clients.forEach(c => {
+      clientSums[c.id] = {
+        id: c.id,
+        name: c.name || c.legalName,
+        total: 0,
+        phone: c.phones?.[0] || 'Sem telefone',
+        location: c.location || 'Não informada'
+      };
+    });
+
+    periodCompletedOrders.forEach(order => {
+      let matchedClient = clients.find(c => c.id === order.clientId);
+      if (!matchedClient && order.clientName) {
+        matchedClient = clients.find(c => c.name.toLowerCase() === order.clientName.toLowerCase() || c.legalName.toLowerCase() === order.clientName.toLowerCase());
+      }
+      
+      if (matchedClient) {
+        const orderVal = considerarImpostos ? order.total : order.total * 0.85; // 15% taxes deducted
+        clientSums[matchedClient.id].total += orderVal;
+      }
+    });
+
+    // Convert to list and sort descending by total
+    const purchasers = Object.values(clientSums).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
+    const nonPurchasers = Object.values(clientSums).filter(c => c.total === 0);
+
+    const totalVendidoAbc = purchasers.reduce((acc, c) => acc + c.total, 0);
+
+    let cumulativeSum = 0;
+    const listA: any[] = [];
+    const listB: any[] = [];
+    const listC: any[] = [];
+
+    purchasers.forEach(c => {
+      cumulativeSum += c.total;
+      const cumulativePercentage = totalVendidoAbc > 0 ? (cumulativeSum / totalVendidoAbc) * 100 : 0;
+      const itemWithMeta = {
+        ...c,
+        participation: totalVendidoAbc > 0 ? (c.total / totalVendidoAbc) * 100 : 0,
+        cumulativePercentage
+      };
+      
+      if (cumulativePercentage <= 80) {
+        listA.push(itemWithMeta);
+      } else if (cumulativePercentage <= 95) {
+        listB.push(itemWithMeta);
+      } else {
+        listC.push(itemWithMeta);
+      }
+    });
+
+    // Add non-purchasers to list C
+    const finalC = [
+      ...listC,
+      ...nonPurchasers.map(c => ({
+        ...c,
+        participation: 0,
+        cumulativePercentage: 100
+      }))
+    ];
+
+    return {
+      listA,
+      listB,
+      listC: finalC,
+      totalVendidoAbc,
+      totalClientsCount: clients.length,
+      purchasersCount: purchasers.length
+    };
+  }, [userEmail, startDate, endDate, considerarImpostos, syncVersion]);
+
   useEffect(() => {
     const orders = getOrders(userEmail);
     const clients = getClients(userEmail);
@@ -285,8 +377,10 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
     });
 
     const nowTime = new Date().getTime();
-    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+    const carteiraRecenteMs = settings.carteiraRecenteDias * 24 * 60 * 60 * 1000;
+    const carteiraAntigoMs = settings.carteiraAntigoDias * 24 * 60 * 60 * 1000;
+    const positivacaoRecenteMs = settings.positivacaoRecenteDias * 24 * 60 * 60 * 1000;
+    const positivacaoAntigoMs = settings.positivacaoAntigoDias * 24 * 60 * 60 * 1000;
 
     const tempAtivos: typeof carteiraAtivosList = [];
     const tempInativosRecentes: typeof carteiraInativosRecentesList = [];
@@ -338,9 +432,9 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
           lastOrder: latestOrder ? (latestOrder as any).date : 'N/A',
           totalOrders: completedOrders.length
         };
-        if (age <= thirtyDaysMs) {
+        if (age <= carteiraRecenteMs) {
           tempAtivos.push(info);
-        } else if (age <= ninetyDaysMs) {
+        } else if (age <= carteiraAntigoMs) {
           tempInativosRecentes.push(info);
         } else {
           tempInativosAntigos.push(info);
@@ -403,9 +497,9 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
               previousOrderDate: latestBefore ? (latestBefore as any).date : 'N/A'
             };
 
-            if (ageBefore <= thirtyDaysMs) {
+            if (ageBefore <= positivacaoRecenteMs) {
               tempPosAtivos.push(posInfo);
-            } else if (ageBefore <= ninetyDaysMs) {
+            } else if (ageBefore <= positivacaoAntigoMs) {
               tempPosInativosRecentes.push(posInfo);
             } else {
               tempPosInativosAntigos.push(posInfo);
@@ -635,7 +729,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 print:hidden">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 print:hidden">
             {[
               { 
                 id: 'carteira' as const,
@@ -664,6 +758,21 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                   {c: 'bg-secondary', t: `${positivadosAtivosList.length} ativos`}, 
                   {c: 'bg-amber-400', t: `${positivadosInativosRecentesList.length} inativos rec.`}, 
                   {c: 'bg-error', t: `${positivadosInativosAntigosList.length} inativos ant.`}
+                ] 
+              },
+              { 
+                id: 'abc' as const,
+                title: 'Curva ABC de Clientes', 
+                period: 'PERÍODO SELECIONADO', 
+                total: curvaAbcData.totalClientsCount, 
+                subtitle: 'Clientes', 
+                emptyText: curvaAbcData.purchasersCount === 0 ? 'Nenhum faturamento no período' : '', 
+                btn: 'Detalhar curva ABC', 
+                items: [
+                  {c: 'bg-[#4c3780]', t: `${curvaAbcData.listA.length} na Curva A`}, 
+                  {c: 'bg-[#8b5cf6]', t: `${curvaAbcData.listB.length} na Curva B`}, 
+                  {c: 'bg-[#a78bfa]', t: `${curvaAbcData.listC.length} na Curva C`}, 
+                  {c: 'bg-slate-300', t: `${curvaAbcData.totalClientsCount - curvaAbcData.purchasersCount} sem compras`}
                 ] 
               },
               { 
@@ -1085,6 +1194,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                   <BarChart2 className="text-primary animate-pulse" size={22} />
                   {activeModal === 'carteira' && 'Detalhamento da Carteira de Clientes'}
                   {activeModal === 'positivacao' && 'Detalhamento do Indicador de Positivação'}
+                  {activeModal === 'abc' && 'Detalhamento da Curva ABC de Clientes'}
                   {activeModal === 'b2b' && 'Detalhamento do Catálogo Online B2B'}
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
@@ -1108,17 +1218,28 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                     <>
                       O indicador de situação da carteira classifica os clientes em:
                       <br /><span className="font-bold text-slate-900">● Prospects</span>: clientes cadastrados que ainda não efetuaram nenhum pedido;
-                      <br /><span className="font-bold text-slate-900">● Clientes ativos</span>: clientes que compraram no último ciclo de vendas;
-                      <br /><span className="font-bold text-slate-900">● Clientes inativos</span>: clientes que estão há um tempo sem comprar.
+                      <br /><span className="font-bold text-slate-900">● Clientes ativos</span>: clientes que compraram nos últimos {settings.carteiraRecenteDias} dias;
+                      <br /><span className="font-bold text-slate-900">● Inativos Recentes</span>: clientes sem comprar entre {settings.carteiraRecenteDias} e {settings.carteiraAntigoDias} dias;
+                      <br /><span className="font-bold text-slate-900">● Inativos Antigos</span>: clientes sem comprar há {settings.carteiraAntigoDias} dias ou mais.
                       <br /><br />
                       Essa classificação pode ser utilizada para priorizar o atendimento dos clientes e identificar oportunidades para vender ainda mais, sobretudo na parcela de clientes inativos.
                     </>
                   )}
                   {activeModal === 'positivacao' && (
                     <>
-                      Com o indicador de positivação você poderá identificar o número de clientes que fizeram pedido no mês e qual era a situação desses clientes antes de serem positivados.
+                      Com o indicador de positivação você poderá identificar o número de clientes que fizeram pedido no mês e qual era a situação desses clientes antes de serem positivados, baseando-se nos limites configurados de {settings.positivacaoRecenteDias} dias para inativos recentes e {settings.positivacaoAntigoDias} dias para inativos antigos.
                       <br /><br />
                       No gráfico também é apresentado o percentual de clientes que estavam ativos no final do mês anterior e foram positivados no mês. Esse percentual lhe ajudará a entender se o volume de clientes ativos atendidos é suficiente para manter a sua carteira de clientes saudável.
+                    </>
+                  )}
+                  {activeModal === 'abc' && (
+                    <>
+                      A <span className="font-bold text-[#4c3780]">Curva ABC de Clientes</span> ajuda a identificar a relevância de cada cliente no seu faturamento acumulado do período selecionado.
+                      <br /><span className="font-bold text-slate-900">● Classe A (Acumulado de 0% a 80%)</span>: Clientes de maior importância, responsáveis pela maior parte do faturamento.
+                      <br /><span className="font-bold text-slate-900">● Classe B (Acumulado de 80% a 95%)</span>: Clientes de importância intermediária.
+                      <br /><span className="font-bold text-slate-900">● Classe C (Acumulado de 95% a 100%)</span>: Clientes de menor faturamento individual ou sem compras.
+                      <br /><br />
+                      Você pode alternar nos filtros do relatório se o valor dos impostos (simulação de 15% de dedução) deve ser considerado no faturamento.
                     </>
                   )}
                   {activeModal === 'b2b' && (
@@ -1440,6 +1561,130 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                     ) : (
                       <p className="text-xs text-slate-500 text-center py-4 bg-slate-50 border border-dashed rounded-xl">Todos os clientes cadastrados no Catálogo realizaram pedidos!</p>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {activeModal === 'abc' && (
+                <div className="space-y-6">
+                  {/* Tax filter toggle */}
+                  <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl">
+                    <div className="space-y-1 pr-4">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded bg-[#4c3780] inline-block" />
+                        Considerar Impostos no Cálculo
+                      </h4>
+                      <p className="text-[11px] text-slate-500 leading-normal">
+                        Quando ativado, a Curva ABC é gerada com base no faturamento bruto total dos pedidos concluídos. Quando desativado, o sistema desconta automaticamente 15% de tributação média simulada.
+                      </p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={considerarImpostos} 
+                        onChange={(e) => setConsiderarImpostos(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4c3780]"></div>
+                    </label>
+                  </div>
+
+                  {/* Summary of ABC classes */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-violet-50/70 border border-violet-100 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-black text-violet-700 uppercase tracking-wider">Classe A (0% a 80%)</span>
+                          <span className="text-[10px] font-bold text-violet-600 bg-violet-100/50 px-2 py-0.5 rounded-full">Altamente Relevantes</span>
+                        </div>
+                        <p className="text-2xl font-black text-violet-900 mt-1">R$ {curvaAbcData.listA.reduce((sum, x) => sum + x.total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      </div>
+                      <p className="text-xs text-violet-700 font-semibold mt-3">{curvaAbcData.listA.length} clientes ({curvaAbcData.totalClientsCount > 0 ? ((curvaAbcData.listA.length / curvaAbcData.totalClientsCount) * 100).toFixed(1) : 0}%)</p>
+                    </div>
+
+                    <div className="p-4 bg-fuchsia-50/70 border border-fuchsia-100 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-black text-fuchsia-700 uppercase tracking-wider">Classe B (80% a 95%)</span>
+                          <span className="text-[10px] font-bold text-fuchsia-600 bg-fuchsia-100/50 px-2 py-0.5 rounded-full">Médio Impacto</span>
+                        </div>
+                        <p className="text-2xl font-black text-fuchsia-900 mt-1">R$ {curvaAbcData.listB.reduce((sum, x) => sum + x.total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      </div>
+                      <p className="text-xs text-fuchsia-700 font-semibold mt-3">{curvaAbcData.listB.length} clientes ({curvaAbcData.totalClientsCount > 0 ? ((curvaAbcData.listB.length / curvaAbcData.totalClientsCount) * 100).toFixed(1) : 0}%)</p>
+                    </div>
+
+                    <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-wider">Classe C (95% a 100%)</span>
+                          <span className="text-[10px] font-bold text-slate-500 bg-slate-150 px-2 py-0.5 rounded-full">Baixo Faturamento</span>
+                        </div>
+                        <p className="text-2xl font-black text-slate-800 mt-1">R$ {curvaAbcData.listC.reduce((sum, x) => sum + x.total, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                      </div>
+                      <p className="text-xs text-slate-600 font-semibold mt-3">{curvaAbcData.listC.length} clientes ({curvaAbcData.totalClientsCount > 0 ? ((curvaAbcData.listC.length / curvaAbcData.totalClientsCount) * 100).toFixed(1) : 0}%)</p>
+                    </div>
+                  </div>
+
+                  {/* List details */}
+                  <div className="space-y-3 pt-2">
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <Users size={16} /> Listagem de Clientes e Classificação
+                    </h4>
+
+                    <div className="border border-slate-200 rounded-xl overflow-hidden max-h-80 overflow-y-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200 sticky top-0 z-10">
+                            <th className="p-3">Rank / Cliente</th>
+                            <th className="p-3">Curva</th>
+                            <th className="p-3 text-right">Faturamento (R$)</th>
+                            <th className="p-3 text-right">Participação %</th>
+                            <th className="p-3 text-right">Acumulado %</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {[
+                            ...curvaAbcData.listA.map((item) => ({ ...item, curve: 'A' })),
+                            ...curvaAbcData.listB.map((item) => ({ ...item, curve: 'B' })),
+                            ...curvaAbcData.listC.map((item) => ({ ...item, curve: 'C' }))
+                          ]
+                            .sort((a, b) => b.total - a.total)
+                            .map((client, idx) => (
+                              <tr key={client.id} className="hover:bg-slate-50/50">
+                                <td className="p-3 font-semibold text-slate-800">
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-5 text-slate-400 font-normal">#{idx + 1}</span>
+                                    <div>
+                                      <p className="font-bold text-slate-950">{client.name}</p>
+                                      <p className="text-[10px] text-slate-400">Tel: {client.phone} | Cidade: {client.location}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="p-3">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black tracking-wider uppercase ${
+                                    client.curve === 'A' 
+                                      ? 'bg-violet-100 text-violet-800 border border-violet-200' 
+                                      : client.curve === 'B' 
+                                      ? 'bg-fuchsia-100 text-fuchsia-800 border border-fuchsia-200' 
+                                      : 'bg-slate-100 text-slate-600 border border-slate-200'
+                                  }`}>
+                                    Classe {client.curve}
+                                  </span>
+                                </td>
+                                <td className="p-3 text-right font-bold text-slate-950">
+                                  R$ {client.total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </td>
+                                <td className="p-3 text-right text-slate-600 font-medium">
+                                  {client.participation.toFixed(2)}%
+                                </td>
+                                <td className="p-3 text-right font-semibold text-slate-800">
+                                  {client.cumulativePercentage.toFixed(2)}%
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}

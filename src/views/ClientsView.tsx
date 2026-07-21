@@ -142,6 +142,7 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
       {viewState === 'list' && (
         <ClientList 
           clients={clients} 
+          userEmail={userEmail}
           onCreateNew={handleCreateNew} 
           onClientClick={handleClientClick}
           onEditClient={handleEditClient}
