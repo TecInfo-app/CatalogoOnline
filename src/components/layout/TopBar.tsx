@@ -25,7 +25,20 @@ export function TopBar({ userEmail, onLogout, profileVersion }: TopBarProps) {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <img src={logoImg} alt={shopName} className="w-6 h-6 rounded-md object-contain shrink-0" />
+          <div 
+            className="w-6 h-6 bg-white shrink-0" 
+            style={{
+              maskImage: `url(${logoImg})`,
+              WebkitMaskImage: `url(${logoImg})`,
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center'
+            }}
+            title={shopName}
+          />
         )}
         <span className="text-headline-sm font-bold ml-1 truncate">{shopName}</span>
       </div>

@@ -41,7 +41,20 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
         
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <img src={logoImg} alt="Vitrine Pay" className="w-12 h-12 rounded-xl object-contain shadow-sm" />
+          <div 
+            className="w-12 h-12 bg-primary shrink-0" 
+            style={{
+              maskImage: `url(${logoImg})`,
+              WebkitMaskImage: `url(${logoImg})`,
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center'
+            }}
+            title="Vitrine Pay"
+          />
           <span className="text-3xl font-extrabold text-primary tracking-tight">Vitrine Pay</span>
         </div>
 

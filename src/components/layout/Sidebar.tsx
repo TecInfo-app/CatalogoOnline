@@ -41,7 +41,20 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
               referrerPolicy="no-referrer"
             />
           ) : (
-            <img src={logoImg} alt={shopName} className="w-8 h-8 rounded-lg object-contain shrink-0" />
+            <div 
+              className="w-8 h-8 bg-primary shrink-0" 
+              style={{
+                maskImage: `url(${logoImg})`,
+                WebkitMaskImage: `url(${logoImg})`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center'
+              }}
+              title={shopName}
+            />
           )}
           <span className="truncate">{shopName}</span>
         </h1>
