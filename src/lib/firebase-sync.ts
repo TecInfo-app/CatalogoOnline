@@ -4,29 +4,36 @@ import { Order, Client, Product } from '../types';
 
 const KNOWN_KEYS = ['store_profile', 'products', 'coupons', 'clients', 'orders', 'product_categories', 'agenda_items', 'planned_routes'];
 
+let isSyncingFromFirebase = false;
+
 // Call this on app load or when user logs in
 // It will pull all keys from Firestore into localStorage
 export const loadStoreData = async (email: string, onlyPublic: boolean = false) => {
-  // First, load standard keys
-  for (const key of KNOWN_KEYS) {
-    // If only public data is requested, skip private tables
-    const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories'].includes(key);
-    if (onlyPublic && isPrivateKey) {
-      continue;
-    }
-
-    try {
-      const docRef = doc(db, 'users', email, 'data', key);
-      const snap = await getDoc(docRef);
-      if (snap.exists()) {
-        const data = snap.data().value;
-        if (data !== undefined) {
-          localStorage.setItem(`vercos_${email}_${key}`, JSON.stringify(data));
-        }
+  isSyncingFromFirebase = true;
+  try {
+    // First, load standard keys
+    for (const key of KNOWN_KEYS) {
+      // If only public data is requested, skip private tables
+      const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories'].includes(key);
+      if (onlyPublic && isPrivateKey) {
+        continue;
       }
-    } catch (e) {
-      console.error(`Error loading ${key}`, e);
+
+      try {
+        const docRef = doc(db, 'users', email, 'data', key);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+          const data = snap.data().value;
+          if (data !== undefined) {
+            localStorage.setItem(`vercos_${email}_${key}`, JSON.stringify(data));
+          }
+        }
+      } catch (e) {
+        console.error(`Error loading ${key}`, e);
+      }
     }
+  } finally {
+    isSyncingFromFirebase = false;
   }
 
   // If we only requested public data, skip the queue merging
@@ -291,12 +298,20 @@ export const patchLocalStorage = () => {
   localStorage.setItem = function(key: string, value: string) {
     originalSetItem.apply(this, [key, value]);
     
+    if (isSyncingFromFirebase) return;
+
     if (key.startsWith('vercos_')) {
       for (const knownKey of KNOWN_KEYS) {
         if (key.endsWith(`_${knownKey}`)) {
           // Extract email which is in the middle: vercos_{email}_{knownKey}
           const email = key.substring('vercos_'.length, key.length - `_${knownKey}`.length);
           
+          const currentUser = auth.currentUser;
+          const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
+          if (!isOwner) {
+            break; // Skip sync for visitors or non-owners
+          }
+
           try {
             const parsed = JSON.parse(value);
             const docRef = doc(db, 'users', email, 'data', knownKey);
