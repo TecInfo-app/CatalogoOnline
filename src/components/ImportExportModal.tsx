@@ -7,6 +7,7 @@ interface ImportExportModalProps {
   onClose: () => void;
   products: Product[];
   onImport: (importedProducts: Product[]) => void;
+  initialTab?: 'import' | 'export';
 }
 
 export function ImportExportModal({
@@ -14,8 +15,9 @@ export function ImportExportModal({
   onClose,
   products,
   onImport,
+  initialTab = 'import',
 }: ImportExportModalProps) {
-  const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'export'>(initialTab);
   const [inputText, setInputText] = useState('');
   const [copied, setCopied] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');

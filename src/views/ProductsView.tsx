@@ -99,6 +99,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
   // Modals state
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
+  const [importExportInitialTab, setImportExportInitialTab] = useState<'import' | 'export'>('import');
   const [productToEdit, setProductToEdit] = useState<Product | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
@@ -583,11 +584,23 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
           <button
             type="button"
             onClick={() => {
+              setImportExportInitialTab('import');
               setIsImportExportOpen(true);
             }}
             className="border border-[#4c3780]/30 hover:border-[#4c3780] text-[#4c3780] hover:bg-[#4c3780]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
           >
-            <Upload size={14} /> Importar produtos
+            <Upload size={14} /> Importar
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setImportExportInitialTab('export');
+              setIsImportExportOpen(true);
+            }}
+            className="border border-[#4c3780]/30 hover:border-[#4c3780] text-[#4c3780] hover:bg-[#4c3780]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+          >
+            <Download size={14} /> Exportar
           </button>
 
           <div className="relative">
@@ -601,16 +614,6 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
 
             {showMoreMenu && (
               <div className="absolute left-0 mt-2 w-48 bg-white border border-slate-100 rounded-xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsImportExportOpen(true);
-                    setShowMoreMenu(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
-                >
-                  <Download size={14} /> Exportar Catálogo
-                </button>
                 <button
                   type="button"
                   onClick={() => {
@@ -1364,6 +1367,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
         onClose={() => setIsImportExportOpen(false)}
         products={products}
         onImport={handleBulkImport}
+        initialTab={importExportInitialTab}
       />
 
       {/* Coupon Modal (New Coupon / Edit Coupon) */}

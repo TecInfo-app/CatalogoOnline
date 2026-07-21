@@ -78,7 +78,47 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
   };
 
   const handleImport = (importedClients: Client[]) => {
-    importedClients.forEach(c => addClient(userEmail, c));
+    if (!Array.isArray(importedClients)) return;
+    
+    const existingClients = getClients(userEmail);
+    const existingIds = new Set(existingClients.map(c => c.id));
+    const existingCnpjs = new Set(
+      existingClients
+        .map(c => c.cnpj?.replace(/\D/g, ''))
+        .filter(Boolean)
+    );
+
+    importedClients.forEach(c => {
+      if (!c.name) return; // Ignore invalid entries
+
+      // Ensure the client has a valid unique ID
+      const clientWithId = {
+        ...c,
+        id: c.id || `cli-${Math.floor(100000 + Math.random() * 900000)}`
+      };
+
+      const cleanCnpj = clientWithId.cnpj?.replace(/\D/g, '');
+
+      const isDuplicate = existingIds.has(clientWithId.id) || (cleanCnpj && existingCnpjs.has(cleanCnpj));
+
+      if (isDuplicate) {
+        // If they already exist in this store, merge and update them
+        const match = existingClients.find(
+          existing => 
+            existing.id === clientWithId.id || 
+            (cleanCnpj && existing.cnpj?.replace(/\D/g, '') === cleanCnpj)
+        );
+        if (match) {
+          const updated = { ...match, ...clientWithId, id: match.id };
+          updateClient(userEmail, updated);
+        }
+      } else {
+        // Otherwise, insert as a brand new client in this store
+        addClient(userEmail, clientWithId);
+        existingIds.add(clientWithId.id);
+        if (cleanCnpj) existingCnpjs.add(cleanCnpj);
+      }
+    });
     loadClients();
   };
 
