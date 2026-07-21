@@ -116,7 +116,7 @@ export const addClient = (email: string, client: Client) => {
 
   try {
     const currentUser = auth.currentUser;
-    const isOwner = currentUser && currentUser.email === email;
+    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
       setDoc(docRef, client).catch(err => {
@@ -138,7 +138,7 @@ export const updateClient = (email: string, client: Client) => {
 
   try {
     const currentUser = auth.currentUser;
-    const isOwner = currentUser && currentUser.email === email;
+    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
       setDoc(docRef, client).catch(err => {
@@ -163,7 +163,7 @@ export const addOrder = (email: string, order: Order) => {
 
   try {
     const currentUser = auth.currentUser;
-    const isOwner = currentUser && currentUser.email === email;
+    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_orders', order.id);
       setDoc(docRef, order).catch(err => {

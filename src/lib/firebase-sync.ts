@@ -26,7 +26,7 @@ export const loadStoreData = async (email: string) => {
   // Next, if current logged in user is the owner, pull and merge incoming orders/clients queue
   try {
     const currentUser = auth.currentUser;
-    const isOwner = currentUser && currentUser.email === email;
+    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
 
     if (isOwner) {
       // 1. Process incoming_orders queue
@@ -128,10 +128,6 @@ export const loadStoreData = async (email: string) => {
 };
 
 export const startRealTimeSync = (email: string, onSync: () => void) => {
-  const currentUser = auth.currentUser;
-  const isOwner = currentUser && currentUser.email === email;
-  if (!isOwner) return () => {};
-
   // Listen to incoming_orders
   const ordersCol = collection(db, 'users', email, 'incoming_orders');
   const unsubscribeOrders = onSnapshot(ordersCol, async (snapshot) => {
