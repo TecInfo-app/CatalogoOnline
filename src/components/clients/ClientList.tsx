@@ -18,7 +18,153 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
   const [activeTab, setActiveTab] = useState<'CLIENTES' | 'CONFIGURAÇÕES'>('CLIENTES');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Advanced Search states
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [advNomeCnpj, setAdvNomeCnpj] = useState('');
+  const [advTelefone, setAdvTelefone] = useState('');
+  const [advEmail, setAdvEmail] = useState('');
+  const [advEndereco, setAdvEndereco] = useState('');
+  const [advBairro, setAdvBairro] = useState('');
+  const [advCidade, setAdvCidade] = useState('');
+  const [advEstado, setAdvEstado] = useState('');
+  const [advSegmento, setAdvSegmento] = useState('Qualquer');
+  const [advRede, setAdvRede] = useState('Qualquer');
+  const [advNomeContato, setAdvNomeContato] = useState('');
+  const [advTag, setAdvTag] = useState('');
+
+  const [appliedFilters, setAppliedFilters] = useState<{
+    nomeCnpj: string;
+    telefone: string;
+    email: string;
+    endereco: string;
+    bairro: string;
+    cidade: string;
+    estado: string;
+    segmento: string;
+    rede: string;
+    nomeContato: string;
+    tag: string;
+  } | null>(null);
+
+  const BRAZILIAN_STATES = [
+    { value: '', label: '----------' },
+    { value: 'AC', label: 'AC - Acre' },
+    { value: 'AL', label: 'AL - Alagoas' },
+    { value: 'AP', label: 'AP - Amapá' },
+    { value: 'AM', label: 'AM - Amazonas' },
+    { value: 'BA', label: 'BA - Bahia' },
+    { value: 'CE', label: 'CE - Ceará' },
+    { value: 'DF', label: 'DF - Distrito Federal' },
+    { value: 'ES', label: 'ES - Espírito Santo' },
+    { value: 'GO', label: 'GO - Goiás' },
+    { value: 'MA', label: 'MA - Maranhão' },
+    { value: 'MT', label: 'MT - Mato Grosso' },
+    { value: 'MS', label: 'MS - Mato Grosso do Sul' },
+    { value: 'MG', label: 'MG - Minas Gerais' },
+    { value: 'PA', label: 'PA - Pará' },
+    { value: 'PB', label: 'PB - Paraíba' },
+    { value: 'PR', label: 'PR - Paraná' },
+    { value: 'PE', label: 'PE - Pernambuco' },
+    { value: 'PI', label: 'PI - Piauí' },
+    { value: 'RJ', label: 'RJ - Rio de Janeiro' },
+    { value: 'RN', label: 'RN - Rio Grande do Norte' },
+    { value: 'RS', label: 'RS - Rio Grande do Sul' },
+    { value: 'RO', label: 'RO - Rondônia' },
+    { value: 'RR', label: 'RR - Roraima' },
+    { value: 'SC', label: 'SC - Santa Catarina' },
+    { value: 'SP', label: 'SP - São Paulo' },
+    { value: 'SE', label: 'SE - Sergipe' },
+    { value: 'TO', label: 'TO - Tocantins' }
+  ];
+
+  const handleApplyAdvancedSearch = () => {
+    setAppliedFilters({
+      nomeCnpj: advNomeCnpj,
+      telefone: advTelefone,
+      email: advEmail,
+      endereco: advEndereco,
+      bairro: advBairro,
+      cidade: advCidade,
+      estado: advEstado,
+      segmento: advSegmento,
+      rede: advRede,
+      nomeContato: advNomeContato,
+      tag: advTag,
+    });
+  };
+
+  const handleHideAdvancedSearch = () => {
+    setShowAdvancedSearch(false);
+    setAppliedFilters(null);
+  };
+
   const filteredClients = useMemo(() => {
+    if (showAdvancedSearch && appliedFilters) {
+      return clients.filter(c => {
+        // Nome ou CNPJ
+        if (appliedFilters.nomeCnpj) {
+          const lower = appliedFilters.nomeCnpj.toLowerCase();
+          const matchName = c.name?.toLowerCase().includes(lower);
+          const matchLegal = c.legalName?.toLowerCase().includes(lower);
+          const matchCnpj = c.cnpj?.includes(appliedFilters.nomeCnpj);
+          if (!matchName && !matchLegal && !matchCnpj) return false;
+        }
+
+        // Telefone
+        if (appliedFilters.telefone) {
+          const lower = appliedFilters.telefone.toLowerCase();
+          const matchPhoneList = c.phones?.some(p => p.toLowerCase().includes(lower));
+          const matchContactPhone = c.contacts?.some(cont => cont.phones?.some(p => p.toLowerCase().includes(lower)));
+          if (!matchPhoneList && !matchContactPhone) return false;
+        }
+
+        // Email
+        if (appliedFilters.email) {
+          const lower = appliedFilters.email.toLowerCase();
+          const matchEmailList = c.emails?.some(e => e.toLowerCase().includes(lower));
+          const matchContactEmail = c.contacts?.some(cont => cont.emails?.some(e => e.toLowerCase().includes(lower)));
+          if (!matchEmailList && !matchContactEmail) return false;
+        }
+
+        // Endereço
+        if (appliedFilters.endereco) {
+          const lower = appliedFilters.endereco.toLowerCase();
+          const matchAddr = c.address?.endereco?.toLowerCase().includes(lower) || c.location?.toLowerCase().includes(lower);
+          if (!matchAddr) return false;
+        }
+
+        // Bairro
+        if (appliedFilters.bairro) {
+          const lower = appliedFilters.bairro.toLowerCase();
+          const matchBairro = c.address?.bairro?.toLowerCase().includes(lower);
+          if (!matchBairro) return false;
+        }
+
+        // Cidade
+        if (appliedFilters.cidade) {
+          const lower = appliedFilters.cidade.toLowerCase();
+          const matchCidade = c.address?.cidade?.toLowerCase().includes(lower) || c.location?.toLowerCase().includes(lower);
+          if (!matchCidade) return false;
+        }
+
+        // Estado
+        if (appliedFilters.estado) {
+          const lower = appliedFilters.estado.toLowerCase();
+          const matchEstado = c.address?.estado?.toLowerCase() === lower || c.location?.toLowerCase().includes(lower);
+          if (!matchEstado) return false;
+        }
+
+        // Nome contato
+        if (appliedFilters.nomeContato) {
+          const lower = appliedFilters.nomeContato.toLowerCase();
+          const matchContact = c.contacts?.some(cont => cont.name?.toLowerCase().includes(lower));
+          if (!matchContact) return false;
+        }
+
+        return true;
+      });
+    }
+
     if (!searchTerm) return clients;
     const lower = searchTerm.toLowerCase();
     return clients.filter(c => 
@@ -26,7 +172,7 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
       c.legalName.toLowerCase().includes(lower) || 
       c.cnpj.includes(searchTerm)
     );
-  }, [clients, searchTerm]);
+  }, [clients, searchTerm, showAdvancedSearch, appliedFilters]);
 
   const stats = useMemo(() => {
     return {
@@ -121,11 +267,161 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
                 className="w-full sm:w-64 border border-slate-300 rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:border-[#4c3780]"
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <button className="text-[#4c3780] text-xs mt-1 absolute -bottom-5 right-0 hover:underline">
+              <button 
+                onClick={() => setShowAdvancedSearch(true)}
+                className="text-[#4c3780] text-xs mt-1 absolute -bottom-5 right-0 hover:underline"
+              >
                 Pesquise por cidade, estado, etc.
               </button>
             </div>
           </div>
+
+          {showAdvancedSearch && (
+            <div className="bg-slate-50 border border-slate-200 rounded p-5 mb-6 space-y-4 animate-in fade-in duration-200 shadow-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Nome ou CNPJ */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome ou CNPJ:</label>
+                  <input 
+                    type="text" 
+                    value={advNomeCnpj}
+                    onChange={(e) => setAdvNomeCnpj(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+
+                {/* Telefone & Email */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Telefone:</label>
+                  <input 
+                    type="text" 
+                    value={advTelefone}
+                    onChange={(e) => setAdvTelefone(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Email:</label>
+                  <input 
+                    type="text" 
+                    value={advEmail}
+                    onChange={(e) => setAdvEmail(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+
+                {/* Endereço & Bairro */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Endereço:</label>
+                  <input 
+                    type="text" 
+                    value={advEndereco}
+                    onChange={(e) => setAdvEndereco(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Bairro:</label>
+                  <input 
+                    type="text" 
+                    value={advBairro}
+                    onChange={(e) => setAdvBairro(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+
+                {/* Cidade & Estado */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Cidade:</label>
+                  <input 
+                    type="text" 
+                    value={advCidade}
+                    onChange={(e) => setAdvCidade(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Estado:</label>
+                  <select 
+                    value={advEstado}
+                    onChange={(e) => setAdvEstado(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                  >
+                    {BRAZILIAN_STATES.map(st => (
+                      <option key={st.value} value={st.value}>{st.label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Segmento & Rede */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Segmento:</label>
+                  <select 
+                    value={advSegmento}
+                    onChange={(e) => setAdvSegmento(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                  >
+                    <option value="Qualquer">Qualquer</option>
+                    <option value="Atacado">Atacado</option>
+                    <option value="Varejo">Varejo</option>
+                    <option value="Distribuidor">Distribuidor</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Rede:</label>
+                  <select 
+                    value={advRede}
+                    onChange={(e) => setAdvRede(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                  >
+                    <option value="Qualquer">Qualquer</option>
+                    <option value="Rede Principal">Rede Principal</option>
+                    <option value="Rede Secundária">Rede Secundária</option>
+                  </select>
+                </div>
+
+                {/* Nome do contato & Tag */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nome do contato:</label>
+                  <input 
+                    type="text" 
+                    value={advNomeContato}
+                    onChange={(e) => setAdvNomeContato(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Tag:</label>
+                  <input 
+                    type="text" 
+                    value={advTag}
+                    onChange={(e) => setAdvTag(e.target.value)}
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                  />
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-2">
+                <button 
+                  onClick={handleApplyAdvancedSearch}
+                  className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-5 py-2.5 rounded font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                >
+                  <Search size={14} /> Pesquisar
+                </button>
+
+                <button 
+                  onClick={handleHideAdvancedSearch}
+                  className="text-[#4c3780] hover:text-[#3d2c66] font-bold text-xs flex items-center gap-1 hover:underline cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="rotate-180">
+                    <path d="m6 9 6 6 6-6"/>
+                  </svg>
+                  Ocultar pesquisa avançada
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="mb-4">
             <button className="text-[#4c3780] font-bold text-sm flex items-center gap-1 hover:underline">
