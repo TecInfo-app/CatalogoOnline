@@ -124,7 +124,7 @@ export default function App() {
       case 'products':
         return <ProductsView userEmail={userEmail} />;
       case 'clients':
-        return <ClientsView userEmail={userEmail} />;
+        return <ClientsView userEmail={userEmail} onNavigate={setCurrentTab} />;
       case 'orders':
         return <OrdersView userEmail={userEmail} onNavigate={setCurrentTab} />;
       case 'agenda':

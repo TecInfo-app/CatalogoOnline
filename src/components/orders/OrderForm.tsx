@@ -71,6 +71,20 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       nextMonth.setDate(nextMonth.getDate() + 30);
       setDueDate(nextMonth.toISOString().split('T')[0]);
       setInstallments(1);
+
+      const preselectedClientStr = sessionStorage.getItem('preselected_order_client');
+      if (preselectedClientStr) {
+        try {
+          const preselected = JSON.parse(preselectedClientStr);
+          const matched = loadedClients.find(c => c.id === preselected.id);
+          if (matched) {
+            setSelectedClient(matched);
+          }
+          sessionStorage.removeItem('preselected_order_client');
+        } catch (e) {
+          console.error(e);
+        }
+      }
     }
   }, [userEmail, orderToEdit]);
 

@@ -8,7 +8,9 @@ type ViewState = 'list' | 'create';
 
 export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNavigate: (tab: string) => void }) {
   const [orders, setOrders] = useState<Order[]>([]);
-  const [viewState, setViewState] = useState<ViewState>('list');
+  const [viewState, setViewState] = useState<ViewState>(() => {
+    return sessionStorage.getItem('preselected_order_client') ? 'create' : 'list';
+  });
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
 

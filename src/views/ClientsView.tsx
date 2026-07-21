@@ -7,7 +7,7 @@ import { ClientDetail } from '../components/clients/ClientDetail';
 
 type ViewState = 'list' | 'create' | 'detail';
 
-export function ClientsView({ userEmail }: { userEmail: string }) {
+export function ClientsView({ userEmail, onNavigate }: { userEmail: string; onNavigate?: (tab: string) => void }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [viewState, setViewState] = useState<ViewState>('list');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -162,9 +162,11 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
       {viewState === 'detail' && selectedClient && (
         <ClientDetail 
           client={selectedClient} 
+          userEmail={userEmail}
           onBack={handleBackToList}
           onUpdate={handleUpdateClient}
           onEdit={handleEditClient}
+          onNavigate={onNavigate}
         />
       )}
 
