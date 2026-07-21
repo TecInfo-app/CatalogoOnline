@@ -42,8 +42,9 @@ export function AbacatePayCheckoutView({ orderId, sellerEmail }: AbacatePayCheck
     // Simulate processing time
     setTimeout(() => {
       setLoading(false);
-      // Redirect back with success flag and simulated=true
-      const returnUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderId}&simulated=true`;
+      // Redirect back with success flag and simulated=true using slug if available
+      const sellerId = storeProfile.slug || sellerEmail;
+      const returnUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerId}&pay=success&orderId=${orderId}&simulated=true`;
       window.location.href = returnUrl;
     }, 2500);
   };
@@ -352,7 +353,8 @@ export function AbacatePayCheckoutView({ orderId, sellerEmail }: AbacatePayCheck
             onClick={() => {
               const confirmCancel = window.confirm('Tem certeza de que deseja sair do checkout? Seu pedido não será finalizado.');
               if (confirmCancel) {
-                window.location.href = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}`;
+                const sellerId = storeProfile.slug || sellerEmail;
+                window.location.href = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerId}`;
               }
             }}
             className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-500 font-bold hover:text-slate-400 transition-colors"

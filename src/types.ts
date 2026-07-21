@@ -94,6 +94,7 @@ export interface StoreProfile {
   shopName: string;
   shopNumber: string;
   logoUrl?: string;
+  slug?: string;
   abacatePayEnabled?: boolean;
   abacatePayApiKey?: string;
   abacatePayWorkerUrl?: string;

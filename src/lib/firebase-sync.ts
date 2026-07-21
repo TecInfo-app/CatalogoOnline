@@ -257,6 +257,20 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
   };
 };
 
+export const getEmailBySlug = async (slug: string): Promise<string | null> => {
+  try {
+    const slugKey = slug.toLowerCase().trim();
+    const docRef = doc(db, 'slugs', slugKey);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      return snap.data().email || null;
+    }
+  } catch (e) {
+    console.error("Error looking up slug:", e);
+  }
+  return null;
+};
+
 let isPatched = false;
 
 export const patchLocalStorage = () => {
@@ -278,6 +292,18 @@ export const patchLocalStorage = () => {
             const parsed = JSON.parse(value);
             const docRef = doc(db, 'users', email, 'data', knownKey);
             setDoc(docRef, { value: parsed }).catch(e => console.error("Firebase sync error", e));
+
+            // Sync slug if this is store_profile
+            if (knownKey === 'store_profile' && parsed && typeof parsed === 'object') {
+              const slug = (parsed as any).slug;
+              if (slug && typeof slug === 'string') {
+                const slugKey = slug.toLowerCase().trim();
+                if (slugKey) {
+                  const slugDocRef = doc(db, 'slugs', slugKey);
+                  setDoc(slugDocRef, { email: email.toLowerCase() }).catch(e => console.error("Firebase slug sync error", e));
+                }
+              }
+            }
           } catch (e) {
             // Not valid JSON or something else
           }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Phone, Mail, FileText, Camera, Check, RotateCcw, Building, Hash, Image as ImageIcon } from 'lucide-react';
+import { User, Phone, Mail, FileText, Camera, Check, RotateCcw, Building, Hash, Image as ImageIcon, Copy, ExternalLink } from 'lucide-react';
 import { getStoreProfile, saveStoreProfile } from '../lib/store';
 import { StoreProfile } from '../types';
 
@@ -21,7 +21,34 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
 
   const [initialProfile, setInitialProfile] = useState<StoreProfile | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-_]/g, '');
+    
+    setProfile(prev => ({
+      ...prev,
+      slug: value
+    }));
+  };
+
+  const getFriendlyLink = (slugValue: string) => {
+    const origin = window.location.origin;
+    const pathname = window.location.pathname;
+    const slug = slugValue ? slugValue.trim().toLowerCase() : '';
+    return `${origin}${pathname}?view=catalog&seller=${slug || 'nome-da-sua-loja'}`;
+  };
+
+  const copyLinkToClipboard = () => {
+    const link = getFriendlyLink(profile.slug || '');
+    navigator.clipboard.writeText(link);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   useEffect(() => {
     const data = getStoreProfile(userEmail);
@@ -261,6 +288,49 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   placeholder="Identificador da Loja (ex: 1)"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
+                Link Amigável / Usuário da Loja (Slug)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="slug"
+                  value={profile.slug || ''}
+                  onChange={handleSlugChange}
+                  placeholder="ex: ciadochopp"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                />
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Escolha um identificador único sem espaços ou caracteres especiais (ex: ciadochopp). Seus clientes poderão usar este nome amigável para acessar sua loja!
+              </p>
+
+              {/* FRIENDLY URL CARD PREVIEW */}
+              <div className="mt-3 bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-2">
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Link do seu catálogo online:
+                </span>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                  <div className="flex-grow bg-white border border-slate-200/60 rounded-xl px-3 py-2.5 text-[11px] font-mono font-bold text-[#4c3780] break-all select-all flex items-center overflow-x-auto min-h-[38px] min-w-0">
+                    {getFriendlyLink(profile.slug || '')}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={copyLinkToClipboard}
+                    className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
+                      copiedLink
+                        ? "bg-emerald-600 text-white shadow-sm"
+                        : "bg-[#4c3780]/5 text-[#4c3780] hover:bg-[#4c3780]/10 border border-[#4c3780]/10"
+                    }`}
+                  >
+                    {copiedLink ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedLink ? 'Copiado!' : 'Copiar Link'}
+                  </button>
+                </div>
               </div>
             </div>
 

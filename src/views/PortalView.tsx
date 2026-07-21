@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Share2, Copy, Check, ExternalLink, QrCode, Smartphone, Sparkles, CheckCircle2, Eye, EyeOff } from 'lucide-react';
-import { getProducts } from '../lib/store';
+import { getProducts, getStoreProfile } from '../lib/store';
 import { Product } from '../types';
 import { cn } from '../lib/utils';
 
@@ -14,9 +14,11 @@ export function PortalView({ userEmail }: PortalViewProps) {
   const [inactiveProductsCount, setInactiveProductsCount] = useState(0);
   const [totalProductsCount, setTotalProductsCount] = useState(0);
 
-  // Generate the catalog sharing link dynamically
+  // Generate the catalog sharing link dynamically using slug if available
+  const profile = getStoreProfile(userEmail);
+  const sellerId = profile.slug ? profile.slug : userEmail;
   const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
-  const catalogUrl = `${window.location.origin}${basePath}?view=catalog&seller=${encodeURIComponent(userEmail)}`;
+  const catalogUrl = `${window.location.origin}${basePath}?view=catalog&seller=${encodeURIComponent(sellerId)}`;
 
   useEffect(() => {
     const products = getProducts(userEmail);

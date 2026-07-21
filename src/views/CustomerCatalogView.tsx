@@ -976,7 +976,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   localStorage.removeItem(`abacatepay_session_${orderIdParam}`);
                   
                   // Clean URL query params to keep clean
-                  const cleanUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}`;
+                  const sellerId = storeProfile.slug || sellerEmail;
+                  const cleanUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerId}`;
                   window.history.replaceState({}, document.title, cleanUrl);
                 }}
                 className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3.5 px-6 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
@@ -1016,7 +1017,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   type="button"
                   onClick={() => {
                     setIsVerifyingPayment(false);
-                    const cleanUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}`;
+                    const sellerId = storeProfile.slug || sellerEmail;
+                    const cleanUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerId}`;
                     window.location.href = cleanUrl;
                   }}
                   className="w-full bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-semibold py-3 px-4 rounded-xl text-xs transition-colors cursor-pointer"
@@ -2623,8 +2625,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                 },
                                 body: JSON.stringify({
                                   items: [{ id: productId, quantity: 1 }],
-                                  returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
-                                  completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                                  returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${storeProfile.slug || sellerEmail}&pay=success&orderId=${orderNum}`,
+                                  completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${storeProfile.slug || sellerEmail}&pay=success&orderId=${orderNum}`,
                                 })
                               });
                               const checkoutData = await checkoutRes.json();
@@ -2649,8 +2651,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                   price: Math.round(cartTotal * 100),
                                   description: `Compra de ${confirmName}`
                                 }],
-                                returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
-                                completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerEmail}&pay=success&orderId=${orderNum}`,
+                                returnUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${storeProfile.slug || sellerEmail}&pay=success&orderId=${orderNum}`,
+                                completionUrl: window.location.origin + window.location.pathname + `?view=catalog&seller=${storeProfile.slug || sellerEmail}&pay=success&orderId=${orderNum}`,
                               })
                             });
                             const checkoutData = await checkoutRes.json();
@@ -2673,7 +2675,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         window.location.href = realCheckoutUrl;
                       } else {
                         // Fallback to our elegant self-contained AbacatePay Simulated Checkout page
-                        window.location.href = window.location.origin + window.location.pathname + `?view=abacatepay-checkout&orderId=${orderNum}&seller=${sellerEmail}`;
+                        window.location.href = window.location.origin + window.location.pathname + `?view=abacatepay-checkout&orderId=${orderNum}&seller=${storeProfile.slug || sellerEmail}`;
                       }
                     } else {
                       // WhatsApp Flow

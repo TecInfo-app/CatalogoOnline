@@ -18,7 +18,7 @@ import { ProfileView } from './views/ProfileView';
 import { SettingsView } from './views/SettingsView';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { loadStoreData, startRealTimeSync } from './lib/firebase-sync';
+import { loadStoreData, startRealTimeSync, getEmailBySlug } from './lib/firebase-sync';
 
 export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -27,6 +27,7 @@ export default function App() {
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [loadingData, setLoadingData] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [resolvedSellerEmail, setResolvedSellerEmail] = useState<string | null>(null);
 
   // Check if we are in customer catalog mode
   const searchParams = new URLSearchParams(window.location.search);
@@ -35,10 +36,23 @@ export default function App() {
 
   useEffect(() => {
     if (isCatalogMode && sellerParam) {
-      // If we are just viewing the catalog, we load the seller's data
-      loadStoreData(sellerParam).then(() => {
+      const initCatalog = async () => {
+        let emailToLoad = sellerParam;
+        
+        // If it's not a valid email, treat it as a friendly slug and resolve it
+        if (sellerParam && !sellerParam.includes('@')) {
+          const resolvedEmail = await getEmailBySlug(sellerParam);
+          if (resolvedEmail) {
+            emailToLoad = resolvedEmail;
+          }
+        }
+        
+        setResolvedSellerEmail(emailToLoad);
+        await loadStoreData(emailToLoad);
         setCatalogLoaded(true);
-      });
+      };
+      
+      initCatalog();
     }
   }, [isCatalogMode, sellerParam]);
 
@@ -80,7 +94,7 @@ export default function App() {
         </div>
       );
     }
-    return <CustomerCatalogView sellerEmail={sellerParam} />;
+    return <CustomerCatalogView sellerEmail={resolvedSellerEmail || sellerParam} />;
   }
 
   if (loadingAuth || loadingData) {
