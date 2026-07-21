@@ -1,5 +1,7 @@
 import { Product, Client, Order, StoreProfile, Coupon } from '../types';
 import { products as initialProducts, clients as initialClients, orders as initialOrders } from '../data';
+import { db, auth } from './firebase';
+import { doc, setDoc } from 'firebase/firestore';
 
 const getStorageKey = (email: string, key: string) => `vercos_${email}_${key}`;
 
@@ -111,6 +113,19 @@ export const addClient = (email: string, client: Client) => {
   const clients = getClients(email);
   clients.push(client);
   localStorage.setItem(getStorageKey(email, 'clients'), JSON.stringify(clients));
+
+  try {
+    const currentUser = auth.currentUser;
+    const isOwner = currentUser && currentUser.email === email;
+    if (!isOwner && email) {
+      const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
+      setDoc(docRef, client).catch(err => {
+        console.error("Firestore write client error:", err);
+      });
+    }
+  } catch (err) {
+    console.error("Failed to sync new client to incoming_clients", err);
+  }
 };
 
 export const updateClient = (email: string, client: Client) => {
@@ -119,6 +134,19 @@ export const updateClient = (email: string, client: Client) => {
   if (index !== -1) {
     clients[index] = client;
     localStorage.setItem(getStorageKey(email, 'clients'), JSON.stringify(clients));
+  }
+
+  try {
+    const currentUser = auth.currentUser;
+    const isOwner = currentUser && currentUser.email === email;
+    if (!isOwner && email) {
+      const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
+      setDoc(docRef, client).catch(err => {
+        console.error("Firestore update client error:", err);
+      });
+    }
+  } catch (err) {
+    console.error("Failed to sync updated client to incoming_clients", err);
   }
 };
 
@@ -132,6 +160,19 @@ export const addOrder = (email: string, order: Order) => {
   const orders = getOrders(email);
   orders.push(order);
   localStorage.setItem(getStorageKey(email, 'orders'), JSON.stringify(orders));
+
+  try {
+    const currentUser = auth.currentUser;
+    const isOwner = currentUser && currentUser.email === email;
+    if (!isOwner && email) {
+      const docRef = doc(db, 'users', email, 'incoming_orders', order.id);
+      setDoc(docRef, order).catch(err => {
+        console.error("Firestore write order error:", err);
+      });
+    }
+  } catch (err) {
+    console.error("Failed to sync new order to incoming_orders", err);
+  }
 };
 
 export const updateOrder = (email: string, order: Order) => {

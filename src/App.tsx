@@ -18,7 +18,7 @@ import { ProfileView } from './views/ProfileView';
 import { SettingsView } from './views/SettingsView';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { loadStoreData } from './lib/firebase-sync';
+import { loadStoreData, startRealTimeSync } from './lib/firebase-sync';
 
 export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -59,6 +59,18 @@ export default function App() {
 
     return () => unsubscribe();
   }, [isCatalogMode]);
+
+  // Listen to incoming orders/clients in real-time instantly when owner is logged in
+  useEffect(() => {
+    if (!userEmail || isCatalogMode) return;
+
+    const unsubscribe = startRealTimeSync(userEmail, () => {
+      // Notify all views to refresh their local states
+      window.dispatchEvent(new Event('vercos_data_synced'));
+    });
+
+    return () => unsubscribe();
+  }, [userEmail, isCatalogMode]);
 
   if (isCatalogMode && sellerParam) {
     if (!catalogLoaded) {

@@ -109,18 +109,27 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
 
   // Initial load
   useEffect(() => {
-    // Load products
-    const loadedProducts = getProducts(userEmail);
-    setProducts(loadedProducts);
+    const loadAll = () => {
+      // Load products
+      const loadedProducts = getProducts(userEmail);
+      setProducts(loadedProducts);
 
-    // Load custom categories if exist
-    const savedCats = localStorage.getItem(getStorageKey('product_categories'));
-    if (savedCats) {
-      setCategories(JSON.parse(savedCats));
-    }
+      // Load custom categories if exist
+      const savedCats = localStorage.getItem(getStorageKey('product_categories'));
+      if (savedCats) {
+        setCategories(JSON.parse(savedCats));
+      }
 
-    // Load coupons
-    setCoupons(getCoupons(userEmail));
+      // Load coupons
+      setCoupons(getCoupons(userEmail));
+    };
+
+    loadAll();
+
+    window.addEventListener('vercos_data_synced', loadAll);
+    return () => {
+      window.removeEventListener('vercos_data_synced', loadAll);
+    };
   }, [userEmail]);
 
   const saveCouponsToStorage = (updatedCoupons: Coupon[]) => {

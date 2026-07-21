@@ -14,6 +14,15 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
 
   useEffect(() => {
     loadOrders();
+
+    const handleSync = () => {
+      loadOrders();
+    };
+
+    window.addEventListener('vercos_data_synced', handleSync);
+    return () => {
+      window.removeEventListener('vercos_data_synced', handleSync);
+    };
   }, [userEmail]);
 
   const loadOrders = () => {

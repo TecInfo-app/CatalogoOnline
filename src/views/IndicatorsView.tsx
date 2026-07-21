@@ -26,6 +26,18 @@ const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear())
 };
 
 export function IndicatorsView({ userEmail }: { userEmail: string }) {
+  const [syncVersion, setSyncVersion] = useState(0);
+
+  useEffect(() => {
+    const handleSync = () => {
+      setSyncVersion(prev => prev + 1);
+    };
+    window.addEventListener('vercos_data_synced', handleSync);
+    return () => {
+      window.removeEventListener('vercos_data_synced', handleSync);
+    };
+  }, []);
+
   const [activeTab, setActiveTab] = useState<'panel' | 'reports'>('panel');
   const [selectedReport, setSelectedReport] = useState<'summary' | 'clients' | 'products' | 'detailed'>('summary');
 
@@ -174,7 +186,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
       uniqueClientsCount: clientSalesList.length,
       totalItemsCount: productSalesList.reduce((acc, p) => acc + p.qty, 0)
     };
-  }, [userEmail, startDate, endDate]);
+  }, [userEmail, startDate, endDate, syncVersion]);
 
   useEffect(() => {
     const orders = getOrders(userEmail);
@@ -455,7 +467,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
     setPositivados(tempPosNovos.length + tempPosAtivos.length + tempPosInativosRecentes.length + tempPosInativosAntigos.length);
     setCatalogClientsCount(tempB2bComPedidos.length);
     setChartData(newChartData);
-  }, [userEmail, startDate, endDate]);
+  }, [userEmail, startDate, endDate, syncVersion]);
 
   return (
     <div className="animate-in fade-in duration-300 max-w-7xl mx-auto space-y-6">

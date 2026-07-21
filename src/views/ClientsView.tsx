@@ -16,6 +16,15 @@ export function ClientsView({ userEmail }: { userEmail: string }) {
 
   useEffect(() => {
     loadClients();
+
+    const handleSync = () => {
+      loadClients();
+    };
+
+    window.addEventListener('vercos_data_synced', handleSync);
+    return () => {
+      window.removeEventListener('vercos_data_synced', handleSync);
+    };
   }, [userEmail]);
 
   const loadClients = () => {
