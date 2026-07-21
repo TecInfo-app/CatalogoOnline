@@ -150,7 +150,8 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
         // Estado
         if (appliedFilters.estado) {
           const lower = appliedFilters.estado.toLowerCase();
-          const matchEstado = c.address?.estado?.toLowerCase() === lower || c.location?.toLowerCase().includes(lower);
+          const locationState = c.location?.split('-').pop()?.trim().toLowerCase();
+          const matchEstado = c.address?.estado?.toLowerCase() === lower || locationState === lower;
           if (!matchEstado) return false;
         }
 
