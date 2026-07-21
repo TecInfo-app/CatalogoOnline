@@ -1,6 +1,7 @@
 import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoreProfile } from '../../lib/store';
+import logoImg from '../../assets/logo.png';
 
 interface SidebarProps {
   currentTab: string;
@@ -12,7 +13,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileVersion }: SidebarProps) {
   const profile = userEmail ? getStoreProfile(userEmail) : null;
-  const shopName = profile?.shopName || 'Vercos';
+  const shopName = profile?.shopName || 'Vitrine Pay';
   const userName = profile?.name || userEmail?.split('@')[0] || 'Iranildo';
   const userDisplayEmail = profile?.email || userEmail || 'iranildo.jobs@gmail.com';
   const logoUrl = profile?.logoUrl;
@@ -40,9 +41,7 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
               referrerPolicy="no-referrer"
             />
           ) : (
-            <span className="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-black text-sm shrink-0">
-              {shopName.charAt(0).toUpperCase()}
-            </span>
+            <img src={logoImg} alt={shopName} className="w-8 h-8 rounded-lg object-contain shrink-0" />
           )}
           <span className="truncate">{shopName}</span>
         </h1>

@@ -417,7 +417,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       
       {/* HEADER ACTIONS */}
       <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
-        <button onClick={onCancel} className="text-[#4c3780] text-sm hover:underline font-bold">
+        <button onClick={onCancel} className="text-[#851b42] text-sm hover:underline font-bold">
           &larr; Voltar
         </button>
         <h2 className="text-xl font-bold text-slate-800">{orderToEdit ? 'Editar Pedido' : 'Novo Pedido'}</h2>
@@ -458,7 +458,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                    value={clientSearchTerm}
                    onChange={(e) => setClientSearchTerm(e.target.value)}
                    onFocus={() => setShowClientList(true)}
-                   className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                   className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
                  />
                )}
                {showClientList && !selectedClient && (
@@ -483,13 +483,13 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => onNavigate('clients')}
-                  className="border border-slate-300 text-[#4c3780] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                  className="border border-slate-300 text-[#851b42] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
                 >
                   Novo cliente
                 </button>
                 <button 
                   onClick={() => setShowClientList(!showClientList)}
-                  className="text-[#4c3780] text-sm hover:underline flex items-center gap-1 cursor-pointer"
+                  className="text-[#851b42] text-sm hover:underline flex items-center gap-1 cursor-pointer"
                 >
                   <List size={14} /> Listar todos clientes
                 </button>
@@ -507,7 +507,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             </h3>
           </div>
           <div className="pl-7">
-            <div className="text-sm font-medium text-[#4c3780]">
+            <div className="text-sm font-medium text-[#851b42]">
               {storeProfile.shopName || storeProfile.name || 'Minha Loja'}
             </div>
             {storeProfile.phone && (
@@ -533,7 +533,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 onFocus={() => setShowProductList(true)}
-                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
               />
               {showProductList && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded shadow-lg z-20 max-h-60 overflow-y-auto">
@@ -547,7 +547,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                          <span className="font-bold text-sm text-slate-800">{product.name}</span>
                          <span className="text-xs text-slate-500">R$ {product.price.toFixed(2).replace('.', ',')}</span>
                        </div>
-                       <Plus size={16} className="text-[#4c3780]" />
+                       <Plus size={16} className="text-[#851b42]" />
                      </div>
                    )) : (
                      <div className="p-3 text-sm text-slate-500 text-center">Nenhum produto encontrado.</div>
@@ -559,13 +559,13 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             <div className="flex items-center gap-4 mb-6">
               <button 
                 onClick={() => onNavigate('products')}
-                className="border border-slate-300 text-[#4c3780] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                className="border border-slate-300 text-[#851b42] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
               >
                 Novo produto
               </button>
               <button 
                 onClick={() => setShowProductList(!showProductList)}
-                className="text-[#4c3780] text-sm hover:underline flex items-center gap-1 cursor-pointer"
+                className="text-[#851b42] text-sm hover:underline flex items-center gap-1 cursor-pointer"
               >
                 <List size={14} /> Listar todos produtos
               </button>
@@ -637,7 +637,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             <button 
                               type="button"
                               onClick={() => openProductConfigModal(item.product)}
-                              className="text-[#4c3780] hover:text-[#3d2c66] p-1 rounded hover:bg-slate-100 transition-colors"
+                              className="text-[#851b42] hover:text-[#5e132e] p-1 rounded hover:bg-slate-100 transition-colors"
                               title="Editar especificações"
                             >
                               <Edit2 size={16} />
@@ -658,7 +658,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   <tfoot className="bg-slate-50 font-bold border-t border-slate-200">
                     <tr>
                       <td colSpan={3} className="p-3 text-right text-slate-600 uppercase tracking-wider">Total do Pedido</td>
-                      <td className="p-3 text-right text-lg text-[#4c3780]">R$ {totalValue.toFixed(2).replace('.', ',')}</td>
+                      <td className="p-3 text-right text-lg text-[#851b42]">R$ {totalValue.toFixed(2).replace('.', ',')}</td>
                       <td></td>
                     </tr>
                   </tfoot>
@@ -681,7 +681,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">* Número do pedido</label>
-                  <input type="text" value={orderNumber} onChange={e => setOrderNumber(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780]" />
+                  <input type="text" value={orderNumber} onChange={e => setOrderNumber(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">Data de emissão</label>
@@ -689,7 +689,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">* Tipo de pedido</label>
-                  <select value={orderType} onChange={e => setOrderType(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780]">
+                  <select value={orderType} onChange={e => setOrderType(e.target.value)} className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]">
                     <option value="Venda">Venda</option>
                     <option value="Compra">Compra</option>
                   </select>
@@ -709,7 +709,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                       <select 
                         value={paymentMethod} 
                         onChange={e => setPaymentMethod(e.target.value)} 
-                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780]"
+                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]"
                       >
                         <option value="">Selecione...</option>
                         <option value="Cartão">Cartão</option>
@@ -899,7 +899,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             <div className="pl-7 mt-6">
               <button 
                 onClick={() => setIsEditingDetails(true)}
-                className="border border-slate-300 text-[#4c3780] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
+                className="border border-slate-300 text-[#851b42] px-3 py-1.5 rounded text-xs font-bold hover:bg-slate-50 flex items-center gap-1 cursor-pointer"
               >
                 <Edit2 size={12} /> Alterar detalhes do pedido
               </button>
@@ -912,7 +912,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       <div className="fixed bottom-0 left-0 right-0 md:left-56 bg-slate-50 border-t border-slate-200 p-4 flex flex-wrap gap-3 z-30 justify-between sm:justify-start items-center">
         <button 
           onClick={handleGenerateOrder}
-          className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-6 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm shrink-0"
+          className="bg-[#851b42] hover:bg-[#5e132e] text-white px-6 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-sm shrink-0"
         >
           <Check size={16} /> {orderToEdit ? 'Salvar alterações' : 'Gerar pedido'}
         </button>
@@ -965,7 +965,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           <div className="text-right">
             <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">Vendedor</p>
             <p className="font-semibold text-slate-700 mt-0.5">{storeProfile.name || 'Vendedor'}</p>
-            <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#4c3780]">{paymentMethod || 'Não informado'}</span></p>
+            <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#851b42]">{paymentMethod || 'Não informado'}</span></p>
           </div>
         </div>
 
@@ -1034,7 +1034,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         {/* RODAPÉ DO COMPROVANTE */}
         <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-6 mt-8">
           <p>Obrigado pela preferência!</p>
-          <p className="mt-1">Sistema de Gestão Vercos</p>
+          <p className="mt-1">Sistema de Gestão Vitrine Pay</p>
         </div>
       </div>
 
@@ -1045,7 +1045,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-start gap-4">
               <div>
-                <span className="text-[10px] font-black text-[#4c3780] uppercase tracking-wider bg-[#4c3780]/5 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-black text-[#851b42] uppercase tracking-wider bg-[#851b42]/5 px-2 py-0.5 rounded">
                   CONFIGURAR PRODUTO
                 </span>
                 <h3 className="text-base font-bold text-slate-800 mt-1">
@@ -1085,7 +1085,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 <select
                   value={configuringPriceTable}
                   onChange={(e) => setConfiguringPriceTable(e.target.value)}
-                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 font-semibold focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780] outline-none cursor-pointer"
+                  className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 font-semibold focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42] outline-none cursor-pointer"
                 >
                   {getPriceTables(configuringBasePrice).map((t, idx) => (
                     <option key={idx} value={t.name}>{t.label}</option>
@@ -1097,7 +1097,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-slate-500 uppercase tracking-wide font-sans">Quantidade</label>
-                  <div className="flex border border-slate-300 rounded-lg overflow-hidden w-full bg-white focus-within:border-[#4c3780] focus-within:ring-1 focus-within:ring-[#4c3780]">
+                  <div className="flex border border-slate-300 rounded-lg overflow-hidden w-full bg-white focus-within:border-[#851b42] focus-within:ring-1 focus-within:ring-[#851b42]">
                     <input
                       type="number"
                       min="1"
@@ -1247,7 +1247,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   value={configuringAdditionalInfo}
                   onChange={(e) => setConfiguringAdditionalInfo(e.target.value)}
                   placeholder="Instruções específicas para faturamento, produção ou frete..."
-                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780] font-medium"
+                  className="w-full border border-slate-300 rounded-lg p-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42] font-medium"
                 />
               </div>
             </div>
@@ -1264,7 +1264,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <button
                 type="button"
                 onClick={handleConfirmAddProduct}
-                className="px-5 py-2.5 bg-[#4c3780] hover:bg-[#3d2c66] text-white rounded-lg text-xs font-bold transition-colors shadow-md cursor-pointer flex items-center gap-1.5"
+                className="px-5 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-lg text-xs font-bold transition-colors shadow-md cursor-pointer flex items-center gap-1.5"
               >
                 <Check size={14} /> Adicionar
               </button>

@@ -115,7 +115,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
   const [resolveDetails, setResolveDetails] = useState('');
 
   // Storage key for items
-  const getStorageKey = (key: string) => `vercos_${userEmail}_${key}`;
+  const getStorageKey = (key: string) => `vitrine_pay_${userEmail}_${key}`;
 
   // Local state for agenda items
   const [items, setItems] = useState<AgendaItem[]>([]);
@@ -478,7 +478,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
         <div className="flex-1">
           <h3 className="text-label-md text-primary font-bold">Que tal uma demonstração gratuita?</h3>
           <p className="text-body-sm text-on-primary-fixed-variant mt-1">
-            Fale com um de nossos especialistas e veja tudo que o Vercos pode fazer pelo seu negócio.
+            Fale com um de nossos especialistas e veja tudo que o Vitrine Pay pode fazer pelo seu negócio.
           </p>
         </div>
         <button className="p-1 rounded-full hover:bg-on-primary-fixed/10 transition-colors">
@@ -492,7 +492,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
           onClick={() => setActiveTab('tarefas')}
           className={`flex-1 py-3 px-4 flex gap-2 items-center justify-center border-b-2 font-bold text-sm transition-all ${
             activeTab === 'tarefas' 
-              ? 'border-[#4c3780] text-[#4c3780]' 
+              ? 'border-[#851b42] text-[#851b42]' 
               : 'border-transparent text-on-surface-variant hover:bg-surface-container-low'
           }`}
         >
@@ -503,7 +503,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
           onClick={() => setActiveTab('roteiros')}
           className={`flex-1 py-3 px-4 flex gap-2 items-center justify-center border-b-2 font-bold text-sm transition-all ${
             activeTab === 'roteiros' 
-              ? 'border-[#4c3780] text-[#4c3780]' 
+              ? 'border-[#851b42] text-[#851b42]' 
               : 'border-transparent text-on-surface-variant hover:bg-surface-container-low'
           }`}
         >
@@ -536,24 +536,24 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                     }}
                     className={`flex flex-col items-center min-w-[54px] gap-1.5 p-1.5 rounded-xl transition-all ${
                       isSelected 
-                        ? 'bg-[#4c3780]/15 border border-[#4c3780]/30 shadow-xs' 
+                        ? 'bg-[#851b42]/15 border border-[#851b42]/30 shadow-xs' 
                         : 'hover:bg-slate-100/70 border border-transparent'
                     } ${selectedCalendarDate && !isSelected ? 'opacity-60 hover:opacity-100' : ''}`}
                   >
                     <span className={`text-[10px] font-extrabold uppercase tracking-wider ${
                       isSelected 
-                        ? 'text-[#4c3780]' 
+                        ? 'text-[#851b42]' 
                         : isToday 
-                          ? 'text-[#4c3780] font-extrabold' 
+                          ? 'text-[#851b42] font-extrabold' 
                           : 'text-slate-400'
                     }`}>
                       {day}
                     </span>
                     <span className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
                       isSelected 
-                        ? 'bg-[#4c3780] text-white shadow-sm font-extrabold' 
+                        ? 'bg-[#851b42] text-white shadow-sm font-extrabold' 
                         : isToday 
-                          ? 'border-2 border-[#4c3780] text-[#4c3780] bg-white font-extrabold' 
+                          ? 'border-2 border-[#851b42] text-[#851b42] bg-white font-extrabold' 
                           : 'text-slate-700'
                     }`}>
                       {dateNum}
@@ -586,11 +586,11 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
               <h2 className="text-xl font-bold text-on-surface">Tarefas e Atividades</h2>
               <p className="text-xs text-on-surface-variant mt-0.5">Acompanhe as tarefas agendadas e realizadas.</p>
               {selectedCalendarDate && (
-                <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-[#4c3780]/10 border border-[#4c3780]/20 rounded-lg text-[10px] font-bold text-[#4c3780]">
+                <div className="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 bg-[#851b42]/10 border border-[#851b42]/20 rounded-lg text-[10px] font-bold text-[#851b42]">
                   <span>Mostrando apenas: {selectedCalendarDate}</span>
                   <button 
                     onClick={() => setSelectedCalendarDate(null)}
-                    className="p-0.5 hover:bg-[#4c3780]/20 rounded-full transition-colors flex items-center justify-center"
+                    className="p-0.5 hover:bg-[#851b42]/20 rounded-full transition-colors flex items-center justify-center"
                     title="Limpar data"
                   >
                     <X size={10} strokeWidth={3} />
@@ -726,7 +726,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                     setRouteClients([]);
                     setShowCreateRoute(true);
                   }}
-                  className="bg-[#4c3780] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#3d2c67] transition-all flex items-center gap-1.5 shadow-sm"
+                  className="bg-[#851b42] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#3d2c67] transition-all flex items-center gap-1.5 shadow-sm"
                 >
                   Criar roteiro
                 </button>
@@ -766,8 +766,8 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                           <td className="py-3 px-2">{getDayOfWeekBR(route.date)}</td>
                           <td className="py-3 px-2">{route.clients.length} {route.clients.length === 1 ? 'cliente' : 'clientes'}</td>
                           <td className="py-3 px-2">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${route.active ? 'bg-[#f5f2f9] text-[#4c3780]' : 'bg-slate-100 text-slate-500'}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${route.active ? 'bg-[#4c3780]' : 'bg-slate-400'}`}></span>
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${route.active ? 'bg-[#f5f2f9] text-[#851b42]' : 'bg-slate-100 text-slate-500'}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${route.active ? 'bg-[#851b42]' : 'bg-slate-400'}`}></span>
                               {route.active ? 'Ativo' : 'Inativo'}
                             </span>
                           </td>
@@ -784,7 +784,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                                   setRouteClients(route.clients);
                                   setShowCreateRoute(true);
                                 }}
-                                className="p-1.5 text-slate-400 hover:text-[#4c3780] hover:bg-slate-100 rounded-lg transition-all"
+                                className="p-1.5 text-slate-400 hover:text-[#851b42] hover:bg-slate-100 rounded-lg transition-all"
                                 title="Editar"
                               >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
@@ -863,7 +863,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                     <button
                       type="button"
                       onClick={() => setRouteActive(!routeActive)}
-                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${routeActive ? 'bg-[#4c3780]' : 'bg-slate-200'}`}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${routeActive ? 'bg-[#851b42]' : 'bg-slate-200'}`}
                     >
                       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${routeActive ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -916,7 +916,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                         <button
                           type="button"
                           onClick={() => setShowAddClientsModal(true)}
-                          className="text-xs font-bold text-[#4c3780] hover:underline flex items-center gap-1"
+                          className="text-xs font-bold text-[#851b42] hover:underline flex items-center gap-1"
                         >
                           <Plus size={14} /> Alterar seleção
                         </button>
@@ -928,7 +928,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                         return (
                           <div key={clientId} className="bg-white border border-slate-100 rounded-xl p-3 flex items-center justify-between shadow-xs">
                             <div className="flex items-center gap-3">
-                              <span className="w-6 h-6 rounded-full bg-[#f5f2f9] text-[#4c3780] flex items-center justify-center text-xs font-extrabold">
+                              <span className="w-6 h-6 rounded-full bg-[#f5f2f9] text-[#851b42] flex items-center justify-center text-xs font-extrabold">
                                 {idx + 1}º
                               </span>
                               <div>
@@ -988,10 +988,10 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                       onClick={() => setShowAddClientsModal(true)}
                       className="flex flex-col items-center gap-2 group"
                     >
-                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-lg group-hover:bg-[#f5f2f9] group-hover:text-[#4c3780] transition-colors">
+                      <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-lg group-hover:bg-[#f5f2f9] group-hover:text-[#851b42] transition-colors">
                         +
                       </div>
-                      <span className="text-xs font-bold text-slate-500 tracking-tight group-hover:text-[#4c3780] transition-colors">Adicionar clientes</span>
+                      <span className="text-xs font-bold text-slate-500 tracking-tight group-hover:text-[#851b42] transition-colors">Adicionar clientes</span>
                     </button>
                   )}
 
@@ -1006,7 +1006,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
               <div className="flex gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="submit"
-                  className="bg-[#4c3780] hover:bg-[#3d2c67] text-white font-bold py-3 px-6 rounded-xl text-sm shadow-md transition-all"
+                  className="bg-[#851b42] hover:bg-[#3d2c67] text-white font-bold py-3 px-6 rounded-xl text-sm shadow-md transition-all"
                 >
                   Salvar
                 </button>
@@ -1356,28 +1356,28 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                     <button
                       type="button"
                       onClick={() => handleSelectPeriodType('all')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'all' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#4c3780]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'all' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#851b42]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       Todo o período
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSelectPeriodType('today')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'today' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#4c3780]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'today' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#851b42]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       Hoje
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSelectPeriodType('week')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'week' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#4c3780]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'week' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#851b42]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       Esta Semana
                     </button>
                     <button
                       type="button"
                       onClick={() => handleSelectPeriodType('month')}
-                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'month' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#4c3780]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                      className={`px-3 py-2 text-xs font-semibold rounded-lg border transition-all ${selectedPeriodType === 'month' ? 'bg-[#f5f2f9] border-[#e5dfec] text-[#851b42]' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
                       Este Mês
                     </button>
@@ -1388,7 +1388,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                       setSelectedPeriodType('custom');
                       setShowCustomPeriod(!showCustomPeriod);
                     }}
-                    className={`w-full border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-bold cursor-pointer transition-all ${selectedPeriodType === 'custom' ? 'bg-[#f5f2f9]/60 border-[#e5dfec] text-[#4c3780]' : 'bg-white border-slate-200 text-[#4c3780] hover:bg-slate-50/30'}`}
+                    className={`w-full border rounded-xl px-4 py-2.5 flex items-center justify-between text-sm font-bold cursor-pointer transition-all ${selectedPeriodType === 'custom' ? 'bg-[#f5f2f9]/60 border-[#e5dfec] text-[#851b42]' : 'bg-white border-slate-200 text-[#851b42] hover:bg-slate-50/30'}`}
                   >
                     <div className="flex items-center gap-2.5">
                       <CalendarDays size={18} className="text-primary" />
@@ -1590,7 +1590,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                             setRouteClients([...routeClients, c.id]);
                           }
                         }}
-                        className="rounded border-slate-300 text-[#4c3780] focus:ring-[#4c3780] w-4 h-4"
+                        className="rounded border-slate-300 text-[#851b42] focus:ring-[#851b42] w-4 h-4"
                       />
                       <div className="space-y-0.5">
                         <span className="text-xs font-bold text-slate-800 block">{c.name}</span>
@@ -1610,7 +1610,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
             <div className="px-6 py-4 border-t border-slate-100 flex gap-3 bg-slate-50/50">
               <button
                 onClick={() => setShowAddClientsModal(false)}
-                className="flex-1 bg-[#4c3780] hover:bg-[#3d2c67] text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition-all"
+                className="flex-1 bg-[#851b42] hover:bg-[#3d2c67] text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition-all"
               >
                 Confirmar ({routeClients.length})
               </button>
@@ -1704,7 +1704,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
               {/* Form */}
               <form onSubmit={handleResolveSubmit} className="p-6 space-y-4">
                 <div className="bg-[#f5f2f9]/50 border border-[#e5dfec]/30 rounded-xl p-3 space-y-1">
-                  <span className="text-[10px] font-extrabold text-[#4c3780] uppercase tracking-wider block">Cliente</span>
+                  <span className="text-[10px] font-extrabold text-[#851b42] uppercase tracking-wider block">Cliente</span>
                   <span className="text-xs font-bold text-slate-800 block">{item.clientName}</span>
                   {item.details && (
                     <span className="text-[11px] text-slate-500 italic block mt-1">"{item.details}"</span>

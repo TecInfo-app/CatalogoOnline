@@ -53,7 +53,7 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
               className={cn(
                 "flex flex-col items-center justify-center pt-1 w-full h-full rounded-lg transition-colors px-1 cursor-pointer",
                 isActive 
-                  ? "text-[#4c3780] border-t-2 border-[#4c3780] bg-[#4c3780]/5" 
+                  ? "text-[#851b42] border-t-2 border-[#851b42] bg-[#851b42]/5" 
                   : "text-on-surface-variant hover:bg-surface-container-low"
               )}
             >
@@ -78,7 +78,7 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Menu size={18} className="text-[#4c3780]" />
+                <Menu size={18} className="text-[#851b42]" />
                 <h3 className="text-sm font-black text-slate-800">Mais Opções</h3>
               </div>
               <button 
@@ -113,13 +113,13 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
                     className={cn(
                       "flex items-center gap-3 p-3 rounded-2xl border text-left transition-all cursor-pointer",
                       isActive
-                        ? "bg-[#4c3780]/10 border-[#4c3780]/20 text-[#4c3780] font-black"
+                        ? "bg-[#851b42]/10 border-[#851b42]/20 text-[#851b42] font-black"
                         : "bg-slate-50/50 border-slate-100 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold"
                     )}
                   >
                     <div className={cn(
                       "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
-                      isActive ? "bg-[#4c3780] text-white" : "bg-slate-100 text-slate-500"
+                      isActive ? "bg-[#851b42] text-white" : "bg-slate-100 text-slate-500"
                     )}>
                       <MIcon size={16} />
                     </div>

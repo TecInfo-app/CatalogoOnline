@@ -223,7 +223,7 @@ export function ProductFormModal({
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-          <h2 className="text-sm font-bold text-[#4c3780] uppercase tracking-wider">
+          <h2 className="text-sm font-bold text-[#851b42] uppercase tracking-wider">
             {productToEdit ? 'Editar Produto' : 'Novo Produto'}
           </h2>
           <button 
@@ -244,7 +244,7 @@ export function ProductFormModal({
             {/* Image Selector Column */}
             <div className="md:col-span-3 flex flex-col items-center gap-3">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider self-start">Imagem do Produto</span>
-              <div className="relative w-full aspect-square bg-slate-50 border-2 border-dashed border-slate-200 hover:border-[#4c3780]/40 rounded-xl flex flex-col items-center justify-center overflow-hidden transition-all group">
+              <div className="relative w-full aspect-square bg-slate-50 border-2 border-dashed border-slate-200 hover:border-[#851b42]/40 rounded-xl flex flex-col items-center justify-center overflow-hidden transition-all group">
                 {imageUrl ? (
                   <>
                     <img 
@@ -270,7 +270,7 @@ export function ProductFormModal({
                   </>
                 ) : (
                   <label className="cursor-pointer flex flex-col items-center justify-center p-4 text-center">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2 group-hover:text-[#4c3780] group-hover:bg-[#4c3780]/5 transition-all">
+                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-2 group-hover:text-[#851b42] group-hover:bg-[#851b42]/5 transition-all">
                       <Upload size={18} />
                     </div>
                     <span className="text-[11px] font-bold text-slate-600">Inserir do Dispositivo</span>
@@ -281,7 +281,7 @@ export function ProductFormModal({
               </div>
 
               {/* device upload trigger helper */}
-              <label className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 border border-slate-200 hover:border-[#4c3780]/30 hover:bg-[#4c3780]/5 text-slate-700 hover:text-[#4c3780] rounded-xl cursor-pointer text-xs font-bold transition-all shadow-2xs">
+              <label className="w-full flex items-center justify-center gap-1.5 py-2 px-3 bg-slate-100 border border-slate-200 hover:border-[#851b42]/30 hover:bg-[#851b42]/5 text-slate-700 hover:text-[#851b42] rounded-xl cursor-pointer text-xs font-bold transition-all shadow-2xs">
                 <Upload size={13} />
                 <span>Escolher do Dispositivo</span>
                 <input type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
@@ -297,7 +297,7 @@ export function ProductFormModal({
                       type="button"
                       onClick={() => setImageUrl(img)}
                       className={`w-8 h-8 rounded-md overflow-hidden border-2 transition-all ${
-                        imageUrl === img ? 'border-[#4c3780] scale-105' : 'border-transparent hover:scale-105'
+                        imageUrl === img ? 'border-[#851b42] scale-105' : 'border-transparent hover:scale-105'
                       }`}
                     >
                       <img src={img} alt="Preset" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
@@ -320,7 +320,7 @@ export function ProductFormModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Cama Pet Formato Toca"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all font-semibold"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all font-semibold"
                   required
                 />
               </div>
@@ -335,7 +335,7 @@ export function ProductFormModal({
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
                   placeholder="SKU-001"
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all font-mono"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all font-mono"
                 />
               </div>
 
@@ -349,7 +349,7 @@ export function ProductFormModal({
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
                   placeholder="Kg, Cx, Un, Pç, etc."
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all font-semibold"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all font-semibold"
                 />
               </div>
 
@@ -363,7 +363,7 @@ export function ProductFormModal({
                   value={multiple}
                   onChange={(e) => setMultiple(Math.max(1, parseInt(e.target.value) || 1))}
                   min={1}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all font-semibold"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all font-semibold"
                 />
               </div>
 
@@ -379,13 +379,13 @@ export function ProductFormModal({
                       value={newCategoryName}
                       onChange={(e) => setNewCategoryName(e.target.value)}
                       placeholder="Nova categoria..."
-                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] transition-all font-semibold"
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] transition-all font-semibold"
                       autoFocus
                     />
                     <button 
                       type="button"
                       onClick={handleCreateCategory}
-                      className="bg-[#4c3780] hover:bg-[#3c2a68] text-white px-3 rounded-xl text-xs font-bold transition-all"
+                      className="bg-[#851b42] hover:bg-[#5e132e] text-white px-3 rounded-xl text-xs font-bold transition-all"
                     >
                       Ok
                     </button>
@@ -403,7 +403,7 @@ export function ProductFormModal({
                       <select 
                         value={category}
                         onChange={(e) => setCategory(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all appearance-none font-semibold"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all appearance-none font-semibold"
                       >
                         {categories.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -433,7 +433,7 @@ export function ProductFormModal({
                     type="checkbox"
                     checked={isActive}
                     onChange={(e) => setIsActive(e.target.checked)}
-                    className="w-4 h-4 rounded border-slate-300 text-[#4c3780] focus:ring-[#4c3780]/30 cursor-pointer"
+                    className="w-4 h-4 rounded border-slate-300 text-[#851b42] focus:ring-[#851b42]/30 cursor-pointer"
                   />
                   <div className="text-left">
                     <p className="text-xs font-bold text-slate-700">Ativo no Catálogo</p>
@@ -460,7 +460,7 @@ export function ProductFormModal({
                   onClick={() => setActiveTab(tab.id as any)}
                   className={`pb-3 text-xs font-bold tracking-wider transition-all relative ${
                     activeTab === tab.id 
-                      ? 'text-[#4c3780] border-b-2 border-[#4c3780]' 
+                      ? 'text-[#851b42] border-b-2 border-[#851b42]' 
                       : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
@@ -484,7 +484,7 @@ export function ProductFormModal({
                     <select 
                       value={currency}
                       onChange={(e) => setCurrency(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-xs text-slate-700 outline-none focus:border-[#4c3780] appearance-none font-semibold"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-xs text-slate-700 outline-none focus:border-[#851b42] appearance-none font-semibold"
                     >
                       <option value="R$">R$ (Real)</option>
                       <option value="US$">US$ (Dólar)</option>
@@ -506,13 +506,13 @@ export function ProductFormModal({
                       value={minPrice || ''}
                       onChange={(e) => setMinPrice(parseFloat(e.target.value) || 0)}
                       placeholder="0,00"
-                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-[#4c3780] uppercase tracking-wider block">
+                  <label className="text-[10px] font-bold text-[#851b42] uppercase tracking-wider block">
                     * Preço de Tabela
                   </label>
                   <div className="relative flex items-center">
@@ -523,7 +523,7 @@ export function ProductFormModal({
                       value={price || ''}
                       onChange={(e) => setPrice(parseFloat(e.target.value) || 0)}
                       placeholder="0,00"
-                      className="w-full bg-white border border-[#4c3780] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold"
+                      className="w-full bg-white border border-[#851b42] rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold"
                       required
                     />
                   </div>
@@ -543,7 +543,7 @@ export function ProductFormModal({
                       type="number" 
                       value={stock}
                       onChange={(e) => setStock(parseInt(e.target.value) || 0)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                     />
                   </div>
 
@@ -553,7 +553,7 @@ export function ProductFormModal({
                         type="checkbox"
                         checked={isPromo}
                         onChange={(e) => setIsPromo(e.target.checked)}
-                        className="rounded border-slate-300 text-[#4c3780] focus:ring-[#4c3780]"
+                        className="rounded border-slate-300 text-[#851b42] focus:ring-[#851b42]"
                       />
                       <span className="text-xs font-semibold text-slate-700">Produto em Promoção</span>
                     </label>
@@ -582,7 +582,7 @@ export function ProductFormModal({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Escreva detalhes técnicos, comerciais ou notas gerais do produto..."
-                    className="w-full bg-white border border-slate-200 rounded-xl p-4 text-xs text-slate-700 outline-none focus:border-[#4c3780] resize-none"
+                    className="w-full bg-white border border-slate-200 rounded-xl p-4 text-xs text-slate-700 outline-none focus:border-[#851b42] resize-none"
                   ></textarea>
                 </div>
               </div>
@@ -601,7 +601,7 @@ export function ProductFormModal({
                       value={newVarName}
                       onChange={(e) => setNewVarName(e.target.value)}
                       placeholder="Ex: Tamanho"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                     />
                   </div>
                   <div className="sm:col-span-6 space-y-1.5">
@@ -613,14 +613,14 @@ export function ProductFormModal({
                       value={newVarValue}
                       onChange={(e) => setNewVarValue(e.target.value)}
                       placeholder="Ex: P, M, G, GG"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                     />
                   </div>
                   <div className="sm:col-span-2">
                     <button
                       type="button"
                       onClick={handleAddVariation}
-                      className="w-full bg-[#4c3780]/10 hover:bg-[#4c3780]/20 text-[#4c3780] font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
+                      className="w-full bg-[#851b42]/10 hover:bg-[#851b42]/20 text-[#851b42] font-bold py-2 px-3 rounded-lg text-xs transition-all flex items-center justify-center gap-1"
                     >
                       <Plus size={14} /> Adicionar
                     </button>
@@ -636,7 +636,7 @@ export function ProductFormModal({
                       {variations.map((v, idx) => (
                         <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3 flex justify-between items-center shadow-xs">
                           <div>
-                            <span className="text-xs font-bold text-[#4c3780] block">{v.name}</span>
+                            <span className="text-xs font-bold text-[#851b42] block">{v.name}</span>
                             <div className="flex gap-1 flex-wrap mt-1">
                               {v.values.map((val, i) => (
                                 <span key={i} className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
@@ -672,7 +672,7 @@ export function ProductFormModal({
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
                     placeholder="Ex: 0.450 kg"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                   />
                 </div>
 
@@ -685,7 +685,7 @@ export function ProductFormModal({
                     value={dimensions}
                     onChange={(e) => setDimensions(e.target.value)}
                     placeholder="Ex: 15 x 30 x 10 cm"
-                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] font-semibold"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] font-semibold"
                   />
                 </div>
               </div>
@@ -697,7 +697,7 @@ export function ProductFormModal({
           <div className="pt-4 flex flex-col sm:flex-row gap-3 border-t border-slate-100 bg-slate-50/50 -mx-6 -mb-6 p-6">
             <button
               type="submit"
-              className="bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1"
+              className="bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1"
             >
               ✓ Salvar
             </button>
@@ -705,7 +705,7 @@ export function ProductFormModal({
               <button
                 type="button"
                 onClick={(e) => handleSubmit(e, true)}
-                className="bg-[#4c3780]/10 hover:bg-[#4c3780]/20 text-[#4c3780] font-bold py-3 px-6 rounded-xl text-xs transition-all"
+                className="bg-[#851b42]/10 hover:bg-[#851b42]/20 text-[#851b42] font-bold py-3 px-6 rounded-xl text-xs transition-all"
               >
                 Salvar e cadastrar outro
               </button>

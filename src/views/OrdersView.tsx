@@ -21,9 +21,9 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
       loadOrders();
     };
 
-    window.addEventListener('vercos_data_synced', handleSync);
+    window.addEventListener('vitrine_pay_data_synced', handleSync);
     return () => {
-      window.removeEventListener('vercos_data_synced', handleSync);
+      window.removeEventListener('vitrine_pay_data_synced', handleSync);
     };
   }, [userEmail]);
 

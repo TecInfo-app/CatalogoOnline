@@ -105,7 +105,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   // Storage key for items
-  const getStorageKey = (key: string) => `vercos_${userEmail}_${key}`;
+  const getStorageKey = (key: string) => `vitrine_pay_${userEmail}_${key}`;
 
   // Initial load
   useEffect(() => {
@@ -126,9 +126,9 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
 
     loadAll();
 
-    window.addEventListener('vercos_data_synced', loadAll);
+    window.addEventListener('vitrine_pay_data_synced', loadAll);
     return () => {
-      window.removeEventListener('vercos_data_synced', loadAll);
+      window.removeEventListener('vitrine_pay_data_synced', loadAll);
     };
   }, [userEmail]);
 
@@ -326,7 +326,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             onClick={() => setTopMainTab('produtos')}
             className={cn(
               "text-sm pb-2 px-1 relative flex items-center gap-1.5 transition-colors",
-              topMainTab === 'produtos' ? "font-extrabold text-[#4c3780] border-b-2 border-[#4c3780]" : "font-semibold text-slate-400 hover:text-slate-600"
+              topMainTab === 'produtos' ? "font-extrabold text-[#851b42] border-b-2 border-[#851b42]" : "font-semibold text-slate-400 hover:text-slate-600"
             )}
           >
             <Package size={16} /> PRODUTOS
@@ -336,7 +336,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             onClick={() => setTopMainTab('promocoes')}
             className={cn(
               "text-sm pb-2 px-1 relative flex items-center gap-1.5 transition-colors",
-              topMainTab === 'promocoes' ? "font-extrabold text-[#4c3780] border-b-2 border-[#4c3780]" : "font-semibold text-slate-400 hover:text-slate-600"
+              topMainTab === 'promocoes' ? "font-extrabold text-[#851b42] border-b-2 border-[#851b42]" : "font-semibold text-slate-400 hover:text-slate-600"
             )}
           >
             <Sparkles size={16} /> PROMOÇÕES
@@ -350,7 +350,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs space-y-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total de Cupons</p>
-              <p className="text-xl font-black text-[#4c3780]">{coupons.length}</p>
+              <p className="text-xl font-black text-[#851b42]">{coupons.length}</p>
             </div>
             <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-xs space-y-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Promoções Ativas</p>
@@ -384,7 +384,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                 setCouponToEdit(null);
                 setIsCouponModalOpen(true);
               }}
-              className="bg-[#4c3780] hover:bg-[#3c2a68] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center cursor-pointer"
+              className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 shrink-0 self-stretch sm:self-auto justify-center cursor-pointer"
             >
               <Plus size={15} strokeWidth={2.5} /> Novo Cupom / Promoção
             </button>
@@ -406,7 +406,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                   setCouponToEdit(null);
                   setIsCouponModalOpen(true);
                 }}
-                className="bg-[#4c3780] hover:bg-[#3c2a68] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all mx-auto cursor-pointer"
+                className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all mx-auto cursor-pointer"
               >
                 Cadastrar Primeiro Cupom
               </button>
@@ -430,7 +430,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       "w-28 flex flex-col items-center justify-center text-white p-4 text-center shrink-0 border-r-2 border-dashed border-slate-100/40 relative select-none",
                       coupon.type === 'fidelidade' ? "bg-blue-500" :
                       coupon.type === 'aniversario' ? "bg-pink-500" :
-                      coupon.type === 'valor_pedido' ? "bg-amber-500" : "bg-[#4c3780]"
+                      coupon.type === 'valor_pedido' ? "bg-amber-500" : "bg-[#851b42]"
                     )}>
                       {/* Decorative ticket cutouts */}
                       <div className="absolute top-0 right-0 -mr-2 w-4 h-4 bg-slate-50 rounded-full" />
@@ -520,7 +520,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                               setCouponToEdit(coupon);
                               setIsCouponModalOpen(true);
                             }}
-                            className="w-7 h-7 rounded-lg border border-slate-100 hover:border-[#4c3780]/20 text-slate-500 hover:text-[#4c3780] hover:bg-purple-50/50 flex items-center justify-center transition-colors cursor-pointer"
+                            className="w-7 h-7 rounded-lg border border-slate-100 hover:border-[#851b42]/20 text-slate-500 hover:text-[#851b42] hover:bg-purple-50/50 flex items-center justify-center transition-colors cursor-pointer"
                             title="Editar"
                           >
                             <Edit size={12} />
@@ -585,7 +585,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               setProductToEdit(null);
               setIsFormModalOpen(true);
             }}
-            className="bg-[#4c3780] hover:bg-[#3c2a68] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/10 flex items-center gap-2"
+            className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/10 flex items-center gap-2"
           >
             <Plus size={15} strokeWidth={2.5} /> Cadastrar produto
           </button>
@@ -596,7 +596,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               setImportExportInitialTab('import');
               setIsImportExportOpen(true);
             }}
-            className="border border-[#4c3780]/30 hover:border-[#4c3780] text-[#4c3780] hover:bg-[#4c3780]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            className="border border-[#851b42]/30 hover:border-[#851b42] text-[#851b42] hover:bg-[#851b42]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <Upload size={14} /> Importar
           </button>
@@ -607,7 +607,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               setImportExportInitialTab('export');
               setIsImportExportOpen(true);
             }}
-            className="border border-[#4c3780]/30 hover:border-[#4c3780] text-[#4c3780] hover:bg-[#4c3780]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+            className="border border-[#851b42]/30 hover:border-[#851b42] text-[#851b42] hover:bg-[#851b42]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
           >
             <Download size={14} /> Exportar
           </button>
@@ -661,7 +661,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             <select
               value={statusFilter}
               onChange={(e: any) => setStatusFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-[#4c3780] appearance-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-[#851b42] appearance-none"
             >
               <option value="active">Exibir produtos ativos</option>
               <option value="all">Exibir todos os produtos</option>
@@ -675,7 +675,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-[#4c3780] appearance-none"
+              className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 pr-8 text-xs font-semibold text-slate-700 outline-none focus:border-[#851b42] appearance-none"
             >
               <option value="Todas">Todas as categorias</option>
               {categories.map(cat => (
@@ -693,7 +693,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Pesquise por código ou nome"
-              className="pl-9 pr-4 py-2 w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 outline-none focus:bg-white focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 transition-all"
+              className="pl-9 pr-4 py-2 w-full sm:w-56 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 outline-none focus:bg-white focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 transition-all"
             />
           </div>
 
@@ -704,7 +704,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               onClick={() => setViewMode('list')}
               className={cn(
                 "p-2 rounded-lg transition-all",
-                viewMode === 'list' ? "bg-white text-[#4c3780] shadow-xs font-bold" : "text-slate-400 hover:text-slate-600"
+                viewMode === 'list' ? "bg-white text-[#851b42] shadow-xs font-bold" : "text-slate-400 hover:text-slate-600"
               )}
               title="Visualização em Lista"
             >
@@ -715,7 +715,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               onClick={() => setViewMode('mosaic')}
               className={cn(
                 "p-2 rounded-lg transition-all",
-                viewMode === 'mosaic' ? "bg-white text-[#4c3780] shadow-xs font-bold" : "text-slate-400 hover:text-slate-600"
+                viewMode === 'mosaic' ? "bg-white text-[#851b42] shadow-xs font-bold" : "text-slate-400 hover:text-slate-600"
               )}
               title="Visualização em Mosaico"
             >
@@ -735,7 +735,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             className={cn(
               "p-4 rounded-xl border text-left transition-all duration-200 shadow-xs flex items-center justify-between group",
               stockSubFilter === 'all'
-                ? "bg-[#4c3780] border-[#4c3780] text-white"
+                ? "bg-[#851b42] border-[#851b42] text-white"
                 : "bg-white border-slate-100 text-slate-700 hover:border-slate-200"
             )}
           >
@@ -825,7 +825,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
               setStatusFilter('all');
               setStockSubFilter('all');
             }}
-            className="mt-4 bg-[#4c3780]/10 hover:bg-[#4c3780]/20 text-[#4c3780] font-bold px-4 py-2 rounded-xl text-xs transition-all"
+            className="mt-4 bg-[#851b42]/10 hover:bg-[#851b42]/20 text-[#851b42] font-bold px-4 py-2 rounded-xl text-xs transition-all"
           >
             Limpar Filtros
           </button>
@@ -835,7 +835,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in fade-in duration-300">
           <div className="p-4 bg-slate-50/40 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h3 className="text-xs font-extrabold text-[#4c3780] uppercase tracking-wider">Planilha de Verificação de Estoque</h3>
+              <h3 className="text-xs font-extrabold text-[#851b42] uppercase tracking-wider">Planilha de Verificação de Estoque</h3>
               <p className="text-[11px] text-slate-400 mt-0.5">Ajuste os valores diretamente nos botões para verificar o estoque que está OK ou em falta.</p>
             </div>
             <div className="flex gap-2">
@@ -920,7 +920,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
 
                       {/* NAME */}
                       <td className="py-3.5 px-4">
-                        <div className="font-bold text-[#4c3780] hover:underline text-left leading-snug">
+                        <div className="font-bold text-[#851b42] hover:underline text-left leading-snug">
                           {product.name}
                         </div>
                       </td>
@@ -954,7 +954,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                             min="0"
                             value={currentStock}
                             onChange={(e) => handleUpdateStock(product.id, parseInt(e.target.value) || 0)}
-                            className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-black text-slate-700 focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 outline-none"
+                            className="w-16 text-center border border-slate-200 rounded-lg py-1 text-xs font-black text-slate-700 focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 outline-none"
                           />
 
                           <button
@@ -1054,7 +1054,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                           type="button"
                           onClick={() => handleToggleActive(product.id)}
                           className={cn(
-                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#4c3780]/20",
+                            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#851b42]/20",
                             product.isActive !== false ? "bg-emerald-500" : "bg-slate-300"
                           )}
                           title={product.isActive !== false ? "Ativo no Catálogo (clique para ocultar)" : "Inativo no Catálogo (clique para exibir)"}
@@ -1082,7 +1082,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                               setProductToEdit(product);
                               setIsFormModalOpen(true);
                             }}
-                            className="font-bold text-[#4c3780] hover:underline text-left leading-snug group-hover:text-[#3c2a68]"
+                            className="font-bold text-[#851b42] hover:underline text-left leading-snug group-hover:text-[#5e132e]"
                           >
                             {product.name}
                           </button>
@@ -1104,7 +1104,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                         {hasVariations ? (
                           <div className="flex flex-wrap gap-1">
                             {product.variations!.slice(0, 2).map((v, i) => (
-                              <span key={i} className="text-[9px] bg-purple-50 text-[#4c3780] px-1.5 py-0.5 rounded border border-purple-100 font-semibold">
+                              <span key={i} className="text-[9px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded border border-purple-100 font-semibold">
                                 {v.name}: {v.values.join('/')}
                               </span>
                             ))}
@@ -1140,7 +1140,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       </td>
 
                       {/* Table Price */}
-                      <td className="py-3.5 px-4 text-right font-mono font-extrabold text-[#4c3780]">
+                      <td className="py-3.5 px-4 text-right font-mono font-extrabold text-[#851b42]">
                         R$ {product.price.toFixed(2).replace('.', ',')}
                       </td>
 
@@ -1153,7 +1153,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                               setProductToEdit(product);
                               setIsFormModalOpen(true);
                             }}
-                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-[#4c3780] rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-[#851b42] rounded-lg transition-colors"
                             title="Editar"
                           >
                             <Edit size={14} />
@@ -1272,7 +1272,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                         setProductToEdit(product);
                         setIsFormModalOpen(true);
                       }}
-                      className="text-xs font-bold text-slate-800 leading-snug line-clamp-2 hover:text-[#4c3780] hover:underline text-left block w-full"
+                      className="text-xs font-bold text-slate-800 leading-snug line-clamp-2 hover:text-[#851b42] hover:underline text-left block w-full"
                     >
                       {product.name}
                     </button>
@@ -1282,7 +1282,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                   {hasVariations && (
                     <div className="flex gap-1 flex-wrap">
                       {product.variations!.slice(0, 2).map((v, i) => (
-                        <span key={i} className="text-[8.5px] bg-purple-50 text-[#4c3780] px-1.5 py-0.5 rounded font-bold border border-purple-100">
+                        <span key={i} className="text-[8.5px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded font-bold border border-purple-100">
                           {v.name}: {v.values.join('/')}
                         </span>
                       ))}
@@ -1303,7 +1303,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                         </p>
                       )}
                       {!product.isPromo && <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">Preço Atacado</p>}
-                      <p className="text-sm font-black text-[#4c3780]">
+                      <p className="text-sm font-black text-[#851b42]">
                         R$ {product.price.toFixed(2).replace('.', ',')}
                       </p>
                     </div>
@@ -1328,7 +1328,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                           setProductToEdit(product);
                           setIsFormModalOpen(true);
                         }}
-                        className="w-8 h-8 rounded-lg border border-slate-200 hover:border-[#4c3780]/30 text-slate-600 hover:text-[#4c3780] hover:bg-purple-50 flex items-center justify-center transition-colors"
+                        className="w-8 h-8 rounded-lg border border-slate-200 hover:border-[#851b42]/30 text-slate-600 hover:text-[#851b42] hover:bg-purple-50 flex items-center justify-center transition-colors"
                         title="Editar"
                       >
                         <Edit size={13} />
@@ -1387,7 +1387,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
             <div className="p-6 border-b border-slate-100 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
-                  <Ticket size={18} className="text-[#4c3780]" />
+                  <Ticket size={18} className="text-[#851b42]" />
                   {couponToEdit ? 'Editar Promoção' : 'Nova Promoção / Cupom'}
                 </h3>
                 <p className="text-[11px] text-slate-400 mt-0.5">Configure as regras e descontos para oferecer aos clientes.</p>
@@ -1415,7 +1415,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                   placeholder="Ex: Cupom de Boas-vindas ou 10% de Fidelidade"
                   value={couponName}
                   onChange={(e) => setCouponName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
 
@@ -1431,7 +1431,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       setCouponCode('CUPOM' + Math.floor(100 + Math.random() * 900));
                     }
                   }}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 >
                   <option value="cupom">🎫 Cupom Manual (Cliente digita no carrinho)</option>
                   <option value="valor_pedido">💰 Desconto por Valor do Pedido (Automático no carrinho)</option>
@@ -1451,7 +1451,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       placeholder="Ex: BEMVINDO10"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value.toUpperCase().replace(/\s+/g, ''))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-mono font-bold uppercase"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-mono font-bold uppercase"
                     />
                   </div>
                   
@@ -1461,7 +1461,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       id="couponIsFirstOrderOnly"
                       checked={couponIsFirstOrderOnly}
                       onChange={(e) => setCouponIsFirstOrderOnly(e.target.checked)}
-                      className="w-4 h-4 rounded text-[#4c3780] focus:ring-[#4c3780]"
+                      className="w-4 h-4 rounded text-[#851b42] focus:ring-[#851b42]"
                     />
                     <label htmlFor="couponIsFirstOrderOnly" className="text-xs font-bold text-slate-600 select-none cursor-pointer">
                       Apenas para o primeiro pedido do cliente
@@ -1482,7 +1482,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                     value={couponMinOrdersRequired || ''}
                     onChange={(e) => setCouponMinOrdersRequired(parseInt(e.target.value) || 0)}
                     placeholder="Ex: 5 (cliente precisa de 5 pedidos feitos)"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-bold"
                   />
                 </div>
               )}
@@ -1497,7 +1497,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                     className={cn(
                       "py-2 px-4 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer",
                       couponDiscountType === 'percentage'
-                        ? "bg-purple-50 border-[#4c3780] text-[#4c3780]"
+                        ? "bg-purple-50 border-[#851b42] text-[#851b42]"
                         : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                     )}
                   >
@@ -1509,7 +1509,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                     className={cn(
                       "py-2 px-4 rounded-xl border text-xs font-bold transition-all text-center cursor-pointer",
                       couponDiscountType === 'fixed'
-                        ? "bg-purple-50 border-[#4c3780] text-[#4c3780]"
+                        ? "bg-purple-50 border-[#851b42] text-[#851b42]"
                         : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
                     )}
                   >
@@ -1532,7 +1532,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                   value={couponDiscountValue || ''}
                   onChange={(e) => setCouponDiscountValue(parseFloat(e.target.value) || 0)}
                   placeholder={couponDiscountType === 'percentage' ? 'Ex: 10' : 'Ex: 15,00'}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-bold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-bold"
                 />
               </div>
 
@@ -1548,7 +1548,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                     value={couponMinOrderValue || ''}
                     onChange={(e) => setCouponMinOrderValue(parseFloat(e.target.value) || 0)}
                     placeholder="Ex: 150,00"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-bold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-bold"
                   />
                 </div>
               )}
@@ -1560,7 +1560,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                   type="date"
                   value={couponExpiryDate}
                   onChange={(e) => setCouponExpiryDate(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
 
@@ -1616,7 +1616,7 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                     expiryDate: couponExpiryDate || undefined
                   });
                 }}
-                className="flex-1 px-4 py-2.5 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                className="flex-1 px-4 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl font-bold text-xs shadow-sm transition-colors cursor-pointer"
               >
                 Salvar Regra
               </button>

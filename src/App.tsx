@@ -80,7 +80,7 @@ export default function App() {
 
     const unsubscribe = startRealTimeSync(userEmail, () => {
       // Notify all views to refresh their local states
-      window.dispatchEvent(new Event('vercos_data_synced'));
+      window.dispatchEvent(new Event('vitrine_pay_data_synced'));
     });
 
     return () => unsubscribe();

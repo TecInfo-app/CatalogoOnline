@@ -32,9 +32,9 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
     const handleSync = () => {
       setSyncVersion(prev => prev + 1);
     };
-    window.addEventListener('vercos_data_synced', handleSync);
+    window.addEventListener('vitrine_pay_data_synced', handleSync);
     return () => {
-      window.removeEventListener('vercos_data_synced', handleSync);
+      window.removeEventListener('vitrine_pay_data_synced', handleSync);
     };
   }, []);
 
@@ -769,7 +769,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                 emptyText: curvaAbcData.purchasersCount === 0 ? 'Nenhum faturamento no período' : '', 
                 btn: 'Detalhar curva ABC', 
                 items: [
-                  {c: 'bg-[#4c3780]', t: `${curvaAbcData.listA.length} na Curva A`}, 
+                  {c: 'bg-[#851b42]', t: `${curvaAbcData.listA.length} na Curva A`}, 
                   {c: 'bg-[#8b5cf6]', t: `${curvaAbcData.listB.length} na Curva B`}, 
                   {c: 'bg-[#a78bfa]', t: `${curvaAbcData.listC.length} na Curva C`}, 
                   {c: 'bg-slate-300', t: `${curvaAbcData.totalClientsCount - curvaAbcData.purchasersCount} sem compras`}
@@ -1155,7 +1155,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                       <tbody className="divide-y divide-slate-100 text-sm">
                         {reportData.periodOrders.map((order, idx) => (
                           <tr key={idx} className="hover:bg-slate-50/50 print:bg-transparent">
-                            <td className="p-4 font-bold text-[#4c3780]">#{order.orderNumber}</td>
+                            <td className="p-4 font-bold text-[#851b42]">#{order.orderNumber}</td>
                             <td className="p-4 text-slate-600">{order.date}</td>
                             <td className="p-4 font-semibold text-slate-900">{order.clientName}</td>
                             <td className="p-4">
@@ -1234,7 +1234,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                   )}
                   {activeModal === 'abc' && (
                     <>
-                      A <span className="font-bold text-[#4c3780]">Curva ABC de Clientes</span> ajuda a identificar a relevância de cada cliente no seu faturamento acumulado do período selecionado.
+                      A <span className="font-bold text-[#851b42]">Curva ABC de Clientes</span> ajuda a identificar a relevância de cada cliente no seu faturamento acumulado do período selecionado.
                       <br /><span className="font-bold text-slate-900">● Classe A (Acumulado de 0% a 80%)</span>: Clientes de maior importância, responsáveis pela maior parte do faturamento.
                       <br /><span className="font-bold text-slate-900">● Classe B (Acumulado de 80% a 95%)</span>: Clientes de importância intermediária.
                       <br /><span className="font-bold text-slate-900">● Classe C (Acumulado de 95% a 100%)</span>: Clientes de menor faturamento individual ou sem compras.
@@ -1571,7 +1571,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                   <div className="flex items-center justify-between p-4 bg-slate-50 border border-slate-200 rounded-2xl">
                     <div className="space-y-1 pr-4">
                       <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded bg-[#4c3780] inline-block" />
+                        <span className="w-2 h-2 rounded bg-[#851b42] inline-block" />
                         Considerar Impostos no Cálculo
                       </h4>
                       <p className="text-[11px] text-slate-500 leading-normal">
@@ -1585,7 +1585,7 @@ export function IndicatorsView({ userEmail }: { userEmail: string }) {
                         onChange={(e) => setConsiderarImpostos(e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#4c3780]"></div>
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#851b42]"></div>
                     </label>
                   </div>
 

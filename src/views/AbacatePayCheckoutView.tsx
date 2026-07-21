@@ -307,7 +307,7 @@ export function AbacatePayCheckoutView({ orderId, sellerEmail }: AbacatePayCheck
           <div className="bg-[#111e14] border border-emerald-950/60 rounded-3xl p-6 space-y-4">
             <h3 className="text-xs font-black text-slate-300 uppercase tracking-wider border-b border-emerald-950/60 pb-3 flex items-center justify-between">
               <span>Resumo da compra</span>
-              <span className="text-[10px] font-bold text-[#4c3780] bg-purple-950/40 border border-purple-900/40 px-2 py-0.5 rounded-lg">#{orderId}</span>
+              <span className="text-[10px] font-bold text-[#851b42] bg-purple-950/40 border border-purple-900/40 px-2 py-0.5 rounded-lg">#{orderId}</span>
             </h3>
 
             {/* PRODUCT ITEMS LIST */}

@@ -60,7 +60,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         if (snap.exists()) {
           const data = snap.data().value;
           if (data !== undefined) {
-            localStorage.setItem(`vercos_${normEmail}_${key}`, JSON.stringify(data));
+            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(data));
           }
         }
       } catch (e) {
@@ -84,7 +84,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         const ordersCol = collection(db, 'users', normEmail, 'incoming_orders');
         const ordersSnap = await getDocs(ordersCol);
         if (!ordersSnap.empty) {
-          const storedOrdersKey = `vercos_${normEmail}_orders`;
+          const storedOrdersKey = `vitrine_pay_${normEmail}_orders`;
           let currentOrders: Order[] = [];
           const localData = localStorage.getItem(storedOrdersKey);
           if (localData) {
@@ -92,7 +92,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
           }
 
           // Also get products to update stocks
-          const storedProductsKey = `vercos_${normEmail}_products`;
+          const storedProductsKey = `vitrine_pay_${normEmail}_products`;
           let currentProducts: Product[] = [];
           const prodData = localStorage.getItem(storedProductsKey);
           if (prodData) {
@@ -148,7 +148,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         const clientsCol = collection(db, 'users', normEmail, 'incoming_clients');
         const clientsSnap = await getDocs(clientsCol);
         if (!clientsSnap.empty) {
-          const storedClientsKey = `vercos_${normEmail}_clients`;
+          const storedClientsKey = `vitrine_pay_${normEmail}_clients`;
           let currentClients: Client[] = [];
           const localData = localStorage.getItem(storedClientsKey);
           if (localData) {
@@ -189,7 +189,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
   const unsubscribeOrders = onSnapshot(ordersCol, async (snapshot) => {
     if (snapshot.empty) return;
 
-    const storedOrdersKey = `vercos_${normEmail}_orders`;
+    const storedOrdersKey = `vitrine_pay_${normEmail}_orders`;
     let currentOrders: Order[] = [];
     const localData = localStorage.getItem(storedOrdersKey);
     if (localData) {
@@ -200,7 +200,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
       }
     }
 
-    const storedProductsKey = `vercos_${normEmail}_products`;
+    const storedProductsKey = `vitrine_pay_${normEmail}_products`;
     let currentProducts: Product[] = [];
     const prodData = localStorage.getItem(storedProductsKey);
     if (prodData) {
@@ -268,7 +268,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
   const unsubscribeClients = onSnapshot(clientsCol, async (snapshot) => {
     if (snapshot.empty) return;
 
-    const storedClientsKey = `vercos_${normEmail}_clients`;
+    const storedClientsKey = `vitrine_pay_${normEmail}_clients`;
     let currentClients: Client[] = [];
     const localData = localStorage.getItem(storedClientsKey);
     if (localData) {
@@ -341,11 +341,11 @@ export const patchLocalStorage = () => {
     
     if (isSyncingFromFirebase) return;
 
-    if (key.startsWith('vercos_')) {
+    if (key.startsWith('vitrine_pay_')) {
       for (const knownKey of KNOWN_KEYS) {
         if (key.endsWith(`_${knownKey}`)) {
-          // Extract email which is in the middle: vercos_{email}_{knownKey}
-          const rawEmail = key.substring('vercos_'.length, key.length - `_${knownKey}`.length);
+          // Extract email which is in the middle: vitrine_pay_{email}_{knownKey}
+          const rawEmail = key.substring('vitrine_pay_'.length, key.length - `_${knownKey}`.length);
           const email = getNormalizedEmail(rawEmail);
           if (!email) {
             break;

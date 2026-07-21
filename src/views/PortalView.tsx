@@ -48,7 +48,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
       
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-1.5 pt-4">
-        <div className="flex items-center gap-1 text-[#4c3780]">
+        <div className="flex items-center gap-1 text-[#851b42]">
           <Share2 size={16} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Portal de Vendas</span>
         </div>
@@ -72,7 +72,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
                 </span>
                 <h3 className="text-sm font-extrabold text-slate-800">Seu Link de Divulgação Exclusivo</h3>
               </div>
-              <div className="w-10 h-10 rounded-full bg-purple-50 text-[#4c3780] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-full bg-purple-50 text-[#851b42] flex items-center justify-center">
                 <Share2 size={18} />
               </div>
             </div>
@@ -87,7 +87,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
                 type="text"
                 readOnly
                 value={catalogUrl}
-                className="flex-1 bg-transparent border-none outline-none text-xs font-mono font-bold text-[#4c3780] select-all px-2 overflow-x-auto"
+                className="flex-1 bg-transparent border-none outline-none text-xs font-mono font-bold text-[#851b42] select-all px-2 overflow-x-auto"
               />
               <button
                 type="button"
@@ -96,7 +96,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
                   "py-1.5 px-3.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer shrink-0",
                   copied 
                     ? "bg-emerald-600 text-white shadow-sm" 
-                    : "bg-white border border-slate-200 hover:border-[#4c3780]/30 hover:bg-[#4c3780]/5 text-slate-600 hover:text-[#4c3780]"
+                    : "bg-white border border-slate-200 hover:border-[#851b42]/30 hover:bg-[#851b42]/5 text-slate-600 hover:text-[#851b42]"
                 )}
               >
                 {copied ? <Check size={13} /> : <Copy size={13} />}
@@ -109,7 +109,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
               <button
                 type="button"
                 onClick={handleOpenCatalog}
-                className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <ExternalLink size={13} /> Abrir Catálogo
               </button>
@@ -132,7 +132,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
             <div className="space-y-4">
               {/* Step 1 */}
               <div className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#4c3780] font-black text-xs flex items-center justify-center shrink-0">1</div>
+                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#851b42] font-black text-xs flex items-center justify-center shrink-0">1</div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-800">Selecione a Visibilidade dos Produtos</h4>
                   <p className="text-[11px] text-slate-500 leading-normal">
@@ -143,7 +143,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
 
               {/* Step 2 */}
               <div className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#4c3780] font-black text-xs flex items-center justify-center shrink-0">2</div>
+                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#851b42] font-black text-xs flex items-center justify-center shrink-0">2</div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-800">Compartilhe com Seus Clientes</h4>
                   <p className="text-[11px] text-slate-500 leading-normal">
@@ -154,7 +154,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
 
               {/* Step 3 */}
               <div className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#4c3780] font-black text-xs flex items-center justify-center shrink-0">3</div>
+                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#851b42] font-black text-xs flex items-center justify-center shrink-0">3</div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-800">O Cliente Monta e Envia o Carrinho</h4>
                   <p className="text-[11px] text-slate-500 leading-normal">
@@ -165,7 +165,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
 
               {/* Step 4 */}
               <div className="flex gap-3">
-                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#4c3780] font-black text-xs flex items-center justify-center shrink-0">4</div>
+                <div className="w-6 h-6 rounded-full bg-purple-50 text-[#851b42] font-black text-xs flex items-center justify-center shrink-0">4</div>
                 <div className="space-y-1">
                   <h4 className="text-xs font-bold text-slate-800">Acompanhe Seus Novos Pedidos</h4>
                   <p className="text-[11px] text-slate-500 leading-normal">
@@ -203,8 +203,8 @@ export function PortalView({ userEmail }: PortalViewProps) {
               </div>
             </div>
 
-            <div className="bg-[#4c3780]/5 rounded-2xl p-4 border border-[#4c3780]/10 flex items-center justify-between text-xs">
-              <span className="font-bold text-[#4c3780]">Total de produtos cadastrados:</span>
+            <div className="bg-[#851b42]/5 rounded-2xl p-4 border border-[#851b42]/10 flex items-center justify-between text-xs">
+              <span className="font-bold text-[#851b42]">Total de produtos cadastrados:</span>
               <span className="font-extrabold text-slate-800">{totalProductsCount}</span>
             </div>
           </div>
@@ -223,17 +223,17 @@ export function PortalView({ userEmail }: PortalViewProps) {
               {/* Fake Client App Header */}
               <div className="bg-white border-b border-slate-100 p-2.5 flex justify-between items-center sticky top-0 shadow-3xs">
                 <div className="flex flex-col">
-                  <span className="text-[8px] font-black text-[#4c3780] uppercase tracking-wider">Vercos</span>
+                  <span className="text-[8px] font-black text-[#851b42] uppercase tracking-wider">Vitrine Pay</span>
                   <span className="text-[7.5px] font-bold text-slate-600 -mt-0.5 truncate max-w-[80px]">Catálogo</span>
                 </div>
-                <div className="w-5 h-5 rounded-full bg-[#4c3780] text-white flex items-center justify-center text-[8px] font-bold">
+                <div className="w-5 h-5 rounded-full bg-[#851b42] text-white flex items-center justify-center text-[8px] font-bold">
                   🛒
                 </div>
               </div>
 
               {/* Fake Catalog Products */}
               <div className="p-3 space-y-2 flex-grow">
-                <div className="bg-purple-100/40 p-2 rounded-lg border border-purple-200/50 text-[9px] font-bold text-[#4c3780] text-center">
+                <div className="bg-purple-100/40 p-2 rounded-lg border border-purple-200/50 text-[9px] font-bold text-[#851b42] text-center">
                   Visualização Mobile do Cliente
                 </div>
 
@@ -244,7 +244,7 @@ export function PortalView({ userEmail }: PortalViewProps) {
                       <span className="text-xl">🎒</span>
                     </div>
                     <p className="text-[8px] font-bold text-slate-800 line-clamp-1 mt-1">Mochila Executiva</p>
-                    <p className="text-[8px] font-black text-[#4c3780] mt-0.5">R$ 180,00</p>
+                    <p className="text-[8px] font-black text-[#851b42] mt-0.5">R$ 180,00</p>
                   </div>
 
                   {/* Fake product 2 */}
@@ -253,14 +253,14 @@ export function PortalView({ userEmail }: PortalViewProps) {
                       <span className="text-xl">🧥</span>
                     </div>
                     <p className="text-[8px] font-bold text-slate-800 line-clamp-1 mt-1">Sobretudo Couro</p>
-                    <p className="text-[8px] font-black text-[#4c3780] mt-0.5">R$ 499,00</p>
+                    <p className="text-[8px] font-black text-[#851b42] mt-0.5">R$ 499,00</p>
                   </div>
                 </div>
               </div>
 
               {/* Fake Footer */}
               <div className="bg-white p-2 text-center text-[7px] text-slate-400 border-t border-slate-100">
-                Vercos Catálogo Online
+                Vitrine Pay Catálogo Online
               </div>
 
             </div>

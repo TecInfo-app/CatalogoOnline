@@ -1,5 +1,6 @@
 import { UserCircle, Search, Menu, LogOut } from 'lucide-react';
 import { getStoreProfile } from '../../lib/store';
+import logoImg from '../../assets/logo.png';
 
 interface TopBarProps {
   userEmail?: string;
@@ -9,7 +10,7 @@ interface TopBarProps {
 
 export function TopBar({ userEmail, onLogout, profileVersion }: TopBarProps) {
   const profile = userEmail ? getStoreProfile(userEmail) : null;
-  const shopName = profile?.shopName || 'Vercos';
+  const shopName = profile?.shopName || 'Vitrine Pay';
   const logoUrl = profile?.logoUrl;
 
   return (
@@ -24,7 +25,7 @@ export function TopBar({ userEmail, onLogout, profileVersion }: TopBarProps) {
             referrerPolicy="no-referrer"
           />
         ) : (
-          <UserCircle size={24} className="shrink-0" />
+          <img src={logoImg} alt={shopName} className="w-6 h-6 rounded-md object-contain shrink-0" />
         )}
         <span className="text-headline-sm font-bold ml-1 truncate">{shopName}</span>
       </div>

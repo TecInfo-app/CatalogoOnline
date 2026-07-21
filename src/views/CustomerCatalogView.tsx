@@ -35,7 +35,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
   // Client authentication & state
   const [loggedInClient, setLoggedInClient] = useState<Client | null>(() => {
-    const saved = localStorage.getItem(`vercos_catalog_logged_in_client_${sellerEmail}`);
+    const saved = localStorage.getItem(`vitrine_pay_catalog_logged_in_client_${sellerEmail}`);
     return saved ? JSON.parse(saved) : null;
   });
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
@@ -155,7 +155,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
     // Listen for storage changes to update catalog in real-time if opened in another tab
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === `vercos_${sellerEmail}_products`) {
+      if (e.key === `vitrine_pay_${sellerEmail}_products`) {
         loadData();
       }
     };
@@ -713,7 +713,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         
         // Log them in automatically
         setLoggedInClient(newClient);
-        localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(newClient));
+        localStorage.setItem(`vitrine_pay_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(newClient));
       } else {
         // Find existing client to update details or auto-login
         if (existingClient) {
@@ -727,7 +727,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
           };
           updateClient(sellerEmail, updated);
           setLoggedInClient(updated);
-          localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(updated));
+          localStorage.setItem(`vitrine_pay_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(updated));
         }
       }
     } catch (err) {
@@ -835,7 +835,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
       if (found) {
         setLoggedInClient(found);
-        localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(found));
+        localStorage.setItem(`vitrine_pay_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(found));
         setOrdersVersion(v => v + 1);
         setIsLoginModalOpen(false);
         setLoginName('');
@@ -853,7 +853,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
   const handleLogout = () => {
     setLoggedInClient(null);
-    localStorage.removeItem(`vercos_catalog_logged_in_client_${sellerEmail}`);
+    localStorage.removeItem(`vitrine_pay_catalog_logged_in_client_${sellerEmail}`);
     handleResetCatalog();
   };
 
@@ -893,7 +893,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
     if (orderSuccess.paymentMethod) {
       text += `*PAGAMENTO:* ${orderSuccess.paymentMethod} ✅\n`;
     }
-    text += `\n_Pedido gerado via Vercos Catálogo Online_`;
+    text += `\n_Pedido gerado via Vitrine Pay Catálogo Online_`;
 
     const encoded = encodeURIComponent(text);
     const whatsappUrl = `https://wa.me/?text=${encoded}`;
@@ -963,7 +963,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   {verificationMessage}
                 </h2>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  O AbacatePay confirmou o recebimento do Pix/Cartão de <strong>R$ {formattedTotal}</strong> referente ao pedido <strong className="text-[#4c3780]">#{orderIdParam}</strong>.
+                  O AbacatePay confirmou o recebimento do Pix/Cartão de <strong>R$ {formattedTotal}</strong> referente ao pedido <strong className="text-[#851b42]">#{orderIdParam}</strong>.
                 </p>
               </div>
 
@@ -996,7 +996,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   const cleanUrl = window.location.origin + window.location.pathname + `?view=catalog&seller=${sellerId}`;
                   window.history.replaceState({}, document.title, cleanUrl);
                 }}
-                className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3.5 px-6 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3.5 px-6 rounded-xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
               >
                 <Check size={14} className="stroke-[2.5]" /> Confirmar Pedido e Enviar WhatsApp
               </button>
@@ -1025,7 +1025,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                     setVerificationStatus('success');
                     setVerificationMessage('Pagamento Confirmado Manualmente via API! 🎉');
                   }}
-                  className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors cursor-pointer"
+                  className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors cursor-pointer"
                 >
                   Simular Confirmação de API
                 </button>
@@ -1061,7 +1061,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
           <div className="space-y-2">
             <h1 className="text-xl font-extrabold text-slate-800">Pedido Enviado com Sucesso!</h1>
             <p className="text-xs text-slate-400">
-              Seu pedido <strong className="text-[#4c3780]">#{orderSuccess.orderNumber}</strong> foi registrado e enviado para o vendedor.
+              Seu pedido <strong className="text-[#851b42]">#{orderSuccess.orderNumber}</strong> foi registrado e enviado para o vendedor.
             </p>
           </div>
 
@@ -1097,7 +1097,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       
       {/* PREVIEW BANNER */}
       {isPreview && (
-        <div className="bg-[#4c3780] text-white px-4 py-2 flex items-center justify-between text-xs font-bold">
+        <div className="bg-[#851b42] text-white px-4 py-2 flex items-center justify-between text-xs font-bold">
           <div className="flex items-center gap-2">
             <span className="flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-2 w-2 rounded-full bg-emerald-400 opacity-75"></span>
@@ -1129,15 +1129,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-[#4c3780]/10 text-[#4c3780] flex items-center justify-center font-black text-xs">
+              <div className="w-9 h-9 rounded-full bg-[#851b42]/10 text-[#851b42] flex items-center justify-center font-black text-xs">
                 {(storeProfile.shopName || 'V').charAt(0).toUpperCase()}
               </div>
             )}
             <div className="flex flex-col">
               <div className="flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-black uppercase tracking-widest text-[#4c3780]">
-                  {storeProfile.shopName || 'Vercos'}
+                <span className="text-xs font-black uppercase tracking-widest text-[#851b42]">
+                  {storeProfile.shopName || 'Vitrine Pay'}
                 </span>
               </div>
             </div>
@@ -1151,7 +1151,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Pesquisar produto pelo nome, SKU ou descrição..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+              className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
             />
           </div>
 
@@ -1162,12 +1162,12 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 <button
                   type="button"
                   onClick={() => setIsOrdersModalOpen(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 bg-[#4c3780]/10 hover:bg-[#4c3780]/15 text-[#4c3780] rounded-full transition-all text-xs font-bold cursor-pointer"
+                  className="flex items-center gap-1.5 px-3 py-2 bg-[#851b42]/10 hover:bg-[#851b42]/15 text-[#851b42] rounded-full transition-all text-xs font-bold cursor-pointer"
                   title="Ver meu histórico de pedidos"
                 >
                   <User size={13} />
                   <span className="hidden sm:inline max-w-[100px] truncate">Olá, {loggedInClient.name.split(' ')[0]}</span>
-                  <span className="flex items-center gap-0.5 text-[#4c3780] text-[10px] bg-white px-1.5 py-0.5 rounded-full">
+                  <span className="flex items-center gap-0.5 text-[#851b42] text-[10px] bg-white px-1.5 py-0.5 rounded-full">
                     <History size={10} />
                     Pedidos
                   </span>
@@ -1188,7 +1188,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   setLoginError('');
                   setIsLoginModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#4c3780] hover:border-[#4c3780]/50 rounded-full transition-all text-xs font-bold cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 hover:text-[#851b42] hover:border-[#851b42]/50 rounded-full transition-all text-xs font-bold cursor-pointer"
               >
                 <LogIn size={13} />
                 <span>Entrar</span>
@@ -1197,7 +1197,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative flex items-center justify-center gap-2 px-4 py-2.5 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-full transition-all shadow-md group cursor-pointer"
+              className="relative flex items-center justify-center gap-2 px-4 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-full transition-all shadow-md group cursor-pointer"
             >
               <ShoppingCart size={15} className="group-hover:scale-110 transition-transform" />
               <span className="text-xs font-bold hidden sm:inline">Carrinho</span>
@@ -1221,7 +1221,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Pesquisar produtos..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+            className="w-full bg-slate-50 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
           />
         </div>
       </div>
@@ -1240,7 +1240,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 className={cn(
                   "px-4 py-1.5 rounded-full text-xs font-bold transition-all whitespace-nowrap cursor-pointer shadow-2xs border",
                   selectedCategory === cat 
-                    ? "bg-[#4c3780] text-white border-transparent" 
+                    ? "bg-[#851b42] text-white border-transparent" 
                     : "bg-white text-slate-500 hover:text-slate-800 border-slate-200/55"
                 )}
               >
@@ -1260,7 +1260,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             <button 
               type="button"
               onClick={() => { setSearchTerm(''); setSelectedCategory('Todos'); }}
-              className="text-xs text-[#4c3780] font-bold hover:underline"
+              className="text-xs text-[#851b42] font-bold hover:underline"
             >
               Limpar Filtros
             </button>
@@ -1308,7 +1308,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   <div className="p-3 flex flex-col flex-grow space-y-1.5 justify-between">
                     <div>
                       <span className="text-[9px] font-bold text-slate-400 uppercase font-mono block mb-0.5">{product.category}</span>
-                      <h3 className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-[#4c3780]">
+                      <h3 className="text-xs font-bold text-slate-800 line-clamp-2 leading-snug group-hover:text-[#851b42]">
                         {product.name}
                       </h3>
                       {product.description && (
@@ -1324,7 +1324,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                             R$ {product.originalPrice.toFixed(2).replace('.', ',')}
                           </p>
                         )}
-                        <p className="text-sm font-black text-[#4c3780]">
+                        <p className="text-sm font-black text-[#851b42]">
                           R$ {product.price.toFixed(2).replace('.', ',')} 
                           {product.unit && <span className="text-[10px] text-slate-400 font-semibold"> / {product.unit}</span>}
                         </p>
@@ -1338,7 +1338,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         className={cn(
                           "w-full font-bold py-2 px-3 rounded-xl text-[11px] transition-all cursor-pointer flex items-center justify-center gap-1 shadow-2xs",
                           inStock
-                            ? "bg-[#4c3780] hover:bg-[#3c2a68] text-white"
+                            ? "bg-[#851b42] hover:bg-[#5e132e] text-white"
                             : "bg-slate-100 text-slate-400 cursor-not-allowed"
                         )}
                       >
@@ -1356,7 +1356,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
       {/* FOOTER BAR FOR SELLER CONVENIENCE */}
       <footer className="bg-white border-t border-slate-100 py-4 px-6 text-center text-[10px] text-slate-400 font-medium">
-        <p>Vercos Catálogo do Cliente &bull; Fornecido em modo de teste e visualização.</p>
+        <p>Vitrine Pay Catálogo do Cliente &bull; Fornecido em modo de teste e visualização.</p>
       </footer>
 
       {/* PRODUCT SELECTION MODAL */}
@@ -1380,9 +1380,9 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             
             <div className="p-6 overflow-y-auto space-y-5">
               <div>
-                <p className="text-[10px] font-bold text-[#4c3780] uppercase tracking-widest mb-1">{productToView.category}</p>
+                <p className="text-[10px] font-bold text-[#851b42] uppercase tracking-widest mb-1">{productToView.category}</p>
                 <h3 className="text-lg font-black text-slate-800 leading-tight">{productToView.name}</h3>
-                <p className="text-xl font-black text-[#4c3780] mt-2">
+                <p className="text-xl font-black text-[#851b42] mt-2">
                   R$ {productToView.price.toFixed(2).replace('.', ',')}
                   {productToView.unit && <span className="text-sm font-semibold text-slate-400 ml-1">/ {productToView.unit}</span>}
                 </p>
@@ -1407,8 +1407,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                               className={cn(
                                 "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
                                 isSelected 
-                                  ? "bg-[#4c3780] text-white border-[#4c3780] shadow-sm"
-                                  : "bg-white text-slate-600 border-slate-200 hover:border-[#4c3780]/40 hover:bg-slate-50"
+                                  ? "bg-[#851b42] text-white border-[#851b42] shadow-sm"
+                                  : "bg-white text-slate-600 border-slate-200 hover:border-[#851b42]/40 hover:bg-slate-50"
                               )}
                             >
                               {val}
@@ -1470,7 +1470,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               <button
                 type="button"
                 onClick={() => handleAddToCart(productToView, selectedVariations, selectedQuantity)}
-                className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+                className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3.5 px-4 rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
               >
                 <ShoppingCart size={16} /> Adicionar ao Carrinho - R$ {(productToView.price * selectedQuantity).toFixed(2).replace('.', ',')}
               </button>
@@ -1491,7 +1491,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             
             {/* Drawer Header */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-1.5 text-[#4c3780]">
+              <div className="flex items-center gap-1.5 text-[#851b42]">
                 <ShoppingCart size={16} />
                 <h2 className="text-sm font-extrabold uppercase tracking-wider">Meu Carrinho</h2>
               </div>
@@ -1536,7 +1536,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         {itemVars && (
                           <p className="text-[9px] font-semibold text-slate-400">{itemVars}</p>
                         )}
-                        <p className="text-xs font-extrabold text-[#4c3780]">
+                        <p className="text-xs font-extrabold text-[#851b42]">
                           R$ {(product.price * item.quantity).toFixed(2).replace('.', ',')}
                         </p>
 
@@ -1582,7 +1582,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
               {cart.length > 0 && (
                 <div className="py-4 border-t border-slate-100 space-y-3">
                   <div className="flex items-center gap-1.5 text-slate-800">
-                    <Calendar size={14} className="text-[#4c3780]" />
+                    <Calendar size={14} className="text-[#851b42]" />
                     <h3 className="text-xs font-extrabold uppercase tracking-wider">Cupons & Promoções</h3>
                   </div>
 
@@ -1593,12 +1593,12 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={couponCodeInput}
                       onChange={(e) => setCouponCodeInput(e.target.value)}
                       placeholder="Código do Cupom (Ex: NATAL15)"
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all uppercase placeholder:normal-case font-bold"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all uppercase placeholder:normal-case font-bold"
                     />
                     <button
                       type="button"
                       onClick={handleApplyCouponCode}
-                      className="bg-[#4c3780] hover:bg-[#3c2a68] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all"
+                      className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded-xl text-xs font-bold transition-all"
                     >
                       Aplicar
                     </button>
@@ -1609,7 +1609,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
                   {/* Applied Coupon Info */}
                   {appliedCoupon && (
-                    <div className="flex justify-between items-center bg-purple-50 text-[#4c3780] rounded-xl px-3 py-2 border border-purple-100 text-xs font-semibold animate-in fade-in duration-200">
+                    <div className="flex justify-between items-center bg-purple-50 text-[#851b42] rounded-xl px-3 py-2 border border-purple-100 text-xs font-semibold animate-in fade-in duration-200">
                       <div className="flex items-center gap-1.5">
                         <Check size={14} className="text-purple-600" />
                         <span>Cupom "{appliedCoupon.code}" ativo (-{appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `R$ ${appliedCoupon.discountValue.toFixed(2).replace('.', ',')}`})</span>
@@ -1689,7 +1689,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                 className={cn(
                                   "w-full text-left p-2.5 rounded-xl border transition-all text-xs flex flex-col gap-1",
                                   isSelected || isAutoAppliedBday
-                                    ? "bg-purple-100/50 border-[#4c3780] text-[#4c3780] font-bold" 
+                                    ? "bg-purple-100/50 border-[#851b42] text-[#851b42] font-bold" 
                                     : isDisabled
                                       ? "bg-slate-50 border-slate-100 text-slate-400"
                                       : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
@@ -1727,7 +1727,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                         setCouponSuccessMsg(`Promoção "${c.name}" selecionada!`);
                                         setCouponError('');
                                       }}
-                                      className="text-[10px] font-black bg-[#4c3780] text-white hover:bg-[#3c2a68] px-2.5 py-0.5 rounded-lg transition-colors"
+                                      className="text-[10px] font-black bg-[#851b42] text-white hover:bg-[#5e132e] px-2.5 py-0.5 rounded-lg transition-colors"
                                     >
                                       Ativar ({descText})
                                     </button>
@@ -1757,7 +1757,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                       placeholder="Ex: Carlos Oliveira ou Mercado Silva"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                     />
                   </div>
 
@@ -1769,7 +1769,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={cnpjCpf}
                       onChange={(e) => setCnpjCpf(e.target.value)}
                       placeholder="00.000.000/0001-00"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all"
                     />
                   </div>
 
@@ -1782,7 +1782,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="Ex: (11) 99999-9999"
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                     />
                   </div>
 
@@ -1794,7 +1794,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={birthday}
                       onChange={(e) => setBirthday(e.target.value)}
                       disabled={!!loggedInClient?.birthday}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                     />
                   </div>
 
@@ -1806,7 +1806,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
                       placeholder="Alguma instrução de entrega ou preferência..."
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all resize-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all resize-none"
                     ></textarea>
                   </div>
                 </form>
@@ -1829,7 +1829,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   )}
                   <div className="flex justify-between items-center text-sm font-bold border-t border-slate-200/60 pt-2.5">
                     <span className="text-slate-800">Valor Total:</span>
-                    <span className="text-lg font-black text-[#4c3780]">
+                    <span className="text-lg font-black text-[#851b42]">
                       R$ {cartTotal.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
@@ -1838,7 +1838,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 <button
                   type="submit"
                   form="checkoutForm"
-                  className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-6 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   ✓ Finalizar e Enviar Pedido
                 </button>
@@ -1854,7 +1854,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-1.5 text-[#4c3780]">
+              <div className="flex items-center gap-1.5 text-[#851b42]">
                 <LogIn size={16} />
                 <h3 className="text-sm font-extrabold uppercase tracking-wider">Acessar Área do Cliente</h3>
               </div>
@@ -1887,7 +1887,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   value={loginName}
                   onChange={(e) => setLoginName(e.target.value)}
                   placeholder="Ex: Carlos Oliveira"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
 
@@ -1899,14 +1899,14 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   value={loginPhone}
                   onChange={(e) => setLoginPhone(e.target.value)}
                   placeholder="Ex: (11) 99999-9999"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={isLoggingIn}
-                className="w-full mt-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-2 bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-4 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoggingIn ? (
                   <>
@@ -1926,8 +1926,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       {isOrdersModalOpen && loggedInClient && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#4c3780]/5">
-              <div className="flex items-center gap-2 text-[#4c3780]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#851b42]/5">
+              <div className="flex items-center gap-2 text-[#851b42]">
                 <History size={16} />
                 <div>
                   <h3 className="text-sm font-extrabold uppercase tracking-wider">Histórico de Pedidos & Faturas</h3>
@@ -1951,7 +1951,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 className={cn(
                   "flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                   activeHistoryTab === 'orders'
-                    ? "bg-[#4c3780] text-white shadow-xs"
+                    ? "bg-[#851b42] text-white shadow-xs"
                     : "bg-white hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700"
                 )}
               >
@@ -1965,7 +1965,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   className={cn(
                     "flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                     activeHistoryTab === 'invoices'
-                      ? "bg-[#4c3780] text-white shadow-xs"
+                      ? "bg-[#851b42] text-white shadow-xs"
                       : "bg-white hover:bg-slate-100 border border-slate-100 text-slate-500 hover:text-slate-700"
                   )}
                 >
@@ -2001,7 +2001,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           key={order.id}
                           type="button"
                           onClick={() => setSelectedOrderForDetail(order)}
-                          className="w-full text-left bg-white border border-slate-100/95 hover:border-[#4c3780]/30 hover:bg-slate-50/50 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
+                          className="w-full text-left bg-white border border-slate-100/95 hover:border-[#851b42]/30 hover:bg-slate-50/50 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
                         >
                           <div className="space-y-1.5 flex-1">
                             <div className="flex items-center gap-2">
@@ -2022,11 +2022,11 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           <div className="flex items-center gap-2.5">
                             <div className="text-right">
                               <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-wider">Total</span>
-                              <span className="text-sm font-extrabold text-[#4c3780]">
+                              <span className="text-sm font-extrabold text-[#851b42]">
                                 R$ {order.total.toFixed(2).replace('.', ',')}
                               </span>
                             </div>
-                            <ChevronRight size={16} className="text-slate-300 group-hover:text-[#4c3780] group-hover:translate-x-0.5 transition-all" />
+                            <ChevronRight size={16} className="text-slate-300 group-hover:text-[#851b42] group-hover:translate-x-0.5 transition-all" />
                           </div>
                         </button>
                       );
@@ -2037,7 +2037,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 /* Asaas real-time installments / payments list */
                 isLoadingAsaasPayments ? (
                   <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 bg-white rounded-2xl border border-slate-100">
-                    <Loader2 size={24} className="animate-spin text-[#4c3780]" />
+                    <Loader2 size={24} className="animate-spin text-[#851b42]" />
                     <p className="text-xs font-bold text-slate-600">Buscando carnês e faturas...</p>
                     <p className="text-[10px] text-slate-400">Consultando o sistema do Asaas em tempo real.</p>
                   </div>
@@ -2095,7 +2095,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                             {/* Group Header */}
                             <div className="bg-slate-50/70 px-4 py-3 border-b border-slate-100/80 flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-full bg-[#4c3780]/10 text-[#4c3780] flex items-center justify-center">
+                                <div className="w-7 h-7 rounded-full bg-[#851b42]/10 text-[#851b42] flex items-center justify-center">
                                   <ClipboardList size={14} />
                                 </div>
                                 <div>
@@ -2105,7 +2105,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                   </p>
                                 </div>
                               </div>
-                              <span className="text-[10px] font-black text-[#4c3780] bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-3xs">
+                              <span className="text-[10px] font-black text-[#851b42] bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-3xs">
                                 Total: R$ {totalGroupVal.toFixed(2).replace('.', ',')}
                               </span>
                             </div>
@@ -2177,7 +2177,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                             href={payUrl}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="px-2.5 py-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-[9px] font-black text-center transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                                            className="px-2.5 py-2 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl text-[9px] font-black text-center transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer"
                                           >
                                             <FileText size={10} />
                                             Abrir Boleto / PDF
@@ -2242,11 +2242,11 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             {selectedOrderForDetail && (
               <div className="absolute inset-0 bg-white z-[130] flex flex-col animate-in slide-in-from-right duration-250">
                 {/* Detail Header */}
-                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#4c3780]/5">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#851b42]/5">
                   <button
                     type="button"
                     onClick={() => setSelectedOrderForDetail(null)}
-                    className="flex items-center gap-1 text-xs font-bold text-[#4c3780] hover:text-[#3c2a68] transition-colors cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-slate-100 shadow-3xs"
+                    className="flex items-center gap-1 text-xs font-bold text-[#851b42] hover:text-[#5e132e] transition-colors cursor-pointer bg-white px-2.5 py-1.5 rounded-xl border border-slate-100 shadow-3xs"
                   >
                     <ArrowLeft size={13} />
                     Voltar
@@ -2341,7 +2341,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   ) : null}
                   <div className="flex items-center justify-between border-t border-slate-100/85 pt-2.5">
                     <span className="text-xs font-black text-slate-800">Valor Total:</span>
-                    <span className="text-base font-black text-[#4c3780]">
+                    <span className="text-base font-black text-[#851b42]">
                       R$ {selectedOrderForDetail.total.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
@@ -2356,8 +2356,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       {isDataConfirmationOpen && loggedInClient && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#4c3780]/5">
-              <div className="flex items-center gap-2 text-[#4c3780]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-[#851b42]/5">
+              <div className="flex items-center gap-2 text-[#851b42]">
                 <Edit3 size={16} />
                 <h3 className="text-sm font-extrabold uppercase tracking-wider">Confirmar Seus Dados</h3>
               </div>
@@ -2408,14 +2408,14 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                     <button
                       type="button"
                       onClick={() => setIsEditingConfirmation(true)}
-                      className="w-full bg-white hover:bg-slate-50 text-[#4c3780] border border-[#4c3780]/20 font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                      className="w-full bg-white hover:bg-slate-50 text-[#851b42] border border-[#851b42]/20 font-bold py-3 px-4 rounded-xl text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Edit3 size={12} /> Alterar Dados
                     </button>
                     <button
                       type="button"
                       onClick={() => handleFinalCheckoutInitiation(confirmName, confirmPhone, confirmCnpjCpf, confirmBirthday)}
-                      className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-md flex items-center justify-center gap-1 cursor-pointer"
+                      className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-md flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <Check size={12} /> Continuar e Enviar
                     </button>
@@ -2436,7 +2436,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         required
                         value={confirmName}
                         onChange={(e) => setConfirmName(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                       />
                     </div>
 
@@ -2447,7 +2447,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         required
                         value={confirmPhone}
                         onChange={(e) => setConfirmPhone(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                       />
                     </div>
 
@@ -2457,7 +2457,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         type="text" 
                         value={confirmCnpjCpf}
                         onChange={(e) => setConfirmCnpjCpf(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all"
                       />
                     </div>
 
@@ -2468,7 +2468,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         value={confirmBirthday}
                         onChange={(e) => setConfirmBirthday(e.target.value)}
                         disabled={!!loggedInClient?.birthday}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -2487,7 +2487,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         if (!confirmName.trim() || !confirmPhone.trim()) return;
                         handleFinalCheckoutInitiation(confirmName.trim(), confirmPhone.trim(), confirmCnpjCpf.trim(), confirmBirthday);
                       }}
-                      className="w-2/3 bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-md flex items-center justify-center gap-1 cursor-pointer"
+                      className="w-2/3 bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-md flex items-center justify-center gap-1 cursor-pointer"
                     >
                       Salvar e Finalizar
                     </button>
@@ -2504,7 +2504,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-100">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-              <div className="flex items-center gap-1.5 text-[#4c3780]">
+              <div className="flex items-center gap-1.5 text-[#851b42]">
                 <CreditCard size={16} />
                 <h3 className="text-sm font-extrabold uppercase tracking-wider">Forma de Pagamento</h3>
               </div>
@@ -2520,7 +2520,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
             <div className="p-6 space-y-5">
               <div className="text-center space-y-1">
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Total do seu pedido</span>
-                <span className="text-2xl font-black text-[#4c3780] block">R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
+                <span className="text-2xl font-black text-[#851b42] block">R$ {cartTotal.toFixed(2).replace('.', ',')}</span>
               </div>
 
               <div className="space-y-3">
@@ -2556,13 +2556,13 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   className={cn(
                     "w-full text-left p-4 rounded-2xl border transition-all flex items-start gap-3 cursor-pointer",
                     paymentMethodChoice === 'whatsapp'
-                      ? "bg-purple-50 border-[#4c3780] text-purple-950 shadow-sm"
+                      ? "bg-purple-50 border-[#851b42] text-purple-950 shadow-sm"
                       : "bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-700"
                   )}
                 >
                   <div className={cn(
                     "p-2 rounded-xl shrink-0 mt-0.5",
-                    paymentMethodChoice === 'whatsapp' ? "bg-[#4c3780] text-white" : "bg-slate-100 text-slate-500"
+                    paymentMethodChoice === 'whatsapp' ? "bg-[#851b42] text-white" : "bg-slate-100 text-slate-500"
                   )}>
                     <Send size={16} />
                   </div>
@@ -2699,7 +2699,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       executeFinalCheckout(confirmName, confirmPhone, confirmCnpjCpf, confirmBirthday);
                     }
                   }}
-                  className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-black py-3.5 px-6 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
+                  className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-black py-3.5 px-6 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer disabled:opacity-50"
                 >
                   {isRedirectingToCheckout ? (
                     <>

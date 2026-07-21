@@ -3,6 +3,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
+import logoImg from '../assets/logo.png';
+
 export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -39,10 +41,8 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
         
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center transform rotate-12 shadow-md">
-            <div className="w-5 h-5 border-2 border-white transform -rotate-12 rounded-sm" />
-          </div>
-          <span className="text-3xl font-extrabold text-primary tracking-tight">vercos</span>
+          <img src={logoImg} alt="Vitrine Pay" className="w-12 h-12 rounded-xl object-contain shadow-sm" />
+          <span className="text-3xl font-extrabold text-primary tracking-tight">Vitrine Pay</span>
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 text-center">

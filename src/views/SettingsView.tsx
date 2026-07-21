@@ -200,7 +200,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
       
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-1.5 pt-4">
-        <div className="flex items-center gap-1.5 text-[#4c3780]">
+        <div className="flex items-center gap-1.5 text-[#851b42]">
           <Settings size={16} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Configurações do Sistema</span>
         </div>
@@ -264,7 +264,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
                     href="https://abacatepay.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
-                    className="text-[10px] font-bold text-[#4c3780] hover:underline"
+                    className="text-[10px] font-bold text-[#851b42] hover:underline"
                   >
                     Obter chave no painel do AbacatePay &rarr;
                   </a>
@@ -280,7 +280,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
                     onChange={handleApiKeyChange}
                     disabled={!profile.abacatePayEnabled}
                     placeholder="Insira sua Chave de API Bearer Token (api_abc...)"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                   />
                 </div>
                 <p className="text-[9px] text-slate-400 leading-relaxed font-semibold">
@@ -471,7 +471,7 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
             )}
             <button
               type="submit"
-              className="px-6 py-2.5 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1 ml-auto"
+              className="px-6 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1 ml-auto"
             >
               <Check size={14} /> Salvar Configurações
             </button>
@@ -486,21 +486,21 @@ export function SettingsView({ userEmail }: SettingsViewProps) {
           
           <ul className="space-y-4 text-[11px] text-slate-600 leading-relaxed font-semibold">
             <li className="flex gap-2">
-              <span className="w-5 h-5 bg-[#4c3780] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">1</span>
+              <span className="w-5 h-5 bg-[#851b42] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">1</span>
               <div>
                 <strong className="text-slate-800 block mb-0.5">Ativação no Catálogo</strong>
                 Os clientes verão um novo método de pagamento "Pix / Cartão" no encerramento da compra.
               </div>
             </li>
             <li className="flex gap-2">
-              <span className="w-5 h-5 bg-[#4c3780] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">2</span>
+              <span className="w-5 h-5 bg-[#851b42] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">2</span>
               <div>
                 <strong className="text-slate-800 block mb-0.5">Redirecionamento Seguro</strong>
                 Eles serão redirecionados para a tela de checkout segura do AbacatePay para realizar o Pix ou preencher o cartão.
               </div>
             </li>
             <li className="flex gap-2">
-              <span className="w-5 h-5 bg-[#4c3780] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">3</span>
+              <span className="w-5 h-5 bg-[#851b42] text-white flex items-center justify-center rounded-full text-[10px] shrink-0 font-bold">3</span>
               <div>
                 <strong className="text-slate-800 block mb-0.5">Confirmação em Tempo Real</strong>
                 Após o pagamento, o cliente retorna ao catálogo onde a API do AbacatePay valida a transação e libera a conclusão do pedido.

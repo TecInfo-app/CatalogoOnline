@@ -31,18 +31,18 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
       </div>
 
       {showDemo && (
-        <div className="bg-[#4c3780]/10 border border-[#4c3780]/20 text-[#4c3780] p-4 rounded-lg flex items-center justify-between mb-6 shadow-sm">
+        <div className="bg-[#851b42]/10 border border-[#851b42]/20 text-[#851b42] p-4 rounded-lg flex items-center justify-between mb-6 shadow-sm">
           <div className="flex items-start gap-3">
-            <Lightbulb className="text-[#4c3780] mt-1 flex-shrink-0" size={20} />
+            <Lightbulb className="text-[#851b42] mt-1 flex-shrink-0" size={20} />
             <div>
-              <h4 className="text-sm font-bold text-[#4c3780]">Que tal uma demonstração gratuita?</h4>
+              <h4 className="text-sm font-bold text-[#851b42]">Que tal uma demonstração gratuita?</h4>
               <p className="text-xs text-slate-600 mt-1 max-w-xl">
-                Fale com um de nossos especialistas e veja tudo que o Vercos pode fazer pelo seu negócio.
+                Fale com um de nossos especialistas e veja tudo que o Vitrine Pay pode fazer pelo seu negócio.
               </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <button className="bg-[#4c3780] text-white px-4 py-2 rounded-md text-xs font-bold flex items-center gap-2 hover:bg-[#3d2c66] transition-colors shrink-0 hidden sm:flex">
+            <button className="bg-[#851b42] text-white px-4 py-2 rounded-md text-xs font-bold flex items-center gap-2 hover:bg-[#5e132e] transition-colors shrink-0 hidden sm:flex">
               <MessageCircle size={16} />
               Falar com especialista
             </button>
@@ -57,7 +57,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
         <h2 className="text-lg font-bold text-slate-800">Meus Pedidos</h2>
         <button 
           onClick={onCreateNew}
-          className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
+          className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
         >
           <Plus size={16} /> NOVO PEDIDO
         </button>
@@ -69,7 +69,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
             key={order.id} 
             className="bg-white rounded border border-slate-200 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group"
           >
-            <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#4c3780] transition-colors" />
+            <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#851b42] transition-colors" />
             
             <div className="flex justify-between items-start">
               <div>
@@ -98,7 +98,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
                     onClick={(e) => { e.stopPropagation(); onEditOrder(order); }}
                     className="border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1 text-[10px] font-bold hover:bg-slate-50 cursor-pointer"
                   >
-                    <Edit2 size={12} className="text-[#4c3780]" /> Editar
+                    <Edit2 size={12} className="text-[#851b42]" /> Editar
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onDeleteOrder(order.id); }}
@@ -136,7 +136,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
               </div>
               <div className={cn(
                 "text-lg font-bold",
-                order.status === 'canceled' ? "text-slate-400 line-through" : (order.status === 'budget' ? "text-[#4c3780]" : "text-slate-800")
+                order.status === 'canceled' ? "text-slate-400 line-through" : (order.status === 'budget' ? "text-[#851b42]" : "text-slate-800")
               )}>
                 R$ {order.total.toFixed(2).replace('.', ',')}
               </div>
@@ -150,7 +150,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
         )}
       </div>
 
-      <button onClick={onCreateNew} className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-[#4c3780] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#3d2c66] transition-colors z-40">
+      <button onClick={onCreateNew} className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-[#851b42] text-white rounded-full shadow-lg flex items-center justify-center hover:bg-[#5e132e] transition-colors z-40">
         <Plus size={24} />
       </button>
     </div>

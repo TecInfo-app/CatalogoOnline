@@ -3,7 +3,7 @@ import { products as initialProducts, clients as initialClients, orders as initi
 import { db, auth } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
-const getStorageKey = (email: string, key: string) => `vercos_${email}_${key}`;
+const getStorageKey = (email: string, key: string) => `vitrine_pay_${email}_${key}`;
 
 export const getStoreProfile = (email: string): StoreProfile => {
   const data = localStorage.getItem(getStorageKey(email, 'store_profile'));
@@ -13,7 +13,7 @@ export const getStoreProfile = (email: string): StoreProfile => {
     phone: '(81) 99971-2618',
     email: email || 'iranildo.jobs@gmail.com',
     bio: '',
-    shopName: 'Vercos',
+    shopName: 'Vitrine Pay',
     shopNumber: '1',
     logoUrl: ''
   };
@@ -46,7 +46,7 @@ export const getCoupons = (email: string): Coupon[] => {
   const initialCoupons: Coupon[] = [
     {
       id: 'cp-1',
-      code: 'VERCOS10',
+      code: 'VITRINE10',
       name: 'Cupom de Boas-vindas',
       type: 'cupom',
       discountType: 'percentage',
@@ -241,6 +241,6 @@ export const getIndicatorSettings = (email: string): IndicatorSettings => {
 
 export const saveIndicatorSettings = (email: string, settings: IndicatorSettings): void => {
   localStorage.setItem(getStorageKey(email, 'indicator_settings'), JSON.stringify(settings));
-  window.dispatchEvent(new Event('vercos_data_synced'));
+  window.dispatchEvent(new Event('vitrine_pay_data_synced'));
 };
 

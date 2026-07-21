@@ -111,13 +111,13 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
       
       {/* HEADER SECTION */}
       <div className="flex flex-col gap-1.5 pt-4">
-        <div className="flex items-center gap-1.5 text-[#4c3780]">
+        <div className="flex items-center gap-1.5 text-[#851b42]">
           <User size={16} />
           <span className="text-[10px] font-bold uppercase tracking-wider">Configurações</span>
         </div>
         <h1 className="text-xl font-black text-slate-800 tracking-tight uppercase">Meus Dados</h1>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Insira as informações gerais do usuário e da loja que serão exibidas no Vercos e no Catálogo Online.
+          Insira as informações gerais do usuário e da loja que serão exibidas no Vitrine Pay e no Catálogo Online.
         </p>
       </div>
 
@@ -149,7 +149,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
               <button
                 type="button"
                 onClick={triggerFileInput}
-                className="absolute bottom-0 right-0 p-2 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-full shadow-md transition-colors cursor-pointer"
+                className="absolute bottom-0 right-0 p-2 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-full shadow-md transition-colors cursor-pointer"
                 title="Fazer upload de logo/foto"
               >
                 <Camera size={14} />
@@ -186,7 +186,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.name}
                   onChange={handleChange}
                   placeholder="Nome do usuário"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
             </div>
@@ -202,7 +202,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.phone}
                   onChange={handleChange}
                   placeholder="(81) 99971-2618"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
             </div>
@@ -218,11 +218,11 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.email}
                   onChange={handleChange}
                   placeholder="seuemail@exemplo.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
                 <button
                   type="button"
-                  className="text-[11px] font-extrabold text-[#4c3780] hover:text-[#3c2a68] flex items-center gap-1 hover:underline transition-colors cursor-pointer"
+                  className="text-[11px] font-extrabold text-[#851b42] hover:text-[#5e132e] flex items-center gap-1 hover:underline transition-colors cursor-pointer"
                 >
                   <Mail size={12} /> Alterar e-mail
                 </button>
@@ -244,7 +244,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                 onChange={handleChange}
                 placeholder="Escreva uma breve biografia ou frase de apresentação..."
                 rows={3}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-medium resize-none"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-medium resize-none"
               />
             </div>
 
@@ -270,7 +270,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.shopName}
                   onChange={handleChange}
                   placeholder="Nome Fantasia da Loja"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
             </div>
@@ -286,7 +286,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.shopNumber}
                   onChange={handleChange}
                   placeholder="Identificador da Loja (ex: 1)"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
             </div>
@@ -302,7 +302,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   value={profile.slug || ''}
                   onChange={handleSlugChange}
                   placeholder="ex: ciadochopp"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#4c3780] focus:bg-white transition-all font-semibold"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-3 py-2.5 text-xs text-slate-700 outline-none focus:border-[#851b42] focus:bg-white transition-all font-semibold"
                 />
               </div>
               <p className="text-[10px] text-slate-400">
@@ -315,7 +315,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   Link do seu catálogo online:
                 </span>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                  <div className="flex-grow bg-white border border-slate-200/60 rounded-xl px-3 py-2.5 text-[11px] font-mono font-bold text-[#4c3780] break-all select-all flex items-center overflow-x-auto min-h-[38px] min-w-0">
+                  <div className="flex-grow bg-white border border-slate-200/60 rounded-xl px-3 py-2.5 text-[11px] font-mono font-bold text-[#851b42] break-all select-all flex items-center overflow-x-auto min-h-[38px] min-w-0">
                     {getFriendlyLink(profile.slug || '')}
                   </div>
                   <button
@@ -324,7 +324,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                     className={`py-2 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
                       copiedLink
                         ? "bg-emerald-600 text-white shadow-sm"
-                        : "bg-[#4c3780]/5 text-[#4c3780] hover:bg-[#4c3780]/10 border border-[#4c3780]/10"
+                        : "bg-[#851b42]/5 text-[#851b42] hover:bg-[#851b42]/10 border border-[#851b42]/10"
                     }`}
                   >
                     {copiedLink ? <Check size={13} /> : <Copy size={13} />}
@@ -354,7 +354,7 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
             </button>
             <button
               type="submit"
-              className="px-6 py-2.5 bg-[#4c3780] hover:bg-[#3c2a68] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1"
+              className="px-6 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl text-xs font-bold transition-all shadow-md cursor-pointer flex items-center gap-1"
             >
               <Check size={14} /> Salvar
             </button>

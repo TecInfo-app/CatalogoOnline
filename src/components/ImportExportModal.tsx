@@ -134,7 +134,7 @@ export function ImportExportModal({
         
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-          <h2 className="text-sm font-bold text-[#4c3780] uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-sm font-bold text-[#851b42] uppercase tracking-wider flex items-center gap-2">
             Importar / Exportar Catálogo
           </h2>
           <button 
@@ -153,7 +153,7 @@ export function ImportExportModal({
             onClick={() => { setActiveTab('import'); setErrorMsg(''); setSuccessMsg(''); }}
             className={`flex-1 py-3 text-xs font-bold tracking-wider transition-all border-b-2 text-center ${
               activeTab === 'import' 
-                ? 'text-[#4c3780] border-[#4c3780] bg-white' 
+                ? 'text-[#851b42] border-[#851b42] bg-white' 
                 : 'text-slate-400 hover:text-slate-600 border-transparent'
             }`}
           >
@@ -164,7 +164,7 @@ export function ImportExportModal({
             onClick={() => { setActiveTab('export'); setErrorMsg(''); setSuccessMsg(''); }}
             className={`flex-1 py-3 text-xs font-bold tracking-wider transition-all border-b-2 text-center ${
               activeTab === 'export' 
-                ? 'text-[#4c3780] border-[#4c3780] bg-white' 
+                ? 'text-[#851b42] border-[#851b42] bg-white' 
                 : 'text-slate-400 hover:text-slate-600 border-transparent'
             }`}
           >
@@ -202,7 +202,7 @@ export function ImportExportModal({
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 placeholder='Cole o JSON ou CSV aqui...'
-                className="w-full bg-white border border-slate-200 rounded-xl p-4 text-xs font-mono text-slate-700 outline-none focus:border-[#4c3780] resize-none"
+                className="w-full bg-white border border-slate-200 rounded-xl p-4 text-xs font-mono text-slate-700 outline-none focus:border-[#851b42] resize-none"
               ></textarea>
 
               {errorMsg && (
@@ -219,7 +219,7 @@ export function ImportExportModal({
 
               <button
                 type="submit"
-                className="w-full bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                className="w-full bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
               >
                 <Upload size={14} /> Processar e Importar
               </button>
@@ -252,7 +252,7 @@ export function ImportExportModal({
                 <button
                   type="button"
                   onClick={handleDownloadJSON}
-                  className="flex-1 bg-[#4c3780] hover:bg-[#3c2a68] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md flex items-center justify-center gap-1.5"
                 >
                   <Download size={14} /> Baixar Arquivo .JSON
                 </button>

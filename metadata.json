@@ -1,6 +1,6 @@
 {
-  "name": "Vercos UI Replica",
-  "description": "Replica of Vercos B2B Sales application UI",
+  "name": "Vitrine Pay",
+  "description": "Replica of Vitrine Pay B2B Sales application UI",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

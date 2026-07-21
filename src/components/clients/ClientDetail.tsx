@@ -114,7 +114,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
   useEffect(() => {
     const loadData = () => {
       // 1. Load tasks
-      const storedTasksStr = localStorage.getItem(`vercos_${userEmail}_agenda_items`);
+      const storedTasksStr = localStorage.getItem(`vitrine_pay_${userEmail}_agenda_items`);
       if (storedTasksStr) {
         try {
           const allTasks = JSON.parse(storedTasksStr);
@@ -156,9 +156,9 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
     loadData();
 
     // Listen to store updates
-    window.addEventListener('vercos_data_synced', loadData);
+    window.addEventListener('vitrine_pay_data_synced', loadData);
     return () => {
-      window.removeEventListener('vercos_data_synced', loadData);
+      window.removeEventListener('vitrine_pay_data_synced', loadData);
     };
   }, [userEmail, client.id, client.name]);
 
@@ -258,17 +258,17 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
       status: 'pending' as const
     };
 
-    const storedTasksStr = localStorage.getItem(`vercos_${userEmail}_agenda_items`);
+    const storedTasksStr = localStorage.getItem(`vitrine_pay_${userEmail}_agenda_items`);
     const allTasks = storedTasksStr ? JSON.parse(storedTasksStr) : [];
     const updated = [newTask, ...allTasks];
-    localStorage.setItem(`vercos_${userEmail}_agenda_items`, JSON.stringify(updated));
+    localStorage.setItem(`vitrine_pay_${userEmail}_agenda_items`, JSON.stringify(updated));
     
     setLocalTasks(updated.filter((t: any) => t.clientId === client.id));
     setTaskDetails('');
     setTaskTime('');
     setShowTaskDrawer(false);
     showToast("Tarefa agendada com sucesso!");
-    window.dispatchEvent(new Event('vercos_data_synced'));
+    window.dispatchEvent(new Event('vitrine_pay_data_synced'));
   };
 
   // Activity Drawer Logic
@@ -288,20 +288,20 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
       result: activityResult
     };
 
-    const storedTasksStr = localStorage.getItem(`vercos_${userEmail}_agenda_items`);
+    const storedTasksStr = localStorage.getItem(`vitrine_pay_${userEmail}_agenda_items`);
     const allTasks = storedTasksStr ? JSON.parse(storedTasksStr) : [];
     const updated = [newActivity, ...allTasks];
-    localStorage.setItem(`vercos_${userEmail}_agenda_items`, JSON.stringify(updated));
+    localStorage.setItem(`vitrine_pay_${userEmail}_agenda_items`, JSON.stringify(updated));
     
     setLocalTasks(updated.filter((t: any) => t.clientId === client.id));
     setActivityDetails('');
     setShowActivityDrawer(false);
     showToast("Atividade registrada com sucesso!");
-    window.dispatchEvent(new Event('vercos_data_synced'));
+    window.dispatchEvent(new Event('vitrine_pay_data_synced'));
   };
 
   const handleToggleTaskStatus = (id: string) => {
-    const storedTasksStr = localStorage.getItem(`vercos_${userEmail}_agenda_items`);
+    const storedTasksStr = localStorage.getItem(`vitrine_pay_${userEmail}_agenda_items`);
     if (storedTasksStr) {
       try {
         const allTasks = JSON.parse(storedTasksStr);
@@ -314,10 +314,10 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           }
           return t;
         });
-        localStorage.setItem(`vercos_${userEmail}_agenda_items`, JSON.stringify(updated));
+        localStorage.setItem(`vitrine_pay_${userEmail}_agenda_items`, JSON.stringify(updated));
         setLocalTasks(updated.filter((t: any) => t.clientId === client.id));
         showToast("Status da tarefa atualizado.");
-        window.dispatchEvent(new Event('vercos_data_synced'));
+        window.dispatchEvent(new Event('vitrine_pay_data_synced'));
       } catch (e) {
         console.error(e);
       }
@@ -325,15 +325,15 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
   };
 
   const handleDeleteTask = (id: string) => {
-    const storedTasksStr = localStorage.getItem(`vercos_${userEmail}_agenda_items`);
+    const storedTasksStr = localStorage.getItem(`vitrine_pay_${userEmail}_agenda_items`);
     if (storedTasksStr) {
       try {
         const allTasks = JSON.parse(storedTasksStr);
         const updated = allTasks.filter((t: any) => t.id !== id);
-        localStorage.setItem(`vercos_${userEmail}_agenda_items`, JSON.stringify(updated));
+        localStorage.setItem(`vitrine_pay_${userEmail}_agenda_items`, JSON.stringify(updated));
         setLocalTasks(updated.filter((t: any) => t.clientId === client.id));
         showToast("Registro excluído.");
-        window.dispatchEvent(new Event('vercos_data_synced'));
+        window.dispatchEvent(new Event('vitrine_pay_data_synced'));
       } catch (e) {
         console.error(e);
       }
@@ -364,7 +364,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           </div>
         )}
 
-        <button onClick={onBack} className="text-[#4c3780] text-xs hover:underline font-bold self-start flex items-center gap-1">
+        <button onClick={onBack} className="text-[#851b42] text-xs hover:underline font-bold self-start flex items-center gap-1">
           &larr; Voltar para a lista
         </button>
         
@@ -386,7 +386,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           <div className="flex gap-2.5 flex-wrap">
             <button 
               onClick={() => onEdit?.(client)}
-              className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
             >
               <Edit2 size={13} /> Alterar cadastro
             </button>
@@ -427,15 +427,15 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           )}
           {client.emails && client.emails[0] && (
             <div className="flex items-center gap-2 font-medium">
-              <Mail size={14} className="text-[#4c3780]" /> 
-              <span className="text-[#4c3780] hover:underline cursor-pointer">{client.emails[0]}</span>
+              <Mail size={14} className="text-[#851b42]" /> 
+              <span className="text-[#851b42] hover:underline cursor-pointer">{client.emails[0]}</span>
             </div>
           )}
         </div>
 
         <button 
           onClick={() => setShowFullRegistration(true)}
-          className="mt-3 text-[#4c3780] hover:text-[#3d2c66] text-xs font-extrabold flex items-center gap-1.5 hover:underline cursor-pointer transition-all border border-slate-100 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl self-start"
+          className="mt-3 text-[#851b42] hover:text-[#5e132e] text-xs font-extrabold flex items-center gap-1.5 hover:underline cursor-pointer transition-all border border-slate-100 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-xl self-start"
         >
           <ChevronDown size={14} /> Ver cadastro completo
         </button>
@@ -458,7 +458,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="font-extrabold text-slate-800 text-xs">{task.contactMedium}</span>
-                        <span className="text-[9px] font-bold bg-[#4c3780]/10 text-[#4c3780] px-2 py-0.5 rounded">
+                        <span className="text-[9px] font-bold bg-[#851b42]/10 text-[#851b42] px-2 py-0.5 rounded">
                           {task.date}
                         </span>
                         {task.time && task.time !== '--:--' && (
@@ -621,7 +621,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       </div>
                       <div className="text-right text-slate-500 flex gap-4">
                         <span>{p.qty} un.</span>
-                        <span className="font-bold text-[#4c3780]">R$ {p.price.toFixed(2).replace('.', ',')}</span>
+                        <span className="font-bold text-[#851b42]">R$ {p.price.toFixed(2).replace('.', ',')}</span>
                       </div>
                     </div>
                   ));
@@ -642,7 +642,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           {/* RESUMO CARD */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
             <div className="bg-slate-50 border-b border-slate-200 p-4 font-bold text-xs text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <Award size={14} className="text-[#4c3780]" /> RESUMO FINANCEIRO
+              <Award size={14} className="text-[#851b42]" /> RESUMO FINANCEIRO
             </div>
             <div className="p-5 space-y-4">
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3.5">
@@ -658,7 +658,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                   
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
                     <span className="text-slate-500 text-xs font-semibold">Total faturado:</span>
-                    <span className="text-xs font-extrabold text-[#4c3780]">R$ {totalPurchases.toFixed(2).replace('.', ',')}</span>
+                    <span className="text-xs font-extrabold text-[#851b42]">R$ {totalPurchases.toFixed(2).replace('.', ',')}</span>
                   </div>
 
                   <div className="flex justify-between items-center py-1.5 border-b border-slate-100">
@@ -704,7 +704,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                 onClick={handleTogglePortal} 
                 className={cn(
                   "transition-colors outline-none cursor-pointer p-1 rounded-full", 
-                  client.isPortalEnabled ? "text-[#4c3780]" : "text-slate-300 hover:text-slate-400"
+                  client.isPortalEnabled ? "text-[#851b42]" : "text-slate-300 hover:text-slate-400"
                 )}
               >
                 {client.isPortalEnabled ? <ToggleRight size={36} /> : <ToggleLeft size={36} />}
@@ -728,7 +728,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                   <div className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Total</div>
                   <div className="text-sm text-slate-800 font-extrabold mt-0.5">R$ {totalPurchases > 1000 ? 'Sem limite' : 'R$ 5.000,00'}</div>
                 </div>
-                <button className="text-slate-400 hover:text-[#4c3780] hover:bg-slate-50 border border-slate-200 p-2 rounded-xl transition-colors">
+                <button className="text-slate-400 hover:text-[#851b42] hover:bg-slate-50 border border-slate-200 p-2 rounded-xl transition-colors">
                   <Edit2 size={13} />
                 </button>
               </div>
@@ -739,13 +739,13 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
           <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden relative">
             <div className="bg-slate-50 border-b border-slate-200 p-4 flex justify-between items-center">
               <span className="font-bold text-xs text-slate-600 uppercase tracking-wider">TÍTULOS EM ABERTO</span>
-              <button className="border border-slate-200 text-[#4c3780] bg-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-50 flex items-center gap-1 transition-colors">
+              <button className="border border-slate-200 text-[#851b42] bg-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-50 flex items-center gap-1 transition-colors">
                 <Plus size={12} /> Lançar título
               </button>
             </div>
             <div className="p-5">
               <div className="flex gap-2 mb-6">
-                <button className="bg-[#4c3780] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs">
+                <button className="bg-[#851b42] text-white px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs">
                   A receber
                 </button>
                 <button className="bg-white border border-slate-200 text-slate-600 px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors">
@@ -815,7 +815,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                   <button 
                     type="button"
                     onClick={() => setShowCustomReasonInput(true)}
-                    className="text-xs font-bold text-[#4c3780] hover:underline flex items-center gap-1"
+                    className="text-xs font-bold text-[#851b42] hover:underline flex items-center gap-1"
                   >
                     <Plus size={14} /> Criar motivo de bloqueio
                   </button>
@@ -833,7 +833,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     />
                     <button 
                       type="submit"
-                      className="bg-[#4c3780] text-white px-3.5 py-2 rounded-xl text-xs font-bold"
+                      className="bg-[#851b42] text-white px-3.5 py-2 rounded-xl text-xs font-bold"
                     >
                       Adicionar
                     </button>
@@ -964,8 +964,8 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     {client.emails && client.emails.length > 0 ? (
                       <div className="space-y-1 mt-1">
                         {client.emails.map((m, i) => (
-                          <div key={i} className="font-bold text-[#4c3780] flex items-center gap-1.5">
-                            <Mail size={11} className="text-[#4c3780]/70" /> {m}
+                          <div key={i} className="font-bold text-[#851b42] flex items-center gap-1.5">
+                            <Mail size={11} className="text-[#851b42]/70" /> {m}
                           </div>
                         ))}
                       </div>
@@ -996,7 +996,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                 </h4>
                 <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-3">
                   <div className="flex gap-2 items-start text-xs font-semibold text-slate-700">
-                    <MapPin className="text-[#4c3780] mt-0.5 flex-shrink-0" size={15} />
+                    <MapPin className="text-[#851b42] mt-0.5 flex-shrink-0" size={15} />
                     <div className="space-y-1">
                       {client.address && client.address.endereco ? (
                         <>
@@ -1028,7 +1028,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
             <div className="flex justify-end pt-3 border-t border-slate-100">
               <button 
                 onClick={() => setShowFullRegistration(false)}
-                className="px-5 py-2.5 bg-[#4c3780] text-white rounded-xl text-xs font-bold hover:bg-[#3d2c66] transition-colors shadow-xs"
+                className="px-5 py-2.5 bg-[#851b42] text-white rounded-xl text-xs font-bold hover:bg-[#5e132e] transition-colors shadow-xs"
               >
                 Fechar Ficha
               </button>
@@ -1076,7 +1076,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       required
                       value={taskDate}
                       onChange={(e) => setTaskDate(e.target.value)}
-                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold cursor-pointer"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold cursor-pointer"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1085,7 +1085,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       type="time"
                       value={taskTime}
                       onChange={(e) => setTaskTime(e.target.value)}
-                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold cursor-pointer"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1097,7 +1097,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     <select 
                       value={taskContactMedium}
                       onChange={(e) => setTaskContactMedium(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold appearance-none cursor-pointer"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold appearance-none cursor-pointer"
                     >
                       <option value="Ligação">Ligação</option>
                       <option value="WhatsApp">WhatsApp</option>
@@ -1118,7 +1118,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     placeholder="Descreva o objetivo do contato (Ex: confirmar recebimento de mercadoria, propor nova oferta, etc.)"
                     value={taskDetails}
                     onChange={(e) => setTaskDetails(e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-3 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-medium leading-relaxed resize-none"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-3 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-medium leading-relaxed resize-none"
                   />
                 </div>
 
@@ -1129,7 +1129,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     <select 
                       value={taskSalesperson}
                       onChange={(e) => setTaskSalesperson(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold appearance-none cursor-pointer"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold appearance-none cursor-pointer"
                     >
                       <option value="iranildo">iranildo</option>
                       <option value="maria_silva">Maria Silva</option>
@@ -1154,7 +1154,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
               <button 
                 type="submit"
                 form="create-task-drawer-form"
-                className="flex-1 px-4 py-3 bg-[#4c3780] hover:bg-[#3d2c66] text-white rounded-xl font-bold transition-colors shadow-sm"
+                className="flex-1 px-4 py-3 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl font-bold transition-colors shadow-sm"
               >
                 Salvar tarefa
               </button>
@@ -1202,7 +1202,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       required
                       value={activityDate}
                       onChange={(e) => setActivityDate(e.target.value)}
-                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold cursor-pointer"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold cursor-pointer"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -1212,7 +1212,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       required
                       value={activityTime}
                       onChange={(e) => setActivityTime(e.target.value)}
-                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold cursor-pointer"
+                      className="w-full border border-slate-200 bg-white rounded-xl px-3 py-2.5 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1224,7 +1224,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     <select 
                       value={activityContactMedium}
                       onChange={(e) => setActivityContactMedium(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold appearance-none cursor-pointer"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold appearance-none cursor-pointer"
                     >
                       <option value="Ligação">Ligação</option>
                       <option value="WhatsApp">WhatsApp</option>
@@ -1243,7 +1243,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     <select 
                       value={activityResult}
                       onChange={(e) => setActivityResult(e.target.value)}
-                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-semibold appearance-none cursor-pointer"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold appearance-none cursor-pointer"
                     >
                       <option value="Venda realizada">Venda realizada</option>
                       <option value="Agendou reunião">Agendou reunião</option>
@@ -1264,7 +1264,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                     placeholder="Ex: Liguei para tirar dúvidas sobre produtos. Demonstrou interesse no catálogo de calçados de couro."
                     value={activityDetails}
                     onChange={(e) => setActivityDetails(e.target.value)}
-                    className="w-full border border-slate-200 rounded-xl px-3.5 py-3 outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]/20 font-medium leading-relaxed resize-none"
+                    className="w-full border border-slate-200 rounded-xl px-3.5 py-3 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-medium leading-relaxed resize-none"
                   />
                 </div>
 
@@ -1283,7 +1283,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
               <button 
                 type="submit"
                 form="register-activity-drawer-form"
-                className="flex-1 px-4 py-3 bg-[#4c3780] hover:bg-[#3d2c66] text-white rounded-xl font-bold transition-colors shadow-sm"
+                className="flex-1 px-4 py-3 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl font-bold transition-colors shadow-sm"
               >
                 Registrar Atividade
               </button>
@@ -1314,8 +1314,8 @@ function Section({ title, children, action, actions }: SectionProps) {
             <button className={cn(
               "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer",
               action.outline 
-                ? "bg-white border border-slate-300 text-[#4c3780] hover:bg-slate-50" 
-                : "bg-[#4c3780] text-white hover:bg-[#3d2c66]"
+                ? "bg-white border border-slate-300 text-[#851b42] hover:bg-slate-50" 
+                : "bg-[#851b42] text-white hover:bg-[#5e132e]"
             )} onClick={action.onClick}>
               {action.label}
             </button>
@@ -1324,8 +1324,8 @@ function Section({ title, children, action, actions }: SectionProps) {
             <button key={i} className={cn(
               "px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer",
               !a.primary 
-                ? "bg-white border border-slate-300 text-[#4c3780] hover:bg-slate-50" 
-                : "bg-[#4c3780] text-white hover:bg-[#3d2c66]"
+                ? "bg-white border border-slate-300 text-[#851b42] hover:bg-slate-50" 
+                : "bg-[#851b42] text-white hover:bg-[#5e132e]"
             )} onClick={a.onClick}>
               {a.label}
             </button>

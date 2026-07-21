@@ -358,20 +358,20 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
             <div className="flex gap-2">
               <button 
                 onClick={onCreateNew}
-                className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Plus size={16} /> Cadastrar cliente
               </button>
               <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept=".json" />
               <button 
                 onClick={() => fileInputRef.current?.click()}
-                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#851b42] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Upload size={16} /> Importar
               </button>
               <button 
                 onClick={exportClients}
-                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#4c3780] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
+                className="bg-white border border-slate-300 hover:bg-slate-50 text-[#851b42] px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <Download size={16} /> Exportar
               </button>
@@ -383,12 +383,12 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                 placeholder="Pesquise por nome ou CNPJ"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-64 border border-slate-300 rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:border-[#4c3780]"
+                className="w-full sm:w-64 border border-slate-300 rounded px-3 py-2 pr-10 text-sm focus:outline-none focus:border-[#851b42]"
               />
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <button 
                 onClick={() => setShowAdvancedSearch(true)}
-                className="text-[#4c3780] text-xs mt-1 absolute -bottom-5 right-0 hover:underline"
+                className="text-[#851b42] text-xs mt-1 absolute -bottom-5 right-0 hover:underline"
               >
                 Pesquise por cidade, estado, etc.
               </button>
@@ -405,7 +405,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advNomeCnpj}
                     onChange={(e) => setAdvNomeCnpj(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
 
@@ -416,7 +416,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advTelefone}
                     onChange={(e) => setAdvTelefone(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
                 <div>
@@ -425,7 +425,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advEmail}
                     onChange={(e) => setAdvEmail(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
 
@@ -436,7 +436,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advEndereco}
                     onChange={(e) => setAdvEndereco(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
                 <div>
@@ -445,7 +445,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advBairro}
                     onChange={(e) => setAdvBairro(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
 
@@ -456,7 +456,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advCidade}
                     onChange={(e) => setAdvCidade(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
                 <div>
@@ -464,7 +464,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                   <select 
                     value={advEstado}
                     onChange={(e) => setAdvEstado(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42] cursor-pointer"
                   >
                     {BRAZILIAN_STATES.map(st => (
                       <option key={st.value} value={st.value}>{st.label}</option>
@@ -478,7 +478,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                   <select 
                     value={advSegmento}
                     onChange={(e) => setAdvSegmento(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42] cursor-pointer"
                   >
                     <option value="Qualquer">Qualquer</option>
                     <option value="Atacado">Atacado</option>
@@ -491,7 +491,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                   <select 
                     value={advRede}
                     onChange={(e) => setAdvRede(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780] cursor-pointer"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42] cursor-pointer"
                   >
                     <option value="Qualquer">Qualquer</option>
                     <option value="Rede Principal">Rede Principal</option>
@@ -506,7 +506,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advNomeContato}
                     onChange={(e) => setAdvNomeContato(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
                 <div>
@@ -515,7 +515,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     type="text" 
                     value={advTag}
                     onChange={(e) => setAdvTag(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#4c3780]"
+                    className="w-full bg-white border border-slate-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:border-[#851b42]"
                   />
                 </div>
               </div>
@@ -524,14 +524,14 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
               <div className="flex items-center justify-between pt-4 border-t border-slate-200 mt-2">
                 <button 
                   onClick={handleApplyAdvancedSearch}
-                  className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-5 py-2.5 rounded font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
+                  className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer shadow-sm"
                 >
                   <Search size={14} /> Pesquisar
                 </button>
 
                 <button 
                   onClick={handleHideAdvancedSearch}
-                  className="text-[#4c3780] hover:text-[#3d2c66] font-bold text-xs flex items-center gap-1 hover:underline cursor-pointer"
+                  className="text-[#851b42] hover:text-[#5e132e] font-bold text-xs flex items-center gap-1 hover:underline cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="rotate-180">
                     <path d="m6 9 6 6 6-6"/>
@@ -543,7 +543,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
           )}
 
           <div className="mb-4">
-            <button className="text-[#4c3780] font-bold text-sm flex items-center gap-1 hover:underline">
+            <button className="text-[#851b42] font-bold text-sm flex items-center gap-1 hover:underline">
               Exibir todos os clientes <ChevronDown size={14} />
             </button>
           </div>
@@ -553,7 +553,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
               <div key={client.id} className="border-b border-slate-100 pb-4 flex flex-col md:flex-row md:items-center justify-between gap-4 group">
                 <div className="flex-1">
                   <div 
-                    className="text-[#4c3780] font-bold text-base cursor-pointer hover:underline mb-2 flex items-center"
+                    className="text-[#851b42] font-bold text-base cursor-pointer hover:underline mb-2 flex items-center"
                     onClick={() => onClientClick(client)}
                   >
                     {client.name} <span className="text-slate-500 font-normal ml-1"> - {client.legalName} - {client.cnpj}</span>
@@ -581,7 +581,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                     onClick={(e) => { e.stopPropagation(); onEditClient(client); }}
                     className="border border-slate-200 text-slate-600 px-3 py-1.5 rounded flex items-center gap-1 text-xs font-bold hover:bg-slate-50 cursor-pointer"
                   >
-                    <Edit2 size={12} className="text-[#4c3780]" /> Alterar
+                    <Edit2 size={12} className="text-[#851b42]" /> Alterar
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); onDeleteClient(client.id); }}
@@ -595,7 +595,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
           </div>
 
           <div className="mt-4 text-right">
-            <span className="text-[#4c3780] text-sm font-bold">
+            <span className="text-[#851b42] text-sm font-bold">
               Contar registros: {filteredClients.length}
             </span>
           </div>
@@ -656,8 +656,8 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
               </div>
 
               <div className="mt-8">
-                <button className="w-full bg-slate-50 hover:bg-slate-100 text-[#4c3780] py-2 rounded text-sm font-bold flex justify-center items-center gap-2 transition-colors">
-                  <span className="bg-[#4c3780] text-white p-1 rounded-sm"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+                <button className="w-full bg-slate-50 hover:bg-slate-100 text-[#851b42] py-2 rounded text-sm font-bold flex justify-center items-center gap-2 transition-colors">
+                  <span className="bg-[#851b42] text-white p-1 rounded-sm"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
                   Detalhar carteira
                 </button>
               </div>
@@ -668,7 +668,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm max-w-2xl animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="flex items-center gap-2 pb-4 border-b border-slate-100 mb-6">
-            <Settings className="text-[#4c3780]" size={20} />
+            <Settings className="text-[#851b42]" size={20} />
             <h2 className="text-base font-bold text-slate-800">Configuração de Indicadores</h2>
           </div>
 
@@ -679,8 +679,8 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
           <div className="space-y-6">
             {/* CARTEIRA DE CLIENTES SETTINGS */}
             <div className="border border-slate-150 rounded-xl p-5 bg-slate-50/50">
-              <h3 className="text-sm font-bold text-[#4c3780] mb-4 flex items-center gap-1.5">
-                <span className="w-1.5 h-3 rounded bg-[#4c3780] inline-block" />
+              <h3 className="text-sm font-bold text-[#851b42] mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-3 rounded bg-[#851b42] inline-block" />
                 Carteira de Clientes
               </h3>
               
@@ -695,7 +695,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                       type="number" 
                       value={carteiraRecente}
                       onChange={(e) => setCarteiraRecente(Math.max(1, Number(e.target.value)))}
-                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
                     />
                     <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
                   </div>
@@ -711,7 +711,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                       type="number" 
                       value={carteiraAntigo}
                       onChange={(e) => setCarteiraAntigo(Math.max(1, Number(e.target.value)))}
-                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
                     />
                     <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
                   </div>
@@ -721,8 +721,8 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
 
             {/* POSITIVACAO SETTINGS */}
             <div className="border border-slate-150 rounded-xl p-5 bg-slate-50/50">
-              <h3 className="text-sm font-bold text-[#4c3780] mb-4 flex items-center gap-1.5">
-                <span className="w-1.5 h-3 rounded bg-[#4c3780] inline-block" />
+              <h3 className="text-sm font-bold text-[#851b42] mb-4 flex items-center gap-1.5">
+                <span className="w-1.5 h-3 rounded bg-[#851b42] inline-block" />
                 Positivação
               </h3>
               
@@ -737,7 +737,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                       type="number" 
                       value={positivacaoRecente}
                       onChange={(e) => setPositivacaoRecente(Math.max(1, Number(e.target.value)))}
-                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
                     />
                     <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
                   </div>
@@ -753,7 +753,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
                       type="number" 
                       value={positivacaoAntigo}
                       onChange={(e) => setPositivacaoAntigo(Math.max(1, Number(e.target.value)))}
-                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+                      className="w-20 px-2 py-1 border border-slate-300 rounded text-center text-sm font-bold text-slate-800 focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
                     />
                     <span className="text-xs text-slate-600 font-medium">dias ou mais</span>
                   </div>
@@ -773,7 +773,7 @@ export function ClientList({ clients, userEmail, onCreateNew, onClientClick, onE
             </div>
             <button 
               onClick={handleSaveSettings}
-              className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-5 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
+              className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded-lg text-xs font-bold flex items-center gap-2 transition-colors cursor-pointer shadow-xs"
             >
               <Save size={14} /> Salvar Configurações
             </button>

@@ -118,7 +118,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
               value="Pessoa Jurídica"
               checked={type === 'Pessoa Jurídica'}
               onChange={() => setType('Pessoa Jurídica')}
-              className="text-[#4c3780] focus:ring-[#4c3780]"
+              className="text-[#851b42] focus:ring-[#851b42]"
             />
             Pessoa Jurídica
           </label>
@@ -129,7 +129,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
               value="Pessoa Física"
               checked={type === 'Pessoa Física'}
               onChange={() => setType('Pessoa Física')}
-              className="text-[#4c3780] focus:ring-[#4c3780]"
+              className="text-[#851b42] focus:ring-[#851b42]"
             />
             Pessoa Física
           </label>
@@ -142,7 +142,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
             value={cnpj}
             onChange={(e) => setCnpj(e.target.value)}
             placeholder={type === 'Pessoa Jurídica' ? '00.000.000/0001-00' : '000.000.000-00'}
-            className="w-full max-w-md border border-slate-300 rounded-md px-3.5 py-2.5 text-base font-semibold text-slate-800 focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+            className="w-full max-w-md border border-slate-300 rounded-md px-3.5 py-2.5 text-base font-semibold text-slate-800 focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
           />
         </div>
 
@@ -153,7 +153,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
             placeholder="obrigatório"
             value={legalName}
             onChange={(e) => setLegalName(e.target.value)}
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
           />
         </div>
 
@@ -163,7 +163,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
             type="text" 
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
           />
         </div>
 
@@ -173,9 +173,9 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
             type="text" 
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+            className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
           />
-          <button type="button" className="text-[#4c3780] text-sm font-medium mt-2 hover:underline block">
+          <button type="button" className="text-[#851b42] text-sm font-medium mt-2 hover:underline block">
             Adicionar telefone
           </button>
         </div>
@@ -186,9 +186,9 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
             type="email" 
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]"
+            className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]"
           />
-          <button type="button" className="text-[#4c3780] text-sm font-medium mt-2 hover:underline block">
+          <button type="button" className="text-[#851b42] text-sm font-medium mt-2 hover:underline block">
             Adicionar e-mail
           </button>
         </div>
@@ -196,7 +196,7 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
         <button 
           type="button" 
           onClick={() => setShowFullForm(!showFullForm)}
-          className="flex items-center gap-2 text-[#4c3780] text-sm font-bold mt-4 hover:underline"
+          className="flex items-center gap-2 text-[#851b42] text-sm font-bold mt-4 hover:underline"
         >
           {showFullForm ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           Preencher cadastro completo: contatos, endereço e informações adicionais
@@ -210,31 +210,31 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">CEP</label>
-                  <input type="text" value={cep} onChange={(e) => setCep(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={cep} onChange={(e) => setCep(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">Endereço</label>
-                  <input type="text" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={endereco} onChange={(e) => setEndereco(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Número</label>
-                  <input type="text" value={numero} onChange={(e) => setNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={numero} onChange={(e) => setNumero(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Complemento</label>
-                  <input type="text" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={complemento} onChange={(e) => setComplemento(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Bairro</label>
-                  <input type="text" value={bairro} onChange={(e) => setBairro(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={bairro} onChange={(e) => setBairro(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Cidade</label>
-                  <input type="text" value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={cidade} onChange={(e) => setCidade(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div>
                   <label className="block text-sm text-slate-600 mb-1">Estado</label>
-                  <select value={estado} onChange={(e) => setEstado(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]">
+                  <select value={estado} onChange={(e) => setEstado(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]">
                     <option value="">Selecione...</option>
                     <option value="AC">Acre</option>
                     <option value="AL">Alagoas</option>
@@ -291,22 +291,22 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">Nome</label>
-                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={contactName} onChange={(e) => setContactName(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">Cargo</label>
-                  <input type="text" placeholder="Ex: Gerente de Compras, Recepcionista, etc." value={contactCargo} onChange={(e) => setContactCargo(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" placeholder="Ex: Gerente de Compras, Recepcionista, etc." value={contactCargo} onChange={(e) => setContactCargo(e.target.value)} className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">Telefone</label>
-                  <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm text-slate-600 mb-1">E-mail</label>
-                  <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#4c3780] focus:ring-1 focus:ring-[#4c3780]" />
+                  <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="w-full max-w-md border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]" />
                 </div>
                 <div className="md:col-span-2">
-                  <button type="button" onClick={handleAddContact} className="text-[#4c3780] border border-[#4c3780] hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  <button type="button" onClick={handleAddContact} className="text-[#851b42] border border-[#851b42] hover:bg-slate-50 px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     Adicionar contato
                   </button>
                 </div>
@@ -318,14 +318,14 @@ export function ClientForm({ clientToEdit, onSave, onCancel }: ClientFormProps) 
         <div className="border-t border-slate-200 pt-6 mt-6 flex flex-wrap gap-3">
           <button 
             onClick={() => handleSave(false)}
-            className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-6 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+            className="bg-[#851b42] hover:bg-[#5e132e] text-white px-6 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
           >
             Salvar
           </button>
           {!clientToEdit && (
             <button 
               onClick={() => handleSave(true)}
-              className="bg-[#4c3780] hover:bg-[#3d2c66] text-white px-6 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
+              className="bg-[#851b42] hover:bg-[#5e132e] text-white px-6 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer"
             >
               Salvar e cadastrar outro
             </button>
