@@ -6,58 +6,84 @@ const KNOWN_KEYS = ['store_profile', 'products', 'coupons', 'clients', 'orders',
 
 let isSyncingFromFirebase = false;
 
+/**
+ * Validates and normalizes the merchant email / store ID.
+ * Returns the sanitized, trimmed, lowercase email string, or null if invalid.
+ */
+export const getNormalizedEmail = (email: string | null | undefined): string | null => {
+  if (!email) return null;
+  const clean = email.trim().toLowerCase();
+  if (clean === '' || clean === 'null' || clean === 'undefined') return null;
+  
+  // Standard basic email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(clean)) {
+    return null;
+  }
+  return clean;
+};
+
 // Call this on app load or when user logs in
 // It will pull all keys from Firestore into localStorage
 export const loadStoreData = async (email: string, onlyPublic: boolean = false) => {
+  const normEmail = getNormalizedEmail(email);
+  if (!normEmail) {
+    console.error("loadStoreData was aborted due to an invalid or unauthenticated store owner email:", email);
+    return;
+  }
+
   isSyncingFromFirebase = true;
   try {
+    const currentUser = auth.currentUser;
+    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === normEmail);
+    
+    // Strict scoping: non-owners MUST ONLY access public data
+    const actualOnlyPublic = isOwner ? onlyPublic : true;
+
     // First, load standard keys
     for (const key of KNOWN_KEYS) {
       // If only public data is requested, skip private tables
       const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories'].includes(key);
-      if (onlyPublic && isPrivateKey) {
+      if (actualOnlyPublic && isPrivateKey) {
         continue;
       }
 
       // Also skip keys that a visitor should never fetch (agenda and routes)
-      const currentUser = auth.currentUser;
-      const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
       if (!isOwner && ['agenda_items', 'planned_routes'].includes(key)) {
         continue;
       }
 
       try {
-        const docRef = doc(db, 'users', email, 'data', key);
+        const docRef = doc(db, 'users', normEmail, 'data', key);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const data = snap.data().value;
           if (data !== undefined) {
-            localStorage.setItem(`vercos_${email}_${key}`, JSON.stringify(data));
+            localStorage.setItem(`vercos_${normEmail}_${key}`, JSON.stringify(data));
           }
         }
       } catch (e) {
-        console.error(`Error loading ${key}`, e);
+        console.error(`Error loading key "${key}" for store "${normEmail}":`, e);
       }
     }
   } finally {
     isSyncingFromFirebase = false;
   }
 
-  // If we only requested public data, skip the queue merging
-  if (onlyPublic) return;
+  // If we only requested public data (or were restricted to it), skip the queue merging
+  const currentUser = auth.currentUser;
+  const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === normEmail);
+  if (!isOwner || onlyPublic) return;
 
   // Next, if current logged in user is the owner, pull and merge incoming orders/clients queue
   try {
-    const currentUser = auth.currentUser;
-    const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
-
     if (isOwner) {
       // 1. Process incoming_orders queue
       try {
-        const ordersCol = collection(db, 'users', email, 'incoming_orders');
+        const ordersCol = collection(db, 'users', normEmail, 'incoming_orders');
         const ordersSnap = await getDocs(ordersCol);
         if (!ordersSnap.empty) {
-          const storedOrdersKey = `vercos_${email}_orders`;
+          const storedOrdersKey = `vercos_${normEmail}_orders`;
           let currentOrders: Order[] = [];
           const localData = localStorage.getItem(storedOrdersKey);
           if (localData) {
@@ -65,7 +91,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
           }
 
           // Also get products to update stocks
-          const storedProductsKey = `vercos_${email}_products`;
+          const storedProductsKey = `vercos_${normEmail}_products`;
           let currentProducts: Product[] = [];
           const prodData = localStorage.getItem(storedProductsKey);
           if (prodData) {
@@ -113,15 +139,15 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
           }
         }
       } catch (err) {
-        console.error("Error processing incoming orders queue:", err);
+        console.error(`Error processing incoming orders queue for ${normEmail}:`, err);
       }
 
       // 2. Process incoming_clients queue
       try {
-        const clientsCol = collection(db, 'users', email, 'incoming_clients');
+        const clientsCol = collection(db, 'users', normEmail, 'incoming_clients');
         const clientsSnap = await getDocs(clientsCol);
         if (!clientsSnap.empty) {
-          const storedClientsKey = `vercos_${email}_clients`;
+          const storedClientsKey = `vercos_${normEmail}_clients`;
           let currentClients: Client[] = [];
           const localData = localStorage.getItem(storedClientsKey);
           if (localData) {
@@ -142,39 +168,45 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
           localStorage.setItem(storedClientsKey, JSON.stringify(currentClients));
         }
       } catch (err) {
-        console.error("Error processing incoming clients queue:", err);
+        console.error(`Error processing incoming clients queue for ${normEmail}:`, err);
       }
     }
   } catch (err) {
-    console.error("Error in queue sync verification:", err);
+    console.error(`Error in queue sync verification for ${normEmail}:`, err);
   }
 };
 
 export const startRealTimeSync = (email: string, onSync: () => void) => {
-  // Listen to incoming_orders
-  const ordersCol = collection(db, 'users', email, 'incoming_orders');
+  const normEmail = getNormalizedEmail(email);
+  if (!normEmail) {
+    console.error("startRealTimeSync aborted: invalid email/storeId:", email);
+    return () => {};
+  }
+
+  // Listen to incoming_orders (strictly filtered and routed by normalized owner email)
+  const ordersCol = collection(db, 'users', normEmail, 'incoming_orders');
   const unsubscribeOrders = onSnapshot(ordersCol, async (snapshot) => {
     if (snapshot.empty) return;
 
-    const storedOrdersKey = `vercos_${email}_orders`;
+    const storedOrdersKey = `vercos_${normEmail}_orders`;
     let currentOrders: Order[] = [];
     const localData = localStorage.getItem(storedOrdersKey);
     if (localData) {
       try {
         currentOrders = JSON.parse(localData);
       } catch (e) {
-        console.error("Error parsing local orders during real-time sync", e);
+        console.error(`Error parsing local orders for ${normEmail} during real-time sync`, e);
       }
     }
 
-    const storedProductsKey = `vercos_${email}_products`;
+    const storedProductsKey = `vercos_${normEmail}_products`;
     let currentProducts: Product[] = [];
     const prodData = localStorage.getItem(storedProductsKey);
     if (prodData) {
       try {
         currentProducts = JSON.parse(prodData);
       } catch (e) {
-        console.error("Error parsing local products during real-time sync", e);
+        console.error(`Error parsing local products for ${normEmail} during real-time sync`, e);
       }
     }
     let updatedAnyProduct = false;
@@ -214,7 +246,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
         try {
           await deleteDoc(change.doc.ref);
         } catch (err) {
-          console.error("Failed to delete processed incoming order doc:", err);
+          console.error(`Failed to delete processed incoming order doc for ${normEmail}:`, err);
         }
       }
     }
@@ -227,22 +259,22 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
       onSync();
     }
   }, (err) => {
-    console.error("Error in real-time orders sync snapshot:", err);
+    console.error(`Error in real-time orders sync snapshot for ${normEmail}:`, err);
   });
 
-  // Listen to incoming_clients
-  const clientsCol = collection(db, 'users', email, 'incoming_clients');
+  // Listen to incoming_clients (strictly filtered and routed by normalized owner email)
+  const clientsCol = collection(db, 'users', normEmail, 'incoming_clients');
   const unsubscribeClients = onSnapshot(clientsCol, async (snapshot) => {
     if (snapshot.empty) return;
 
-    const storedClientsKey = `vercos_${email}_clients`;
+    const storedClientsKey = `vercos_${normEmail}_clients`;
     let currentClients: Client[] = [];
     const localData = localStorage.getItem(storedClientsKey);
     if (localData) {
       try {
         currentClients = JSON.parse(localData);
       } catch (e) {
-        console.error("Error parsing local clients during real-time sync", e);
+        console.error(`Error parsing local clients for ${normEmail} during real-time sync`, e);
       }
     }
     let anyMerged = false;
@@ -261,7 +293,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
         try {
           await deleteDoc(change.doc.ref);
         } catch (err) {
-          console.error("Failed to delete processed incoming client doc:", err);
+          console.error(`Failed to delete processed incoming client doc for ${normEmail}:`, err);
         }
       }
     }
@@ -271,7 +303,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
       onSync();
     }
   }, (err) => {
-    console.error("Error in real-time clients sync snapshot:", err);
+    console.error(`Error in real-time clients sync snapshot for ${normEmail}:`, err);
   });
 
   return () => {
@@ -283,10 +315,11 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
 export const getEmailBySlug = async (slug: string): Promise<string | null> => {
   try {
     const slugKey = slug.toLowerCase().trim();
+    if (!slugKey) return null;
     const docRef = doc(db, 'slugs', slugKey);
     const snap = await getDoc(docRef);
     if (snap.exists()) {
-      return snap.data().email || null;
+      return getNormalizedEmail(snap.data().email);
     }
   } catch (e) {
     console.error("Error looking up slug:", e);
@@ -311,18 +344,22 @@ export const patchLocalStorage = () => {
       for (const knownKey of KNOWN_KEYS) {
         if (key.endsWith(`_${knownKey}`)) {
           // Extract email which is in the middle: vercos_{email}_{knownKey}
-          const email = key.substring('vercos_'.length, key.length - `_${knownKey}`.length);
+          const rawEmail = key.substring('vercos_'.length, key.length - `_${knownKey}`.length);
+          const email = getNormalizedEmail(rawEmail);
+          if (!email) {
+            break;
+          }
           
           const currentUser = auth.currentUser;
-          const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
+          const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email);
           if (!isOwner) {
-            break; // Skip sync for visitors or non-owners
+            break; // Skip sync for visitors or non-owners to prevent cross-merchant leakage
           }
 
           try {
             const parsed = JSON.parse(value);
             const docRef = doc(db, 'users', email, 'data', knownKey);
-            setDoc(docRef, { value: parsed }).catch(e => console.error("Firebase sync error", e));
+            setDoc(docRef, { value: parsed }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
 
             // Sync slug if this is store_profile
             if (knownKey === 'store_profile' && parsed && typeof parsed === 'object') {
@@ -331,12 +368,12 @@ export const patchLocalStorage = () => {
                 const slugKey = slug.toLowerCase().trim();
                 if (slugKey) {
                   const slugDocRef = doc(db, 'slugs', slugKey);
-                  setDoc(slugDocRef, { email: email.toLowerCase() }).catch(e => console.error("Firebase slug sync error", e));
+                  setDoc(slugDocRef, { email: email }).catch(e => console.error(`Firebase slug sync error for ${email}:`, e));
                 }
               }
             }
           } catch (e) {
-            // Not valid JSON or something else
+            // Not valid JSON or other parsing exception
           }
           break; // Found the matching key, no need to check others
         }
