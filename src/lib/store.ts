@@ -108,6 +108,29 @@ export const getOrders = (email: string): Order[] => {
   return defaultData;
 };
 
+// Helper to remove undefined values recursively for Firestore compatibility
+function cleanUndefined(obj: any): any {
+  if (obj === null || obj === undefined) {
+    return null;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(item => cleanUndefined(item));
+  }
+  if (typeof obj === 'object') {
+    const cleaned: any = {};
+    for (const key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+        const val = obj[key];
+        if (val !== undefined) {
+          cleaned[key] = cleanUndefined(val);
+        }
+      }
+    }
+    return cleaned;
+  }
+  return obj;
+}
+
 // Functions to add new items
 export const addClient = (email: string, client: Client) => {
   const clients = getClients(email);
@@ -119,7 +142,7 @@ export const addClient = (email: string, client: Client) => {
     const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
-      setDoc(docRef, client).catch(err => {
+      setDoc(docRef, cleanUndefined(client)).catch(err => {
         console.error("Firestore write client error:", err);
       });
     }
@@ -141,7 +164,7 @@ export const updateClient = (email: string, client: Client) => {
     const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_clients', client.id);
-      setDoc(docRef, client).catch(err => {
+      setDoc(docRef, cleanUndefined(client)).catch(err => {
         console.error("Firestore update client error:", err);
       });
     }
@@ -166,7 +189,7 @@ export const addOrder = (email: string, order: Order) => {
     const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
     if (!isOwner && email) {
       const docRef = doc(db, 'users', email, 'incoming_orders', order.id);
-      setDoc(docRef, order).catch(err => {
+      setDoc(docRef, cleanUndefined(order)).catch(err => {
         console.error("Firestore write order error:", err);
       });
     }
