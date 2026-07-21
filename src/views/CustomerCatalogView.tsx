@@ -319,13 +319,28 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
     }
   };
 
+  const [ordersVersion, setOrdersVersion] = useState(0);
+
+  // Sync latest order history when modal is opened
   useEffect(() => {
     if (isOrdersModalOpen && loggedInClient) {
+      loadStoreData(sellerEmail).then(() => {
+        setOrdersVersion(v => v + 1);
+      }).catch(e => console.error("Error background-syncing orders:", e));
       fetchAsaasPayments();
     } else if (!isOrdersModalOpen) {
       setSelectedOrderForDetail(null);
     }
-  }, [isOrdersModalOpen, loggedInClient]);
+  }, [isOrdersModalOpen, loggedInClient, sellerEmail]);
+
+  // Background sync on mount/init if client is already logged in
+  useEffect(() => {
+    if (loggedInClient) {
+      loadStoreData(sellerEmail).then(() => {
+        setOrdersVersion(v => v + 1);
+      }).catch(e => console.error("Error initial background-syncing orders:", e));
+    }
+  }, [sellerEmail]);
 
   // Filter products by search & category
   const filteredProducts = products.filter(p => {
@@ -821,6 +836,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       if (found) {
         setLoggedInClient(found);
         localStorage.setItem(`vercos_catalog_logged_in_client_${sellerEmail}`, JSON.stringify(found));
+        setOrdersVersion(v => v + 1);
         setIsLoginModalOpen(false);
         setLoginName('');
         setLoginPhone('');

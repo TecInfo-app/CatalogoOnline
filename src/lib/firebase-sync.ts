@@ -37,8 +37,9 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
     const currentUser = auth.currentUser;
     const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === normEmail);
     
-    // Strict scoping: non-owners MUST ONLY access public data
-    const actualOnlyPublic = isOwner ? onlyPublic : true;
+    // Strict scoping: allow loading clients and orders for catalog login/history if onlyPublic is false,
+    // but always keep agenda and routes restricted to the owner below.
+    const actualOnlyPublic = onlyPublic;
 
     // First, load standard keys
     for (const key of KNOWN_KEYS) {
