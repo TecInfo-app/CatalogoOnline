@@ -476,7 +476,9 @@ export function ClientList({ clients, onCreateNew, onClientClick, onEditClient, 
           </div>
 
           <div className="mt-4 text-right">
-            <span className="text-[#4c3780] text-sm hover:underline cursor-pointer">Contar registros</span>
+            <span className="text-[#4c3780] text-sm font-bold">
+              Contar registros: {filteredClients.length}
+            </span>
           </div>
 
         </div>
