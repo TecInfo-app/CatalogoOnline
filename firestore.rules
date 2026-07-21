@@ -4,7 +4,7 @@ service cloud.firestore {
     
     // Verifica se o usuário autenticado é o dono da loja
     function isOwner(email) {
-      return request.auth != null && request.auth.token.email == email;
+      return request.auth != null && request.auth.token.email.lower() == email.lower();
     }
 
     match /users/{email} {
@@ -37,7 +37,7 @@ service cloud.firestore {
 
     match /slugs/{slug} {
       allow read: if true;
-      allow create, update: if request.auth != null && request.resource.data.email == request.auth.token.email;
+      allow create, update: if request.auth != null && request.resource.data.email.lower() == request.auth.token.email.lower();
     }
   }
 }

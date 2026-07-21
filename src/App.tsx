@@ -48,7 +48,7 @@ export default function App() {
         }
         
         setResolvedSellerEmail(emailToLoad);
-        await loadStoreData(emailToLoad);
+        await loadStoreData(emailToLoad, true);
         setCatalogLoaded(true);
       };
       

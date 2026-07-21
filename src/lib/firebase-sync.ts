@@ -6,9 +6,15 @@ const KNOWN_KEYS = ['store_profile', 'products', 'coupons', 'clients', 'orders',
 
 // Call this on app load or when user logs in
 // It will pull all keys from Firestore into localStorage
-export const loadStoreData = async (email: string) => {
+export const loadStoreData = async (email: string, onlyPublic: boolean = false) => {
   // First, load standard keys
   for (const key of KNOWN_KEYS) {
+    // If only public data is requested, skip private tables
+    const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories'].includes(key);
+    if (onlyPublic && isPrivateKey) {
+      continue;
+    }
+
     try {
       const docRef = doc(db, 'users', email, 'data', key);
       const snap = await getDoc(docRef);
@@ -22,6 +28,9 @@ export const loadStoreData = async (email: string) => {
       console.error(`Error loading ${key}`, e);
     }
   }
+
+  // If we only requested public data, skip the queue merging
+  if (onlyPublic) return;
 
   // Next, if current logged in user is the owner, pull and merge incoming orders/clients queue
   try {
