@@ -239,7 +239,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           asaasData = {
             dueDate: dueDate,
             installments: installments,
-            asaasPaymentId: payData.id || payData.installment || '',
+            asaasPaymentId: payData.installment || payData.id || '',
             asaasUrl: payData.invoiceUrl || payData.bankSlipUrl || `https://sandbox.asaas.com/simulado/fatura?id=${payData.id}`,
             asaasStatus: 'PENDING'
           };

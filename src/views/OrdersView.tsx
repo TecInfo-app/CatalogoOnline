@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getOrders, addOrder, updateOrder, deleteOrder } from '../lib/store';
+import { getOrders, addOrder, updateOrder, deleteOrder, getStoreProfile } from '../lib/store';
 import { Order } from '../types';
 import { OrderList } from '../components/orders/OrderList';
 import { OrderForm } from '../components/orders/OrderForm';
@@ -43,8 +43,59 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
     setOrderToDelete(id);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (orderToDelete) {
+      const order = orders.find(o => o.id === orderToDelete);
+      if (order && order.paymentMethod === 'Boleto' && order.asaasPaymentId && !order.asaasPaymentId.startsWith('sim_')) {
+        try {
+          const profile = getStoreProfile(userEmail);
+          if (profile.asaasApiKey) {
+            const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
+            const pathPrefix = profile.asaasEnvironment === 'production' 
+              ? '/asaas-production'
+              : '/asaas-sandbox';
+            const baseUrl = `${workerUrl}${pathPrefix}`;
+
+            let targetId = order.asaasPaymentId;
+            let isInstallment = targetId.startsWith('ins_');
+
+            // If it's a single payment ID (pay_...) but might belong to an installment group, check it
+            if (targetId.startsWith('pay_')) {
+              const getRes = await fetch(`${baseUrl}/payments/${targetId}`, {
+                method: 'GET',
+                headers: {
+                  'access_token': profile.asaasApiKey,
+                  'Content-Type': 'application/json'
+                }
+              });
+              if (getRes.ok) {
+                const payDetails = await getRes.json();
+                if (payDetails.installment) {
+                  targetId = payDetails.installment;
+                  isInstallment = true;
+                }
+              }
+            }
+
+            // Cancel either the installment group or the single payment
+            const deleteUrl = isInstallment 
+              ? `${baseUrl}/installments/${targetId}`
+              : `${baseUrl}/payments/${targetId}`;
+
+            await fetch(deleteUrl, {
+              method: 'DELETE',
+              headers: {
+                'access_token': profile.asaasApiKey,
+                'Content-Type': 'application/json'
+              }
+            });
+            console.log(`Cancelled Asaas billing (${targetId}) for deleted order ${order.orderNumber}`);
+          }
+        } catch (err) {
+          console.error("Failed to cancel Asaas payment during order deletion:", err);
+        }
+      }
+
       deleteOrder(userEmail, orderToDelete);
       loadOrders();
       setOrderToDelete(null);
