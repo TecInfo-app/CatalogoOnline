@@ -19,6 +19,13 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         continue;
       }
 
+      // Also skip keys that a visitor should never fetch (agenda and routes)
+      const currentUser = auth.currentUser;
+      const isOwner = currentUser && currentUser.email && (currentUser.email.toLowerCase() === email.toLowerCase());
+      if (!isOwner && ['agenda_items', 'planned_routes'].includes(key)) {
+        continue;
+      }
+
       try {
         const docRef = doc(db, 'users', email, 'data', key);
         const snap = await getDoc(docRef);

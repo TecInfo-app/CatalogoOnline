@@ -11,10 +11,10 @@ service cloud.firestore {
       
       // Configuração de chaves de dados gerais da loja
       match /data/{key} {
-        // Chaves públicas: qualquer cliente precisa ler para carregar o catálogo online
-        allow read: if key in ['store_profile', 'products', 'coupons', 'product_categories'] || isOwner(email);
+        // Chaves públicas e chaves de clientes/pedidos para login e histórico do catálogo
+        allow read: if key in ['store_profile', 'products', 'coupons', 'product_categories', 'clients', 'orders'] || isOwner(email);
         
-        // Chaves privadas (clientes, pedidos, agenda) e escrita em qualquer chave: apenas o dono
+        // Escrita em qualquer chave e leitura de chaves privadas de controle (agenda, rotas, etc.): apenas o dono
         allow read, write: if isOwner(email);
       }
 
