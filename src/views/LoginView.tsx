@@ -40,11 +40,11 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8 sm:p-10 flex flex-col items-center">
         
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center justify-center gap-3 mb-8">
           <img 
             src={logoImg}
             alt="Vitrine Pay"
-            className="w-12 h-12 rounded-xl object-contain shrink-0" 
+            className="h-12 w-auto object-contain shrink-0" 
             style={{
               filter: "brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2258%) hue-rotate(317deg) brightness(91%) contrast(98%)"
             }}

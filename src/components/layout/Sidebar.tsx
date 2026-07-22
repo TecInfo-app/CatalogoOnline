@@ -44,13 +44,15 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
             <img 
               src={logoImg}
               alt={shopName}
-              className="w-8 h-8 object-contain shrink-0" 
+              className="h-8 w-auto object-contain shrink-0" 
               style={{
                 filter: "brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2258%) hue-rotate(317deg) brightness(91%) contrast(98%)"
               }}
             />
           )}
-          <span className="truncate">{shopName}</span>
+          {shopName !== 'Vitrine Pay' && (
+            <span className="truncate">{shopName}</span>
+          )}
         </h1>
       </div>
       <div className="flex-1 overflow-y-auto px-1.5 space-y-1">
