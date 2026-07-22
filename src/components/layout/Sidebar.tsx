@@ -1,7 +1,7 @@
 import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoreProfile } from '../../lib/store';
-import logoImg from '../../assets/brand-icon.png';
+import logoImg from '../../assets/shop-logo.png';
 
 interface SidebarProps {
   currentTab: string;
