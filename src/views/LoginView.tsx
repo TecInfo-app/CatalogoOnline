@@ -45,9 +45,6 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
             src={logoImg}
             alt="Vitrine Pay"
             className="h-12 w-auto object-contain shrink-0" 
-            style={{
-              filter: "brightness(0) saturate(100%) invert(18%) sepia(87%) saturate(2258%) hue-rotate(317deg) brightness(91%) contrast(98%)"
-            }}
           />
           <span className="text-3xl font-extrabold text-primary tracking-tight">Vitrine Pay</span>
         </div>

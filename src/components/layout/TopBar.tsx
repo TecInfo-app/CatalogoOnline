@@ -29,14 +29,9 @@ export function TopBar({ userEmail, onLogout, profileVersion }: TopBarProps) {
             src={logoImg}
             alt={shopName}
             className="h-6 w-auto object-contain shrink-0" 
-            style={{
-              filter: "brightness(0) invert(1)"
-            }}
           />
         )}
-        {shopName !== 'Vitrine Pay' && (
-          <span className="text-headline-sm font-bold ml-1 truncate">{shopName}</span>
-        )}
+        <span className="text-headline-sm font-bold ml-1 truncate">{shopName}</span>
       </div>
       <div className="flex items-center gap-2">
         <button className="text-on-primary/90 hover:bg-primary-container/20 p-2 rounded-full transition-colors">
