@@ -1,6 +1,6 @@
 import { UserCircle, Search, Menu, LogOut } from 'lucide-react';
 import { getStoreProfile } from '../../lib/store';
-import logoImg from '../../assets/logo.png';
+import logoImg from '../../assets/brand-icon.png';
 
 interface TopBarProps {
   userEmail?: string;

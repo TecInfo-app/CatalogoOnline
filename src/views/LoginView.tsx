@@ -3,7 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { auth } from '../lib/firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
-import logoImg from '../assets/logo.png';
+import logoImg from '../assets/brand-icon.png';
 
 export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
   const [email, setEmail] = useState('');
