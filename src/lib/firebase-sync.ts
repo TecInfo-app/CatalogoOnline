@@ -2,7 +2,7 @@ import { db, auth } from './firebase';
 import { doc, getDoc, setDoc, onSnapshot, collection, getDocs, deleteDoc } from 'firebase/firestore';
 import { Order, Client, Product } from '../types';
 
-const KNOWN_KEYS = ['store_profile', 'products', 'coupons', 'clients', 'orders', 'product_categories', 'agenda_items', 'planned_routes'];
+const KNOWN_KEYS = ['store_profile', 'products', 'coupons', 'clients', 'orders', 'product_categories', 'sellers', 'agenda_items', 'planned_routes'];
 
 let isSyncingFromFirebase = false;
 
@@ -44,7 +44,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
     // First, load standard keys
     for (const key of KNOWN_KEYS) {
       // If only public data is requested, skip private tables
-      const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories'].includes(key);
+      const isPrivateKey = !['store_profile', 'products', 'coupons', 'product_categories', 'sellers'].includes(key);
       if (actualOnlyPublic && isPrivateKey) {
         continue;
       }

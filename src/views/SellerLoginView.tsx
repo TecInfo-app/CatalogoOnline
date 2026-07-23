@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mail, Phone, ArrowLeft, ShieldAlert, KeyRound, ArrowRight } from 'lucide-react';
 import { getSellers, getStoreProfile } from '../lib/store';
+import { getEmailBySlug, loadStoreData } from '../lib/firebase-sync';
 import { Seller } from '../types';
 import logoImg from '../assets/shop-logo.png';
 
@@ -16,22 +17,41 @@ export function SellerLoginView({ ownerId, onLoginSuccess, onBackToOwnerLogin }:
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [shopName, setShopName] = useState('Vitrine Pay');
+  const [resolvedOwnerEmail, setResolvedOwnerEmail] = useState<string>('');
 
   // Try to resolve the owner's email from the slug/email provided
   useEffect(() => {
-    if (ownerId) {
-      try {
-        const profile = getStoreProfile(ownerId);
-        if (profile && profile.shopName) {
-          setShopName(profile.shopName);
+    const resolveAndLoadData = async () => {
+      let actualOwnerEmail = ownerId;
+      
+      if (ownerId && !ownerId.includes('@')) {
+        const resolvedEmail = await getEmailBySlug(ownerId);
+        if (resolvedEmail) {
+          actualOwnerEmail = resolvedEmail;
         }
-      } catch (e) {
-        console.error("Error fetching owner profile:", e);
       }
-    }
+      
+      setResolvedOwnerEmail(actualOwnerEmail);
+      
+      if (actualOwnerEmail) {
+        // Load store data (including sellers) from Firebase so login works on new devices
+        await loadStoreData(actualOwnerEmail, true);
+        
+        try {
+          const profile = getStoreProfile(actualOwnerEmail);
+          if (profile && profile.shopName) {
+            setShopName(profile.shopName);
+          }
+        } catch (e) {
+          console.error("Error fetching owner profile:", e);
+        }
+      }
+    };
+    
+    resolveAndLoadData();
   }, [ownerId]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setLoading(true);
@@ -42,68 +62,38 @@ export function SellerLoginView({ ownerId, onLoginSuccess, onBackToOwnerLogin }:
       return;
     }
 
-    setTimeout(() => {
-      try {
-        // 1. Resolve actual owner email
-        let actualOwnerEmail = ownerId;
-        
-        // Let's search if the ownerId is a slug or an email
-        if (ownerId && !ownerId.includes('@')) {
-          // It's a slug, we can scan localStorage for matching store profiles to find the real email
-          const keys = Object.keys(localStorage);
-          const profileKey = keys.find(k => {
-            if (k.startsWith('vitrine_pay_') && k.endsWith('_store_profile')) {
-              try {
-                const profile = JSON.parse(localStorage.getItem(k) || '{}');
-                return profile.slug === ownerId;
-              } catch (e) {
-                return false;
-              }
-            }
-            return false;
-          });
-          
-          if (profileKey) {
-            // Key is 'vitrine_pay_{email}_store_profile'
-            const parts = profileKey.split('_');
-            // email is parts[2] but parts could have multiple underscores. Let's extract properly
-            const match = profileKey.match(/^vitrine_pay_(.+)_store_profile$/);
-            if (match && match[1]) {
-              actualOwnerEmail = match[1];
-            }
-          }
-        }
+    try {
+      const actualOwnerEmail = resolvedOwnerEmail || ownerId;
 
-        // 2. Fetch sellers list for this owner
-        const sellers = getSellers(actualOwnerEmail);
-        
-        // 3. Find seller with matching email and phone (numbers only comparison to prevent mask mismatch)
-        const cleanInputPhone = phone.replace(/\D/g, '');
-        const matchedSeller = sellers.find(s => {
-          const cleanSellerPhone = s.phone.replace(/\D/g, '');
-          const emailMatch = s.email.toLowerCase().trim() === email.toLowerCase().trim();
-          const phoneMatch = cleanSellerPhone === cleanInputPhone || s.phone === phone;
-          return emailMatch && phoneMatch;
-        });
+      // 2. Fetch sellers list for this owner
+      const sellers = getSellers(actualOwnerEmail);
+      
+      // 3. Find seller with matching email and phone (numbers only comparison to prevent mask mismatch)
+      const cleanInputPhone = phone.replace(/\D/g, '');
+      const matchedSeller = sellers.find(s => {
+        const cleanSellerPhone = s.phone.replace(/\D/g, '');
+        const emailMatch = s.email.toLowerCase().trim() === email.toLowerCase().trim();
+        const phoneMatch = cleanSellerPhone === cleanInputPhone || s.phone === phone;
+        return emailMatch && phoneMatch;
+      });
 
-        if (matchedSeller) {
-          // Save session
-          localStorage.setItem('vitrine_pay_seller_session', JSON.stringify({
-            ownerEmail: actualOwnerEmail,
-            sellerId: matchedSeller.id
-          }));
-          
-          onLoginSuccess(actualOwnerEmail, matchedSeller);
-        } else {
-          setErrorMsg('Vendedor não cadastrado ou celular incorreto para este estabelecimento.');
-        }
-      } catch (err) {
-        console.error("Seller login error:", err);
-        setErrorMsg('Erro ao processar login. Verifique as informações.');
-      } finally {
-        setLoading(false);
+      if (matchedSeller) {
+        // Save session
+        localStorage.setItem('vitrine_pay_seller_session', JSON.stringify({
+          ownerEmail: actualOwnerEmail,
+          sellerId: matchedSeller.id
+        }));
+        
+        onLoginSuccess(actualOwnerEmail, matchedSeller);
+      } else {
+        setErrorMsg('Vendedor não cadastrado ou celular incorreto para este estabelecimento.');
       }
-    }, 800);
+    } catch (err) {
+      console.error("Seller login error:", err);
+      setErrorMsg('Erro ao processar login. Verifique as informações.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
