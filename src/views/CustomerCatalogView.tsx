@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy, ChevronRight, ChevronDown } from 'lucide-react';
 import { getProducts, saveProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
 import { Product, Order, Client, Coupon } from '../types';
 import { cn } from '../lib/utils';
@@ -46,6 +46,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
   const [asaasPayments, setAsaasPayments] = useState<any[]>([]);
   const [isLoadingAsaasPayments, setIsLoadingAsaasPayments] = useState(false);
   const [activeHistoryTab, setActiveHistoryTab] = useState<'orders' | 'invoices'>('orders');
+  const [expandedAsaasGroups, setExpandedAsaasGroups] = useState<string[]>([]);
   const [copiedPaymentId, setCopiedPaymentId] = useState<string | null>(null);
   const [isFetchingAction, setIsFetchingAction] = useState<string | null>(null);
 
@@ -2088,14 +2089,21 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         const bNum = parseInt(b[0].replace(/\D/g, '')) || 0;
                         return bNum - aNum;
                       });
-
+                      
                       return sortedGroupEntries.map(([groupTitle, payments]) => {
                         const totalGroupVal = payments.reduce((sum: number, p: any) => sum + p.value, 0);
-
+                        const isExpanded = expandedAsaasGroups.includes(groupTitle);
                         return (
                           <div key={groupTitle} className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-xs hover:shadow-xs transition-all">
                             {/* Group Header */}
-                            <div className="bg-slate-50/70 px-4 py-3 border-b border-slate-100/80 flex items-center justify-between">
+                            <div 
+                              onClick={() => {
+                                setExpandedAsaasGroups(prev => 
+                                  prev.includes(groupTitle) ? prev.filter(t => t !== groupTitle) : [...prev, groupTitle]
+                                );
+                              }}
+                              className="bg-slate-50/70 px-4 py-3 border-b border-slate-100/80 flex items-center justify-between cursor-pointer hover:bg-slate-100/70 transition-colors"
+                            >
                               <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-full bg-[#851b42]/10 text-[#851b42] flex items-center justify-center">
                                   <ClipboardList size={14} />
@@ -2107,15 +2115,22 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                   </p>
                                 </div>
                               </div>
-                              <span className="text-[10px] font-black text-[#851b42] bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-3xs">
-                                Total: R$ {totalGroupVal.toFixed(2).replace('.', ',')}
-                              </span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-[10px] font-black text-[#851b42] bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-3xs">
+                                  Total: R$ {totalGroupVal.toFixed(2).replace('.', ',')}
+                                </span>
+                                <ChevronDown 
+                                  size={16} 
+                                  className={cn("text-slate-400 transition-transform duration-200", isExpanded ? "rotate-180" : "")} 
+                                />
+                              </div>
                             </div>
 
                             {/* List of installments/payments inside this group */}
-                            <div className="p-4 divide-y divide-slate-100/60 space-y-4">
-                              {payments.map((payment, pIndex) => {
-                                const statusText = {
+                            {isExpanded && (
+                              <div className="p-4 divide-y divide-slate-100/60 space-y-4">
+                                {payments.map((payment, pIndex) => {
+                                  const statusText = {
                                   PENDING: 'Pendente',
                                   RECEIVED: 'Pago',
                                   CONFIRMED: 'Pago',
@@ -2221,6 +2236,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                                 );
                               })}
                             </div>
+                            )}
                           </div>
                         );
                       });
