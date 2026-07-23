@@ -700,7 +700,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                 <ClipboardList size={36} className="text-slate-300 font-light" strokeWidth={1.5} />
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">Nenhuma tarefa ou atividade encontrada</h3>
-              <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+              <p className="text-xs text-slate-400 max-w-md w-full leading-relaxed">
                 Não encontramos nenhuma tarefa ou atividade para este período. Crie uma nova ou verifique os filtros aplicados.
               </p>
             </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, ChangeEvent } from 'react';
 import { Client } from '../../types';
-import { Search, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info, Settings, Save, CheckCircle } from 'lucide-react';
+import { Search, Users, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info, Settings, Save, CheckCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
 import { getOrders, getIndicatorSettings, saveIndicatorSettings } from '../../lib/store';
@@ -352,7 +352,7 @@ export function ClientList({
           className={cn("px-4 py-3 flex items-center gap-2", activeTab === 'CLIENTES' ? "border-b-2 border-[#333] text-[#333]" : "text-slate-500 hover:text-[#333]")}
           onClick={() => setActiveTab('CLIENTES')}
         >
-          <span className="bg-[#333] text-white p-0.5 rounded-sm"><svg xmlns="http://www.w3.org/2000/sm"><path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"/><path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9"/><path d="M12 3v6"/></svg></span>
+          <Users size={16} className="text-current" />
           CLIENTES
         </button>
         {!hideSettings && (
