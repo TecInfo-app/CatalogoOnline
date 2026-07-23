@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-import { getOrders, getClients, getProducts, getIndicatorSettings } from '../lib/store';
+import { getOrders, getClients, getProducts, getIndicatorSettings, getSellers } from '../lib/store';
 import { Seller } from '../types';
 
 const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
@@ -40,9 +40,27 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
   }, []);
 
   const settings = useMemo(() => getIndicatorSettings(userEmail), [userEmail, syncVersion]);
+  const sellers = useMemo(() => getSellers(userEmail), [userEmail, syncVersion]);
 
   const [activeTab, setActiveTab] = useState<'panel' | 'reports'>('panel');
+  const [selectedSellerId, setSelectedSellerId] = useState<string>('all');
   const [selectedReport, setSelectedReport] = useState<'summary' | 'clients' | 'products' | 'detailed'>('summary');
+
+  const { filteredOrders, filteredClients } = useMemo(() => {
+    let ords = getOrders(userEmail);
+    let clis = getClients(userEmail);
+    
+    // If active seller is limited, force filter to their own data
+    const effectiveSellerId = (activeSeller && activeSeller.role === 'Comum' && activeSeller.permissions.limitarAcessoClientes) 
+      ? activeSeller.id 
+      : selectedSellerId;
+
+    if (effectiveSellerId !== 'all') {
+      ords = ords.filter(o => o.sellerId === effectiveSellerId);
+      clis = clis.filter(c => c.sellerId === effectiveSellerId);
+    }
+    return { filteredOrders: ords, filteredClients: clis };
+  }, [userEmail, selectedSellerId, activeSeller, syncVersion]);
 
   const [totalVendidoMes, setTotalVendidoMes] = useState(0);
   const [totalVendidoHoje, setTotalVendidoHoje] = useState(0);
@@ -79,8 +97,8 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
   const [b2bSemPedidosList, setB2bSemPedidosList] = useState<{id: string, name: string, phone: string, location: string}[]>([]);
 
   const reportData = useMemo(() => {
-    const orders = getOrders(userEmail);
-    const clients = getClients(userEmail);
+    const orders = filteredOrders;
+    const clients = filteredClients;
     const products = getProducts(userEmail);
     
     const start = new Date(startDate + 'T00:00:00');
@@ -189,13 +207,13 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
       uniqueClientsCount: clientSalesList.length,
       totalItemsCount: productSalesList.reduce((acc, p) => acc + p.qty, 0)
     };
-  }, [userEmail, startDate, endDate, syncVersion]);
+  }, [userEmail, startDate, endDate, filteredOrders, filteredClients]);
 
   const [considerarImpostos, setConsiderarImpostos] = useState(true);
 
   const curvaAbcData = useMemo(() => {
-    const orders = getOrders(userEmail);
-    const clients = getClients(userEmail);
+    const orders = filteredOrders;
+    const clients = filteredClients;
     const start = new Date(startDate + 'T00:00:00');
     const end = new Date(endDate + 'T23:59:59');
     const currentYear = today.getFullYear();
@@ -279,11 +297,11 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
       totalClientsCount: clients.length,
       purchasersCount: purchasers.length
     };
-  }, [userEmail, startDate, endDate, considerarImpostos, syncVersion]);
+  }, [userEmail, startDate, endDate, considerarImpostos, filteredOrders, filteredClients]);
 
   useEffect(() => {
-    const orders = getOrders(userEmail);
-    const clients = getClients(userEmail);
+    const orders = filteredOrders;
+    const clients = filteredClients;
 
     const todayDateStr = new Date().toLocaleDateString('pt-BR');
     const thisMonthStr = todayDateStr.substring(3); // e.g. "07/2026"
@@ -562,7 +580,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
     setPositivados(tempPosNovos.length + tempPosAtivos.length + tempPosInativosRecentes.length + tempPosInativosAntigos.length);
     setCatalogClientsCount(tempB2bComPedidos.length);
     setChartData(newChartData);
-  }, [userEmail, startDate, endDate, syncVersion]);
+  }, [userEmail, startDate, endDate, filteredOrders, filteredClients]);
 
   return (
     <div className="animate-in fade-in duration-300 max-w-7xl mx-auto space-y-6">
@@ -637,8 +655,15 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
             onChange={(e) => setEndDate(e.target.value)}
             className="w-full sm:w-1/4 bg-surface border border-outline-variant rounded-md py-2 px-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
           />
-          <select className="w-full sm:w-1/2 bg-surface border border-outline-variant rounded-md py-2 px-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary">
-            <option>Todos os vendedores</option>
+          <select 
+            value={selectedSellerId}
+            onChange={(e) => setSelectedSellerId(e.target.value)}
+            className="w-full sm:w-1/2 bg-surface border border-outline-variant rounded-md py-2 px-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
+          >
+            <option value="all">Todos os vendedores</option>
+            {sellers.map(s => (
+              <option key={s.id} value={s.id}>{s.name}</option>
+            ))}
           </select>
         </div>
       </div>
