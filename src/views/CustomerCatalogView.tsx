@@ -2058,18 +2058,23 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                   <div className="space-y-5">
                     {(() => {
                       const getOrderGroupKey = (p: any) => {
+                        let orderId = "";
                         if (p.externalReference) {
-                          return `Pedido #${p.externalReference}`;
-                        }
-                        if (p.description) {
-                          const match = p.description.match(/#([A-Za-z0-9-]+)/);
+                          orderId = p.externalReference;
+                        } else if (p.description) {
+                          const match = p.description.match(/#([A-Za-z0-9-_]+)/);
                           if (match) {
-                            return `Pedido #${match[1]}`;
-                          }
-                          if (p.description.includes('Pedido #')) {
+                            orderId = match[1];
+                          } else if (p.description.includes('Pedido #')) {
                             const idx = p.description.indexOf('Pedido #');
-                            return p.description.substring(idx).trim();
+                            orderId = p.description.substring(idx).replace('Pedido #', '').trim();
                           }
+                        }
+                        
+                        if (orderId) {
+                          // Remove the _1, _2 suffix if present to group them
+                          const cleanOrderId = orderId.split('_')[0];
+                          return `Pedido #${cleanOrderId}`;
                         }
                         return "Faturas Diversas / Outros";
                       };
