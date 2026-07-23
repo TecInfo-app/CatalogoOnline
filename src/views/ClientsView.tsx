@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
 import { getClients, addClient, updateClient, deleteClient } from '../lib/store';
-import { Client } from '../types';
+import { Client, Seller } from '../types';
 import { ClientList } from '../components/clients/ClientList';
 import { ClientForm } from '../components/clients/ClientForm';
 import { ClientDetail } from '../components/clients/ClientDetail';
 
 type ViewState = 'list' | 'create' | 'detail';
 
-export function ClientsView({ userEmail, onNavigate }: { userEmail: string; onNavigate?: (tab: string) => void }) {
+export function ClientsView({ userEmail, onNavigate, activeSeller }: { userEmail: string; onNavigate?: (tab: string) => void; activeSeller?: Seller | null }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [viewState, setViewState] = useState<ViewState>('list');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const [clientToDelete, setClientToDelete] = useState<string | null>(null);
+
+  const canCreateClients = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirCadastrarClientes;
+  const canEditClients = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirAlterarClientes;
+  const hideSettings = !!activeSeller; // Hide client thresholds for all sellers
 
   useEffect(() => {
     loadClients();
@@ -25,10 +29,15 @@ export function ClientsView({ userEmail, onNavigate }: { userEmail: string; onNa
     return () => {
       window.removeEventListener('vitrine_pay_data_synced', handleSync);
     };
-  }, [userEmail]);
+  }, [userEmail, activeSeller]);
 
   const loadClients = () => {
-    setClients(getClients(userEmail));
+    let allClients = getClients(userEmail);
+    // If active seller has limitation active, filter to only clients that they created or assigned to them
+    if (activeSeller && activeSeller.role === 'Comum' && activeSeller.permissions.limitarAcessoClientes) {
+      allClients = allClients.filter(c => c.sellerId === activeSeller.id);
+    }
+    setClients(allClients);
   };
 
   const handleCreateNew = () => {
@@ -52,7 +61,7 @@ export function ClientsView({ userEmail, onNavigate }: { userEmail: string; onNa
       setSelectedClient(null);
     } else {
       // Create mode
-      const newClient = partialClient as Client;
+      const newClient = { ...partialClient, sellerId: activeSeller?.id } as Client;
       addClient(userEmail, newClient);
       loadClients();
       setViewState('list');
@@ -148,6 +157,9 @@ export function ClientsView({ userEmail, onNavigate }: { userEmail: string; onNa
           onEditClient={handleEditClient}
           onDeleteClient={handleDeleteClient}
           onImport={handleImport}
+          canCreateClients={canCreateClients}
+          canEditClients={canEditClients}
+          hideSettings={hideSettings}
         />
       )}
 

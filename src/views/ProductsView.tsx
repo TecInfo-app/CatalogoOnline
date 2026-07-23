@@ -28,12 +28,16 @@ import {
   Ticket
 } from 'lucide-react';
 import { getProducts, getCoupons, saveCoupons } from '../lib/store';
-import { Product, Coupon } from '../types';
+import { Product, Coupon, Seller } from '../types';
 import { cn } from '../lib/utils';
 import { ProductFormModal } from '../components/ProductFormModal';
 import { ImportExportModal } from '../components/ImportExportModal';
 
-export function ProductsView({ userEmail }: { userEmail: string }) {
+export function ProductsView({ userEmail, activeSeller }: { userEmail: string; activeSeller?: Seller | null }) {
+  // Compute permissions
+  const canCreate = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirCadastrarProdutos;
+  const canEdit = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirAlterarExcluirProdutos;
+
   // Main tabs: 'produtos' or 'promocoes'
   const [topMainTab, setTopMainTab] = useState<'produtos' | 'promocoes'>('produtos');
 
@@ -579,27 +583,31 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
         
         {/* Left Side Actions: Add, Import, More Options */}
         <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
-          <button
-            type="button"
-            onClick={() => {
-              setProductToEdit(null);
-              setIsFormModalOpen(true);
-            }}
-            className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/10 flex items-center gap-2"
-          >
-            <Plus size={15} strokeWidth={2.5} /> Cadastrar produto
-          </button>
+          {canCreate && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setProductToEdit(null);
+                  setIsFormModalOpen(true);
+                }}
+                className="bg-[#851b42] hover:bg-[#5e132e] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all shadow-md shadow-purple-900/10 flex items-center gap-2"
+              >
+                <Plus size={15} strokeWidth={2.5} /> Cadastrar produto
+              </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              setImportExportInitialTab('import');
-              setIsImportExportOpen(true);
-            }}
-            className="border border-[#851b42]/30 hover:border-[#851b42] text-[#851b42] hover:bg-[#851b42]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
-          >
-            <Upload size={14} /> Importar
-          </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setImportExportInitialTab('import');
+                  setIsImportExportOpen(true);
+                }}
+                className="border border-[#851b42]/30 hover:border-[#851b42] text-[#851b42] hover:bg-[#851b42]/5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+              >
+                <Upload size={14} /> Importar
+              </button>
+            </>
+          )}
 
           <button
             type="button"
@@ -1147,17 +1155,19 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       {/* Actions */}
                       <td className="py-3.5 px-4">
                         <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setProductToEdit(product);
-                              setIsFormModalOpen(true);
-                            }}
-                            className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-[#851b42] rounded-lg transition-colors"
-                            title="Editar"
-                          >
-                            <Edit size={14} />
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductToEdit(product);
+                                setIsFormModalOpen(true);
+                              }}
+                              className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-[#851b42] rounded-lg transition-colors"
+                              title="Editar"
+                            >
+                              <Edit size={14} />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleTogglePromo(product.id)}
@@ -1171,14 +1181,16 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                           >
                             <Sparkles size={14} />
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteProduct(product.id)}
-                            className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteProduct(product.id)}
+                              className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-lg transition-colors"
+                              title="Excluir"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
                         </div>
                       </td>
 
@@ -1322,25 +1334,29 @@ export function ProductsView({ userEmail }: { userEmail: string }) {
                       >
                         {product.isActive !== false ? <Eye size={13} /> : <EyeOff size={13} />}
                       </button>
-                      <button 
-                        type="button"
-                        onClick={() => {
-                          setProductToEdit(product);
-                          setIsFormModalOpen(true);
-                        }}
-                        className="w-8 h-8 rounded-lg border border-slate-200 hover:border-[#851b42]/30 text-slate-600 hover:text-[#851b42] hover:bg-purple-50 flex items-center justify-center transition-colors"
-                        title="Editar"
-                      >
-                        <Edit size={13} />
-                      </button>
-                      <button 
-                        type="button"
-                        onClick={() => handleDeleteProduct(product.id)}
-                        className="w-8 h-8 rounded-lg border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
-                        title="Excluir"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setProductToEdit(product);
+                              setIsFormModalOpen(true);
+                            }}
+                            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-[#851b42]/30 text-slate-600 hover:text-[#851b42] hover:bg-purple-50 flex items-center justify-center transition-colors"
+                            title="Editar"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => handleDeleteProduct(product.id)}
+                            className="w-8 h-8 rounded-lg border border-slate-200 hover:border-red-200 text-slate-600 hover:text-red-500 hover:bg-red-50 flex items-center justify-center transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
 

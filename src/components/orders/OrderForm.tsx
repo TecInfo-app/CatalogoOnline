@@ -2,7 +2,19 @@ import { useState, useMemo, useEffect } from 'react';
 import { Order, Product, Client } from '../../types';
 import { Building2, Package, Info, Search, Plus, List, Edit2, Send, Check, UserSquare2, X, Printer, ArrowDown, ArrowUp } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { getClients, getProducts, getStoreProfile } from '../../lib/store';
+import { getClients, getProducts, getStoreProfile, getSellers } from '../../lib/store';
+
+const getInstallmentDate = (baseDate: string, index: number, frequency: 'semanal' | 'quinzenal' | 'mensal') => {
+  const d = new Date(baseDate + 'T12:00:00');
+  if (frequency === 'semanal') {
+    d.setDate(d.getDate() + (index * 7));
+  } else if (frequency === 'quinzenal') {
+    d.setDate(d.getDate() + (index * 14));
+  } else {
+    d.setMonth(d.getMonth() + index);
+  }
+  return d.toISOString().split('T')[0];
+};
 
 interface OrderFormProps {
   userEmail: string;
@@ -25,6 +37,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const [products, setProducts] = useState<Product[]>([]);
   
   const [orderItems, setOrderItems] = useState<{
+    id: string;
     product: Product;
     quantity: number;
     price: number;
@@ -38,6 +51,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
 
   // Product configuration modal states
   const [productConfiguring, setProductConfiguring] = useState<Product | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [configuringQuantity, setConfiguringQuantity] = useState(1);
   const [configuringPriceTable, setConfiguringPriceTable] = useState('Preço de Tabela');
   const [configuringBasePrice, setConfiguringBasePrice] = useState(0);
@@ -54,14 +68,185 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const [paymentMethod, setPaymentMethod] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [installments, setInstallments] = useState(1);
+  const [billingFrequency, setBillingFrequency] = useState<'semanal' | 'quinzenal' | 'mensal'>('mensal');
   
+  // Represented details states
+  const [representedName, setRepresentedName] = useState('');
+  const [representedPhone, setRepresentedPhone] = useState('');
+
+  const sellers = useMemo(() => getSellers(userEmail), [userEmail]);
+  
+  const activeSellerConfig = useMemo(() => {
+    return sellers.find(s => s.name === representedName);
+  }, [sellers, representedName]);
+
+  const activeRepresentedConfig = useMemo(() => {
+    if (!activeSellerConfig) return null;
+    return activeSellerConfig.representedList?.find(r => r.name === representedName && r.checked);
+  }, [activeSellerConfig, representedName]);
+
+  const maxDiscountAllowed = activeRepresentedConfig ? activeRepresentedConfig.maxDiscount : 100;
+  const maxMarkupAllowed = activeRepresentedConfig ? activeRepresentedConfig.maxMarkup : 100;
+
+  const allowedTables = useMemo(() => {
+    if (!activeRepresentedConfig || !activeRepresentedConfig.priceTables || activeRepresentedConfig.priceTables === 'Sem restrição') {
+      return null;
+    }
+    return activeRepresentedConfig.priceTables.split(', ');
+  }, [activeRepresentedConfig]);
+  
+  // Draft persistent states
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [hasRestoredDraft, setHasRestoredDraft] = useState(false);
+
   useEffect(() => {
     const loadedClients = getClients(userEmail);
     const loadedProducts = getProducts(userEmail);
     setClients(loadedClients);
     setProducts(loadedProducts);
 
+    // 1. Check if there is an active draft in localStorage
+    const draftStr = localStorage.getItem(`order_draft_${userEmail}`);
+    let draftLoaded = false;
+    
+    if (draftStr) {
+      try {
+        const draft = JSON.parse(draftStr);
+        // Ensure it matches our context:
+        // if orderToEdit exists, draft.orderToEditId must equal orderToEdit.id.
+        // if orderToEdit is null/undefined, draft.orderToEditId must be null/undefined.
+        const isEditMatch = orderToEdit && draft.orderToEditId === orderToEdit.id;
+        const isNewMatch = !orderToEdit && !draft.orderToEditId;
+
+        if (isEditMatch || isNewMatch) {
+          // Check if there is actual content in the draft
+          if (draft.selectedClientId || (draft.orderItems && draft.orderItems.length > 0)) {
+            if (draft.selectedClientId) {
+              const client = loadedClients.find(c => c.id === draft.selectedClientId);
+              if (client) setSelectedClient(client);
+            } else {
+              setSelectedClient(null);
+            }
+            setOrderNumber(draft.orderNumber || '');
+            setOrderType(draft.orderType || 'Venda');
+            setPaymentMethod(draft.paymentMethod || '');
+            setDueDate(draft.dueDate || '');
+            setInstallments(draft.installments || 1);
+            setBillingFrequency(draft.billingFrequency || 'mensal');
+            setOrderItems(draft.orderItems || []);
+            setRepresentedName(draft.representedName || '');
+            setRepresentedPhone(draft.representedPhone || '');
+            setHasRestoredDraft(true);
+            draftLoaded = true;
+          }
+        }
+      } catch (e) {
+        console.error("Error parsing order draft", e);
+      }
+    }
+
+    // 2. If no draft was loaded, load from orderToEdit or defaults
+    if (!draftLoaded) {
+      if (orderToEdit) {
+        if (orderToEdit.clientId) {
+          const client = loadedClients.find(c => c.id === orderToEdit.clientId);
+          if (client) setSelectedClient(client);
+        } else {
+          const client = loadedClients.find(c => c.name === orderToEdit.clientName);
+          if (client) setSelectedClient(client);
+        }
+        
+        setOrderNumber(orderToEdit.orderNumber);
+        setOrderType(orderToEdit.orderType || 'Venda');
+        setPaymentMethod(orderToEdit.paymentMethod || '');
+        setDueDate(orderToEdit.dueDate || '');
+        setInstallments(orderToEdit.installments || 1);
+        setBillingFrequency(orderToEdit.billingFrequency || 'mensal');
+        setRepresentedName(orderToEdit.representedName || '');
+        setRepresentedPhone(orderToEdit.representedPhone || '');
+        
+        if (orderToEdit.items) {
+          const itemsToSet = orderToEdit.items.map((i, index) => {
+             const p = loadedProducts.find(p => p.id === i.productId);
+             return {
+               id: `${i.productId}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+               product: p || { id: i.productId, name: i.name, price: i.price, sku: '', stock: 0, status: 'in_stock', imageUrl: '' },
+               quantity: i.quantity,
+               price: i.price,
+               priceTable: (i as any).priceTable || 'Preço de Tabela',
+               discount1: (i as any).discount1 || 0,
+               discount2: (i as any).discount2 || 0,
+               addition1: (i as any).addition1 || 0,
+               addition2: (i as any).addition2 || 0,
+               additionalInfo: (i as any).additionalInfo || ''
+             };
+          });
+          setOrderItems(itemsToSet as any);
+        }
+      } else {
+        setOrderNumber(Math.floor(Math.random() * 10000).toString());
+        setRepresentedName(storeProfile.shopName || storeProfile.name || 'Minha Loja');
+        setRepresentedPhone(storeProfile.phone || '');
+        const nextMonth = new Date();
+        nextMonth.setDate(nextMonth.getDate() + 30);
+        setDueDate(nextMonth.toISOString().split('T')[0]);
+        setInstallments(1);
+        setBillingFrequency('mensal');
+
+        const preselectedClientStr = sessionStorage.getItem('preselected_order_client');
+        if (preselectedClientStr) {
+          try {
+            const preselected = JSON.parse(preselectedClientStr);
+            const matched = loadedClients.find(c => c.id === preselected.id);
+            if (matched) {
+              setSelectedClient(matched);
+            }
+            sessionStorage.removeItem('preselected_order_client');
+          } catch (e) {
+            console.error(e);
+          }
+        }
+      }
+    }
+
+    setIsInitialized(true);
+  }, [userEmail, orderToEdit]);
+
+  // Auto-save draft on any changes after initialization
+  useEffect(() => {
+    if (!isInitialized || !userEmail) return;
+
+    const draftData = {
+      selectedClientId: selectedClient?.id || null,
+      orderNumber,
+      orderType,
+      paymentMethod,
+      dueDate,
+      installments,
+      billingFrequency,
+      orderItems,
+      orderToEditId: orderToEdit?.id || null,
+      representedName,
+      representedPhone
+    };
+
+    if (selectedClient || orderItems.length > 0) {
+      localStorage.setItem(`order_draft_${userEmail}`, JSON.stringify(draftData));
+    } else {
+      localStorage.removeItem(`order_draft_${userEmail}`);
+    }
+  }, [isInitialized, userEmail, selectedClient, orderNumber, orderType, paymentMethod, dueDate, installments, billingFrequency, orderItems, orderToEdit, representedName, representedPhone]);
+
+  const handleClearDraft = () => {
+    localStorage.removeItem(`order_draft_${userEmail}`);
+    setHasRestoredDraft(false);
+    
+    // Reset to defaults or original orderToEdit
+    setSelectedClient(null);
+    setOrderItems([]);
     if (orderToEdit) {
+      const loadedClients = getClients(userEmail);
+      const loadedProducts = getProducts(userEmail);
       if (orderToEdit.clientId) {
         const client = loadedClients.find(c => c.id === orderToEdit.clientId);
         if (client) setSelectedClient(client);
@@ -75,14 +260,22 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       setPaymentMethod(orderToEdit.paymentMethod || '');
       setDueDate(orderToEdit.dueDate || '');
       setInstallments(orderToEdit.installments || 1);
+      setBillingFrequency(orderToEdit.billingFrequency || 'mensal');
       
       if (orderToEdit.items) {
-        const itemsToSet = orderToEdit.items.map(i => {
+        const itemsToSet = orderToEdit.items.map((i, index) => {
            const p = loadedProducts.find(p => p.id === i.productId);
            return {
+             id: `${i.productId}_${index}_${Math.random().toString(36).substr(2, 9)}`,
              product: p || { id: i.productId, name: i.name, price: i.price, sku: '', stock: 0, status: 'in_stock', imageUrl: '' },
              quantity: i.quantity,
-             price: i.price
+             price: i.price,
+             priceTable: (i as any).priceTable || 'Preço de Tabela',
+             discount1: (i as any).discount1 || 0,
+             discount2: (i as any).discount2 || 0,
+             addition1: (i as any).addition1 || 0,
+             addition2: (i as any).addition2 || 0,
+             additionalInfo: (i as any).additionalInfo || ''
            };
         });
         setOrderItems(itemsToSet as any);
@@ -93,22 +286,14 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       nextMonth.setDate(nextMonth.getDate() + 30);
       setDueDate(nextMonth.toISOString().split('T')[0]);
       setInstallments(1);
-
-      const preselectedClientStr = sessionStorage.getItem('preselected_order_client');
-      if (preselectedClientStr) {
-        try {
-          const preselected = JSON.parse(preselectedClientStr);
-          const matched = loadedClients.find(c => c.id === preselected.id);
-          if (matched) {
-            setSelectedClient(matched);
-          }
-          sessionStorage.removeItem('preselected_order_client');
-        } catch (e) {
-          console.error(e);
-        }
-      }
+      setBillingFrequency('mensal');
     }
-  }, [userEmail, orderToEdit]);
+  };
+
+  const handleCancel = () => {
+    localStorage.removeItem(`order_draft_${userEmail}`);
+    onCancel();
+  };
 
   const filteredClients = useMemo(() => {
     if (!clientSearchTerm) return clients;
@@ -129,20 +314,21 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
     );
   }, [products, searchTerm]);
 
-  const openProductConfigModal = (product: Product) => {
-    const existing = orderItems.find(item => item.product.id === product.id);
-    if (existing) {
+  const openProductConfigModal = (product: Product, existingItem?: typeof orderItems[0]) => {
+    if (existingItem) {
       setProductConfiguring(product);
-      setConfiguringQuantity(existing.quantity);
-      setConfiguringPriceTable(existing.priceTable || 'Preço de Tabela');
+      setEditingItemId(existingItem.id);
+      setConfiguringQuantity(existingItem.quantity);
+      setConfiguringPriceTable(existingItem.priceTable || 'Preço de Tabela');
       setConfiguringBasePrice(product.price);
-      setConfiguringDiscount1(existing.discount1 || 0);
-      setConfiguringDiscount2(existing.discount2 || 0);
-      setConfiguringAddition1(existing.addition1 || 0);
-      setConfiguringAddition2(existing.addition2 || 0);
-      setConfiguringAdditionalInfo(existing.additionalInfo || '');
+      setConfiguringDiscount1(existingItem.discount1 || 0);
+      setConfiguringDiscount2(existingItem.discount2 || 0);
+      setConfiguringAddition1(existingItem.addition1 || 0);
+      setConfiguringAddition2(existingItem.addition2 || 0);
+      setConfiguringAdditionalInfo(existingItem.additionalInfo || '');
     } else {
       setProductConfiguring(product);
+      setEditingItemId(null);
       setConfiguringQuantity(1);
       setConfiguringPriceTable('Preço de Tabela');
       setConfiguringBasePrice(product.price);
@@ -160,13 +346,13 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
     setSearchTerm('');
   };
 
-  const removeProduct = (productId: string) => {
-    setOrderItems(prev => prev.filter(item => item.product.id !== productId));
+  const removeProduct = (itemId: string) => {
+    setOrderItems(prev => prev.filter(item => item.id !== itemId));
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (itemId: string, quantity: number) => {
     if (quantity <= 0) return;
-    setOrderItems(prev => prev.map(item => item.product.id === productId ? { ...item, quantity } : item));
+    setOrderItems(prev => prev.map(item => item.id === itemId ? { ...item, quantity } : item));
   };
 
   const getPriceTables = (price: number) => [
@@ -180,46 +366,62 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const currentBasePrice = selectedTableObj.value;
 
   // sequential calculation of discounts and additions (cascading)
+  // Discount 1: Percentage (%), Discount 2: Value (R$)
+  // Addition 1: Percentage (%), Addition 2: Value (R$)
   let netPrice = currentBasePrice;
   if (configuringDiscount1 > 0) {
     netPrice = netPrice * (1 - configuringDiscount1 / 100);
   }
   if (configuringDiscount2 > 0) {
-    netPrice = netPrice * (1 - configuringDiscount2 / 100);
+    netPrice = netPrice - configuringDiscount2;
   }
   if (configuringAddition1 > 0) {
     netPrice = netPrice * (1 + configuringAddition1 / 100);
   }
   if (configuringAddition2 > 0) {
-    netPrice = netPrice * (1 + configuringAddition2 / 100);
+    netPrice = netPrice + configuringAddition2;
   }
+  netPrice = Math.max(0, netPrice);
 
   const configuringSubtotal = netPrice * configuringQuantity;
 
   const handleConfirmAddProduct = () => {
     if (!productConfiguring) return;
     
-    setOrderItems(prev => {
-      const exists = prev.find(item => item.product.id === productConfiguring.id);
-      const newItem = {
-        product: productConfiguring,
-        quantity: configuringQuantity,
-        price: netPrice,
-        priceTable: configuringPriceTable,
-        discount1: configuringDiscount1,
-        discount2: configuringDiscount2,
-        addition1: configuringAddition1,
-        addition2: configuringAddition2,
-        additionalInfo: configuringAdditionalInfo
-      };
+    const totalDiscountPercent = configuringDiscount1 + (configuringDiscount2 / configuringBasePrice) * 100;
+    if (totalDiscountPercent > maxDiscountAllowed) {
+      alert(`O desconto total (${totalDiscountPercent.toFixed(2)}%) excede o limite permitido (${maxDiscountAllowed}%).`);
+      return;
+    }
+    
+    const totalAdditionPercent = configuringAddition1 + (configuringAddition2 / configuringBasePrice) * 100;
+    if (totalAdditionPercent > maxMarkupAllowed) {
+      alert(`O acréscimo total (${totalAdditionPercent.toFixed(2)}%) excede o limite permitido (${maxMarkupAllowed}%).`);
+      return;
+    }
+    
+    const newItem = {
+      id: editingItemId || `${productConfiguring.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      product: productConfiguring,
+      quantity: configuringQuantity,
+      price: netPrice,
+      priceTable: configuringPriceTable,
+      discount1: configuringDiscount1,
+      discount2: configuringDiscount2,
+      addition1: configuringAddition1,
+      addition2: configuringAddition2,
+      additionalInfo: configuringAdditionalInfo
+    };
 
-      if (exists) {
-        return prev.map(item => item.product.id === productConfiguring.id ? newItem : item);
+    setOrderItems(prev => {
+      if (editingItemId) {
+        return prev.map(item => item.id === editingItemId ? newItem : item);
       }
       return [...prev, newItem];
     });
 
     setProductConfiguring(null);
+    setEditingItemId(null);
   };
 
   const totalValue = orderItems.reduce((acc, item) => acc + ((item.price ?? item.product.price) * item.quantity), 0);
@@ -312,38 +514,110 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           }
 
           // 3. Create payment (installment or single)
-          setAsaasStatusMsg(installments > 1 ? `Emitindo cobrança parcelada (${installments}x) no Asaas...` : 'Emitindo cobrança de parcela única no Asaas...');
-          const paymentPayload: any = {
-            customer: customerId,
-            billingType: 'BOLETO',
-            dueDate: dueDate,
-            description: `Pedido #${orderNumber || 'Auto'}`,
-            externalReference: orderNumber
-          };
-
+          let payData: any = {};
           if (installments > 1) {
-            paymentPayload.installmentCount = installments;
-            paymentPayload.totalValue = totalValue;
+            if (billingFrequency === 'mensal') {
+              setAsaasStatusMsg(`Emitindo cobrança parcelada (${installments}x mensal) no Asaas...`);
+              const paymentPayload: any = {
+                customer: customerId,
+                billingType: 'BOLETO',
+                dueDate: dueDate,
+                description: `Pedido #${orderNumber || 'Auto'}`,
+                externalReference: orderNumber,
+                installmentCount: installments,
+                totalValue: totalValue
+              };
+
+              const createPayRes = await fetch(`${baseUrl}/payments`, {
+                method: 'POST',
+                headers: {
+                  'access_token': storeProfile.asaasApiKey,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentPayload)
+              });
+
+              if (!createPayRes.ok) {
+                const errorData = await createPayRes.json().catch(() => ({}));
+                const errorMsg = errorData.errors?.[0]?.description || 'Erro ao gerar cobrança no Asaas';
+                throw new Error(errorMsg);
+              }
+
+              payData = await createPayRes.json();
+            } else {
+              // Create individual payments for custom frequencies (weekly/biweekly)
+              setAsaasStatusMsg(`Emitindo cobrança parcelada (${installments}x ${billingFrequency}) no Asaas...`);
+              const paymentIds: string[] = [];
+              let invoiceUrl = '';
+              for (let i = 0; i < installments; i++) {
+                const installmentDueDate = getInstallmentDate(dueDate, i, billingFrequency);
+                const paymentPayload: any = {
+                  customer: customerId,
+                  billingType: 'BOLETO',
+                  dueDate: installmentDueDate,
+                  value: parseFloat((totalValue / installments).toFixed(2)),
+                  description: `Pedido #${orderNumber || 'Auto'} (Parcela ${i + 1}/${installments})`,
+                  externalReference: `${orderNumber}_${i + 1}`
+                };
+
+                setAsaasStatusMsg(`Gerando parcela ${i + 1} de ${installments} (${billingFrequency}) no Asaas...`);
+                const createPayRes = await fetch(`${baseUrl}/payments`, {
+                  method: 'POST',
+                  headers: {
+                    'access_token': storeProfile.asaasApiKey,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(paymentPayload)
+                });
+
+                if (!createPayRes.ok) {
+                  const errorData = await createPayRes.json().catch(() => ({}));
+                  const errorMsg = errorData.errors?.[0]?.description || `Erro ao gerar parcela ${i + 1} no Asaas`;
+                  throw new Error(errorMsg);
+                }
+
+                const itemPayData = await createPayRes.json();
+                paymentIds.push(itemPayData.id);
+                if (i === 0) {
+                  invoiceUrl = itemPayData.invoiceUrl || itemPayData.bankSlipUrl;
+                }
+              }
+
+              payData = {
+                installment: paymentIds[0], // Use first payment as representative installment ID
+                id: paymentIds[0],
+                invoiceUrl: invoiceUrl
+              };
+            }
           } else {
-            paymentPayload.value = totalValue;
+            setAsaasStatusMsg('Emitindo cobrança de parcela única no Asaas...');
+            const paymentPayload: any = {
+              customer: customerId,
+              billingType: 'BOLETO',
+              dueDate: dueDate,
+              description: `Pedido #${orderNumber || 'Auto'}`,
+              externalReference: orderNumber,
+              value: totalValue
+            };
+
+            const createPayRes = await fetch(`${baseUrl}/payments`, {
+              method: 'POST',
+              headers: {
+                'access_token': storeProfile.asaasApiKey,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(paymentPayload)
+            });
+
+            if (!createPayRes.ok) {
+              const errorData = await createPayRes.json().catch(() => ({}));
+              const errorMsg = errorData.errors?.[0]?.description || 'Erro ao gerar cobrança no Asaas';
+              throw new Error(errorMsg);
+            }
+
+            payData = await createPayRes.json();
           }
 
-          const createPayRes = await fetch(`${baseUrl}/payments`, {
-            method: 'POST',
-            headers: {
-              'access_token': storeProfile.asaasApiKey,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(paymentPayload)
-          });
-
-          if (!createPayRes.ok) {
-            const errorData = await createPayRes.json().catch(() => ({}));
-            const errorMsg = errorData.errors?.[0]?.description || 'Erro ao gerar cobrança no Asaas';
-            throw new Error(errorMsg);
-          }
-
-          const payData = await createPayRes.json();
           asaasData = {
             dueDate: dueDate,
             installments: installments,
@@ -360,7 +634,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             dueDate: dueDate,
             installments: installments,
             asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
-            asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}`,
+            asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}&frequency=${billingFrequency}`,
             asaasStatus: 'SIMULATED'
           };
           setAsaasStatusMsg("Simulação concluída!");
@@ -373,7 +647,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           dueDate: dueDate,
           installments: installments,
           asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
-          asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}`,
+          asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}&frequency=${billingFrequency}`,
           asaasStatus: 'SIMULATED'
         };
       } finally {
@@ -381,6 +655,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       }
     }
 
+    localStorage.removeItem(`order_draft_${userEmail}`);
     onSave({
       id: orderToEdit ? orderToEdit.id : Date.now().toString(),
       orderNumber: orderNumber,
@@ -392,11 +667,18 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       total: totalValue,
       paymentMethod,
       orderType,
+      billingFrequency,
       items: orderItems.map(item => ({
         productId: item.product.id,
         name: item.product.name,
         quantity: item.quantity,
-        price: item.product.price
+        price: item.price ?? item.product.price,
+        priceTable: item.priceTable,
+        discount1: item.discount1,
+        discount2: item.discount2,
+        addition1: item.addition1,
+        addition2: item.addition2,
+        additionalInfo: item.additionalInfo
       })),
       ...asaasData
     });
@@ -417,11 +699,30 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       
       {/* HEADER ACTIONS */}
       <div className="flex justify-between items-center mb-6 border-b border-slate-200 pb-4">
-        <button onClick={onCancel} className="text-[#851b42] text-sm hover:underline font-bold">
+        <button onClick={handleCancel} className="text-[#851b42] text-sm hover:underline font-bold">
           &larr; Voltar
         </button>
         <h2 className="text-xl font-bold text-slate-800">{orderToEdit ? 'Editar Pedido' : 'Novo Pedido'}</h2>
       </div>
+
+      {/* RESTORED DRAFT BANNER */}
+      {hasRestoredDraft && (
+        <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 text-xs flex justify-between items-center animate-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-2">
+            <Info size={16} className="text-amber-600 shrink-0" />
+            <span>
+              Restauramos automaticamente um rascunho de pedido não finalizado {selectedClient ? `para o cliente ${selectedClient.name}` : "para um novo cliente"}.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={handleClearDraft}
+            className="bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-3 py-1.5 rounded transition-colors cursor-pointer"
+          >
+            Começar do Zero (Limpar)
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-col gap-6 max-w-5xl pb-24">
         
@@ -507,12 +808,33 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             </h3>
           </div>
           <div className="pl-7">
-            <div className="text-sm font-medium text-[#851b42]">
-              {storeProfile.shopName || storeProfile.name || 'Minha Loja'}
-            </div>
-            {storeProfile.phone && (
-              <div className="text-sm text-slate-500 mt-1 flex items-center gap-2 border-l-2 border-blue-400 pl-2 ml-1">
-                {storeProfile.phone}
+            {sellers.length > 0 ? (
+              <select
+                value={representedName}
+                onChange={(e) => {
+                  setRepresentedName(e.target.value);
+                  const selectedSeller = sellers.find(s => s.name === e.target.value);
+                  if (selectedSeller) {
+                    setRepresentedPhone(selectedSeller.phone || '');
+                  } else {
+                    setRepresentedPhone('');
+                  }
+                }}
+                className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-[#851b42] font-semibold focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42] outline-none cursor-pointer"
+              >
+                {sellers.map(s => (
+                  <option key={s.id} value={s.name}>{s.name}</option>
+                ))}
+              </select>
+            ) : (
+              <div className="text-sm font-medium text-[#851b42]">
+                {representedName || storeProfile.shopName || storeProfile.name || 'Minha Loja'}
+              </div>
+            )}
+            
+            {representedPhone && (
+              <div className="text-sm text-slate-500 mt-2 flex items-center gap-2 border-l-2 border-blue-400 pl-2 ml-1">
+                {representedPhone}
               </div>
             )}
           </div>
@@ -585,7 +907,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   </thead>
                   <tbody>
                     {orderItems.map(item => (
-                      <tr key={item.product.id} className="border-b border-slate-100 last:border-0">
+                      <tr key={item.id} className="border-b border-slate-100 last:border-0">
                         <td className="p-3 font-medium text-slate-800">
                           <div>{item.product.name}</div>
                           <div className="flex flex-wrap gap-1 mt-1 text-[10px]">
@@ -601,7 +923,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             )}
                             {(item.discount2 || 0) > 0 && (
                               <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded font-semibold font-sans">
-                                -{item.discount2}% desc (2)
+                                -R$ {item.discount2.toFixed(2).replace('.', ',')} desc
                               </span>
                             )}
                             {(item.addition1 || 0) > 0 && (
@@ -611,7 +933,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             )}
                             {(item.addition2 || 0) > 0 && (
                               <span className="bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded font-semibold font-sans">
-                                +{item.addition2}% acrésc (2)
+                                +R$ {item.addition2.toFixed(2).replace('.', ',')} acrésc
                               </span>
                             )}
                             {item.additionalInfo && (
@@ -626,7 +948,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             type="number" 
                             min="1"
                             value={item.quantity}
-                            onChange={(e) => updateQuantity(item.product.id, parseInt(e.target.value) || 1)}
+                            onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
                             className="w-16 border border-slate-300 rounded px-2 py-1 text-center"
                           />
                         </td>
@@ -636,7 +958,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                           <div className="flex items-center justify-center gap-1">
                             <button 
                               type="button"
-                              onClick={() => openProductConfigModal(item.product)}
+                              onClick={() => openProductConfigModal(item.product, item)}
                               className="text-[#851b42] hover:text-[#5e132e] p-1 rounded hover:bg-slate-100 transition-colors"
                               title="Editar especificações"
                             >
@@ -644,7 +966,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             </button>
                             <button 
                               type="button"
-                              onClick={() => removeProduct(item.product.id)} 
+                              onClick={() => removeProduct(item.id)} 
                               className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
                               title="Remover produto"
                             >
@@ -732,7 +1054,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                           )}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-3 gap-3">
                           <div>
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
                               * Vencimento (1ª)
@@ -760,6 +1082,21 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                               ))}
                             </select>
                           </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                              Frequência
+                            </label>
+                            <select 
+                              value={billingFrequency} 
+                              onChange={e => setBillingFrequency(e.target.value as any)} 
+                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                            >
+                              <option value="semanal">Semanal</option>
+                              <option value="quinzenal">Quinzenal</option>
+                              <option value="mensal">Mensal</option>
+                            </select>
+                          </div>
                         </div>
 
                         <div className="pt-2 border-t border-slate-200">
@@ -770,7 +1107,13 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                             {Array.from({ length: installments }).map((_, i) => {
                               const valuePerInstallment = totalValue / installments;
                               const currentDueDate = new Date(dueDate + 'T12:00:00');
-                              currentDueDate.setMonth(currentDueDate.getMonth() + i);
+                              if (billingFrequency === 'semanal') {
+                                currentDueDate.setDate(currentDueDate.getDate() + (i * 7));
+                              } else if (billingFrequency === 'quinzenal') {
+                                currentDueDate.setDate(currentDueDate.getDate() + (i * 14));
+                              } else {
+                                currentDueDate.setMonth(currentDueDate.getMonth() + i);
+                              }
                               
                               return (
                                 <div key={i} className="flex justify-between items-center text-xs font-semibold py-1 border-b border-dashed border-slate-100 last:border-0 text-slate-700">
@@ -851,11 +1194,17 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 <div className="grid grid-cols-2">
                   <span className="text-slate-400">* Cond. de pagamento</span>
                   <span className={cn("font-medium", paymentMethod ? "text-slate-800" : "text-slate-400")}>
-                    {paymentMethod === 'Boleto' ? `Boleto (${installments}x)` : (paymentMethod || '---')}
+                    {paymentMethod === 'Boleto' ? `Boleto (${installments}x - ${billingFrequency})` : (paymentMethod || '---')}
                   </span>
                 </div>
                 {paymentMethod === 'Boleto' && (
                   <>
+                    <div className="grid grid-cols-2">
+                      <span className="text-slate-400">Periodicidade</span>
+                      <span className="text-slate-800 font-medium capitalize">
+                        {billingFrequency}
+                      </span>
+                    </div>
                     <div className="grid grid-cols-2">
                       <span className="text-slate-400">1º Vencimento</span>
                       <span className="text-slate-800 font-medium">
@@ -928,7 +1277,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             if (phone && !phone.startsWith('55')) {
               phone = '55' + phone;
             }
-            const itemList = orderItems.map(i => `${i.quantity}x ${i.product.name} (R$ ${i.product.price.toFixed(2).replace('.', ',')})`).join('\n');
+            const itemList = orderItems.map(i => `${i.quantity}x ${i.product.name} (R$ ${(i.price ?? i.product.price).toFixed(2).replace('.', ',')})`).join('\n');
             const totalStr = `R$ ${totalValue.toFixed(2).replace('.', ',')}`;
             const message = `Olá ${selectedClient?.name || ''},\n\nSegue o resumo do seu pedido #${orderNumber || 'Auto'}:\n\n${itemList}\n\n*Total: ${totalStr}*\nTipo: ${orderType}\nPagamento: ${paymentMethod || 'Não informado'}\n\nObrigado!`;
             
@@ -994,7 +1343,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             </thead>
             <tbody>
               {orderItems.map((item, idx) => (
-                <tr key={item.product.id || idx} className="border-b border-slate-100">
+                <tr key={item.id || item.product.id || idx} className="border-b border-slate-100">
                   <td className="py-2 font-medium text-slate-800">
                     {item.product.name}
                     {item.product.sku && <span className="block text-[10px] text-slate-400 font-normal">REF: {item.product.sku}</span>}
@@ -1087,7 +1436,9 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   onChange={(e) => setConfiguringPriceTable(e.target.value)}
                   className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 text-sm text-slate-700 font-semibold focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42] outline-none cursor-pointer"
                 >
-                  {getPriceTables(configuringBasePrice).map((t, idx) => (
+                  {getPriceTables(configuringBasePrice)
+                    .filter(t => !allowedTables || allowedTables.includes(t.name))
+                    .map((t, idx) => (
                     <option key={idx} value={t.name}>{t.label}</option>
                   ))}
                 </select>
@@ -1132,7 +1483,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   {/* Discount 1 */}
                   <div>
                     <label className="flex items-center gap-1 text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1 font-sans">
-                      <ArrowDown size={11} className="stroke-[2.5]" /> Desconto
+                      <ArrowDown size={11} className="stroke-[2.5]" /> Desconto (%)
                     </label>
                     <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white focus-within:border-rose-500">
                       <input
@@ -1152,32 +1503,32 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   {/* Discount 2 */}
                   <div>
                     <label className="flex items-center gap-1 text-[10px] font-bold text-rose-500 uppercase tracking-wider mb-1 font-sans">
-                      <ArrowDown size={11} className="stroke-[2.5]" /> Desconto
+                      <ArrowDown size={11} className="stroke-[2.5]" /> Desconto (R$)
                     </label>
                     <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white focus-within:border-rose-500">
                       <input
                         type="number"
                         min="0"
-                        max="100"
                         step="0.01"
                         placeholder="0,00"
                         value={configuringDiscount2 === 0 ? '' : configuringDiscount2}
                         onChange={(e) => setConfiguringDiscount2(parseFloat(e.target.value) || 0)}
                         className="w-full px-2 py-1.5 text-xs font-bold text-slate-700 outline-none text-right"
                       />
-                      <span className="bg-slate-50 border-l border-slate-200 text-slate-400 text-[10px] px-1.5 py-1.5 font-bold">%</span>
+                      <span className="bg-slate-50 border-l border-slate-200 text-slate-400 text-[10px] px-1.5 py-1.5 font-bold">R$</span>
                     </div>
                   </div>
 
                   {/* Addition 1 */}
                   <div>
                     <label className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 font-sans">
-                      <ArrowUp size={11} className="stroke-[2.5]" /> Acréscimo
+                      <ArrowUp size={11} className="stroke-[2.5]" /> Acréscimo (%)
                     </label>
                     <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white focus-within:border-emerald-600">
                       <input
                         type="number"
                         min="0"
+                        max="100"
                         step="0.01"
                         placeholder="0,00"
                         value={configuringAddition1 === 0 ? '' : configuringAddition1}
@@ -1191,7 +1542,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   {/* Addition 2 */}
                   <div>
                     <label className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1 font-sans">
-                      <ArrowUp size={11} className="stroke-[2.5]" /> Acréscimo
+                      <ArrowUp size={11} className="stroke-[2.5]" /> Acréscimo (R$)
                     </label>
                     <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white focus-within:border-emerald-600">
                       <input
@@ -1203,7 +1554,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                         onChange={(e) => setConfiguringAddition2(parseFloat(e.target.value) || 0)}
                         className="w-full px-2 py-1.5 text-xs font-bold text-slate-700 outline-none text-right"
                       />
-                      <span className="bg-slate-50 border-l border-slate-200 text-slate-400 text-[10px] px-1.5 py-1.5 font-bold">%</span>
+                      <span className="bg-slate-50 border-l border-slate-200 text-slate-400 text-[10px] px-1.5 py-1.5 font-bold">R$</span>
                     </div>
                   </div>
                 </div>

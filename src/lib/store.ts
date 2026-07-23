@@ -1,4 +1,4 @@
-import { Product, Client, Order, StoreProfile, Coupon } from '../types';
+import { Product, Client, Order, StoreProfile, Coupon, Seller } from '../types';
 import { products as initialProducts, clients as initialClients, orders as initialOrders } from '../data';
 import { db, auth } from './firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -243,4 +243,37 @@ export const saveIndicatorSettings = (email: string, settings: IndicatorSettings
   localStorage.setItem(getStorageKey(email, 'indicator_settings'), JSON.stringify(settings));
   window.dispatchEvent(new Event('vitrine_pay_data_synced'));
 };
+
+export const getSellers = (email: string): Seller[] => {
+  const data = localStorage.getItem(getStorageKey(email, 'sellers'));
+  if (data) return JSON.parse(data);
+  return [];
+};
+
+export const saveSellers = (email: string, sellers: Seller[]): void => {
+  localStorage.setItem(getStorageKey(email, 'sellers'), JSON.stringify(sellers));
+  window.dispatchEvent(new Event('vitrine_pay_data_synced'));
+};
+
+export const addSeller = (email: string, seller: Seller): void => {
+  const sellers = getSellers(email);
+  sellers.push(seller);
+  saveSellers(email, sellers);
+};
+
+export const updateSeller = (email: string, seller: Seller): void => {
+  const sellers = getSellers(email);
+  const index = sellers.findIndex(s => s.id === seller.id);
+  if (index !== -1) {
+    sellers[index] = seller;
+    saveSellers(email, sellers);
+  }
+};
+
+export const deleteSeller = (email: string, id: string): void => {
+  let sellers = getSellers(email);
+  sellers = sellers.filter(s => s.id !== id);
+  saveSellers(email, sellers);
+};
+
 

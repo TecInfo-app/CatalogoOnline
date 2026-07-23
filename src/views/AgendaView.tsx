@@ -19,7 +19,7 @@ import {
   CalendarDays
 } from 'lucide-react';
 import { getClients } from '../lib/store';
-import { Client, PlannedRoute } from '../types';
+import { Client, PlannedRoute, Seller } from '../types';
 
 // Helper to format YYYY-MM-DD date to DD/MM/YYYY
 function formatDateToBR(dateStr: string): string {
@@ -83,7 +83,7 @@ interface AgendaItem {
   result?: string; // for activities
 }
 
-export function AgendaView({ userEmail }: { userEmail: string }) {
+export function AgendaView({ userEmail, activeSeller }: { userEmail: string; activeSeller?: Seller | null }) {
   const [clients, setClients] = useState<Client[]>([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showRegisterActivity, setShowRegisterActivity] = useState(false);
@@ -96,6 +96,8 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
   const [routes, setRoutes] = useState<PlannedRoute[]>([]);
   const [showCreateRoute, setShowCreateRoute] = useState(false);
   const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
+
+  const canManageRoutes = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirCadastrarAlterarExcluirRoteiros;
 
   // Route form states (Match Second Image)
   const [routeName, setRouteName] = useState('');
@@ -715,21 +717,23 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                   <h2 className="text-lg font-bold text-slate-800 tracking-tight">ROTEIROS PLANEJADOS</h2>
                   <p className="text-xs text-slate-500 mt-1">Crie e acompanhe os roteiros planejados para a sua equipe.</p>
                 </div>
-                <button
-                  onClick={() => {
-                    setEditingRouteId(null);
-                    setRouteName('');
-                    setRouteSalesperson('');
-                    setRouteActive(true);
-                    setRouteDate('2026-07-15');
-                    setRouteRepeat('Nunca');
-                    setRouteClients([]);
-                    setShowCreateRoute(true);
-                  }}
-                  className="bg-[#851b42] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#3d2c67] transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  Criar roteiro
-                </button>
+                {canManageRoutes && (
+                  <button
+                    onClick={() => {
+                      setEditingRouteId(null);
+                      setRouteName('');
+                      setRouteSalesperson('');
+                      setRouteActive(true);
+                      setRouteDate('2026-07-15');
+                      setRouteRepeat('Nunca');
+                      setRouteClients([]);
+                      setShowCreateRoute(true);
+                    }}
+                    className="bg-[#851b42] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#3d2c67] transition-all flex items-center gap-1.5 shadow-sm"
+                  >
+                    Criar roteiro
+                  </button>
+                )}
               </div>
 
               {/* Table */}
@@ -744,7 +748,7 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                       <th className="py-3 px-2">Dia da semana</th>
                       <th className="py-3 px-2">Qtde. de clientes</th>
                       <th className="py-3 px-2">Situação</th>
-                      <th className="py-3 px-2 text-right">Ações</th>
+                      {canManageRoutes && <th className="py-3 px-2 text-right">Ações</th>}
                     </tr>
                   </thead>
                   <tbody>
@@ -771,36 +775,38 @@ export function AgendaView({ userEmail }: { userEmail: string }) {
                               {route.active ? 'Ativo' : 'Inativo'}
                             </span>
                           </td>
-                          <td className="py-3 px-2 text-right">
-                            <div className="flex justify-end gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setEditingRouteId(route.id);
-                                  setRouteName(route.name);
-                                  setRouteSalesperson(route.salesperson);
-                                  setRouteActive(route.active);
-                                  setRouteDate(route.date);
-                                  setRouteRepeat(route.repeat);
-                                  setRouteClients(route.clients);
-                                  setShowCreateRoute(true);
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-[#851b42] hover:bg-slate-100 rounded-lg transition-all"
-                                title="Editar"
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setRouteToDelete(route);
-                                  setShowDeleteModal(true);
-                                }}
-                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                                title="Excluir"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
+                          {canManageRoutes && (
+                            <td className="py-3 px-2 text-right">
+                              <div className="flex justify-end gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    setEditingRouteId(route.id);
+                                    setRouteName(route.name);
+                                    setRouteSalesperson(route.salesperson);
+                                    setRouteActive(route.active);
+                                    setRouteDate(route.date);
+                                    setRouteRepeat(route.repeat);
+                                    setRouteClients(route.clients);
+                                    setShowCreateRoute(true);
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-[#851b42] hover:bg-slate-100 rounded-lg transition-all"
+                                  title="Editar"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setRouteToDelete(route);
+                                    setShowDeleteModal(true);
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                  title="Excluir"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))
                     ) : (

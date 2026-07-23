@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { getOrders, addOrder, updateOrder, deleteOrder, getStoreProfile } from '../lib/store';
-import { Order } from '../types';
+import { Order, Seller } from '../types';
 import { OrderList } from '../components/orders/OrderList';
 import { OrderForm } from '../components/orders/OrderForm';
 
 type ViewState = 'list' | 'create';
 
-export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNavigate: (tab: string) => void }) {
+export function OrdersView({ userEmail, onNavigate, activeSeller }: { userEmail: string, onNavigate: (tab: string) => void, activeSeller?: Seller | null }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [viewState, setViewState] = useState<ViewState>(() => {
     return sessionStorage.getItem('preselected_order_client') ? 'create' : 'list';
   });
   const [orderToEdit, setOrderToEdit] = useState<Order | null>(null);
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
+
+  const canEditOrders = !activeSeller || activeSeller.role === 'Administrador' || activeSeller.permissions.permitirAlterarPedidoGerado;
 
   useEffect(() => {
     loadOrders();
@@ -25,10 +27,14 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
     return () => {
       window.removeEventListener('vitrine_pay_data_synced', handleSync);
     };
-  }, [userEmail]);
+  }, [userEmail, activeSeller]);
 
   const loadOrders = () => {
-    setOrders(getOrders(userEmail));
+    let allOrders = getOrders(userEmail);
+    if (activeSeller && activeSeller.role === 'Comum' && !activeSeller.permissions.visualizarPedidosOutrosVendedores) {
+      allOrders = allOrders.filter(o => o.sellerId === activeSeller.id);
+    }
+    setOrders(allOrders);
   };
 
   const handleCreateNew = () => {
@@ -108,7 +114,8 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
     if (orderToEdit) {
       updateOrder(userEmail, { ...orderToEdit, ...partialOrder } as Order);
     } else {
-      addOrder(userEmail, partialOrder as Order);
+      const newOrder = { ...partialOrder, sellerId: activeSeller?.id } as Order;
+      addOrder(userEmail, newOrder);
     }
     loadOrders();
     setViewState('list');
@@ -128,6 +135,7 @@ export function OrdersView({ userEmail, onNavigate }: { userEmail: string, onNav
           onCreateNew={handleCreateNew} 
           onEditOrder={handleEditOrder}
           onDeleteOrder={handleDeleteOrder}
+          canEditOrders={canEditOrders}
         />
       )}
 

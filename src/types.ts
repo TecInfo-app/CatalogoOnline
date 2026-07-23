@@ -23,6 +23,7 @@ export interface Product {
 
 export interface Client {
   id: string;
+  sellerId?: string; // Who created/owns this client
   type?: 'Pessoa Jurídica' | 'Pessoa Física';
   name: string; // usually trade name or short name
   legalName: string; // corporate name / razao social
@@ -59,18 +60,22 @@ export interface Order {
   orderNumber: string;
   clientName: string;
   clientId?: string;
+  sellerId?: string; // Who generated this order
   date: string;
   itemsCount: number;
   total: number;
   status: 'budget' | 'completed' | 'canceled';
   paymentMethod?: string;
   orderType?: string;
+  representedName?: string;
+  representedPhone?: string;
   items?: Array<{ productId: string; name: string; quantity: number; price: number }>;
   subtotal?: number;
   discount?: number;
   discountNotes?: string;
   dueDate?: string;
   installments?: number;
+  billingFrequency?: 'semanal' | 'quinzenal' | 'mensal';
   asaasPaymentId?: string;
   asaasUrl?: string;
   asaasStatus?: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED';
@@ -116,5 +121,50 @@ export interface Coupon {
   minOrdersRequired?: number;
   expiryDate?: string;
 }
+
+export interface SellerPermissions {
+  // Clients
+  limitarAcessoClientes: boolean;
+  permitirVincularTabelasPreco: boolean;
+  permitirCadastrarClientes: boolean;
+  permitirAlterarClientes: boolean;
+  // Products
+  permitirCadastrarProdutos: boolean;
+  permitirAlterarExcluirProdutos: boolean;
+  // Orders
+  permitirAlterarPedidoGerado: boolean;
+  permitirAlterarStatusPedido: boolean;
+  visualizarPedidosOutrosVendedores: boolean;
+  // Indicators
+  permitirAcessoRelatorioComissoes: boolean;
+  permitirDefinirMetas: boolean;
+  // Others
+  permitirCadastrarAlterarTransportadoras: boolean;
+  permitirCadastrarAlterarExcluirRoteiros: boolean;
+}
+
+export interface RepresentedItem {
+  id: string;
+  name: string;
+  checked: boolean;
+  commission: number;
+  maxDiscount: number;
+  maxMarkup: number;
+  saldoFlex: boolean;
+  priceTables: string;
+}
+
+export interface Seller {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  bio: string;
+  avatarUrl?: string;
+  role: 'Comum' | 'Administrador';
+  permissions: SellerPermissions;
+  representedList: RepresentedItem[];
+}
+
 
 

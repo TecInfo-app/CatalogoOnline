@@ -8,9 +8,10 @@ interface OrderListProps {
   onCreateNew: () => void;
   onEditOrder: (order: Order) => void;
   onDeleteOrder: (id: string) => void;
+  canEditOrders?: boolean;
 }
 
-export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: OrderListProps) {
+export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, canEditOrders = true }: OrderListProps) {
   const [showDemo, setShowDemo] = useState(true);
 
   return (
@@ -93,20 +94,22 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
                   )} />
                   {order.status === 'budget' ? 'Em orçamento' : order.status === 'completed' ? 'Concluído' : 'Cancelado'}
                 </span>
-                <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onEditOrder(order); }}
-                    className="border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1 text-[10px] font-bold hover:bg-slate-50 cursor-pointer"
-                  >
-                    <Edit2 size={12} className="text-[#851b42]" /> Editar
-                  </button>
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); onDeleteOrder(order.id); }}
-                    className="border border-slate-200 text-red-500 px-2 py-1 rounded flex items-center gap-1 text-[10px] font-bold hover:bg-red-50 cursor-pointer"
-                  >
-                    <Trash2 size={12} /> Excluir
-                  </button>
-                </div>
+                {canEditOrders && (
+                  <div className="flex items-center gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onEditOrder(order); }}
+                      className="border border-slate-200 text-slate-600 px-2 py-1 rounded flex items-center gap-1 text-[10px] font-bold hover:bg-slate-50 cursor-pointer"
+                    >
+                      <Edit2 size={12} className="text-[#851b42]" /> Editar
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); onDeleteOrder(order.id); }}
+                      className="border border-slate-200 text-red-500 px-2 py-1 rounded flex items-center gap-1 text-[10px] font-bold hover:bg-red-50 cursor-pointer"
+                    >
+                      <Trash2 size={12} /> Excluir
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -115,7 +118,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder }: O
                 <Receipt size={14} className="text-blue-600 shrink-0" />
                 <div className="flex-1 min-w-0 font-sans">
                   <span className="text-[10px] font-bold text-blue-800 block uppercase tracking-wider">Boleto Parcelado Asaas</span>
-                  <span className="text-[9px] text-slate-500 block font-medium">Vencimento: {order.dueDate ? new Date(order.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '---'} &bull; {order.installments || 1}x</span>
+                  <span className="text-[9px] text-slate-500 block font-medium">Vencimento: {order.dueDate ? new Date(order.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '---'} &bull; {order.installments || 1}x {order.billingFrequency ? `(${order.billingFrequency})` : ''}</span>
                 </div>
                 <a
                   href={order.asaasUrl}

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
 import { getOrders, getClients, getProducts, getIndicatorSettings } from '../lib/store';
+import { Seller } from '../types';
 
 const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
   if (!dateStr) return null;
@@ -25,7 +26,7 @@ const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear())
   return null;
 };
 
-export function IndicatorsView({ userEmail }: { userEmail: string }) {
+export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string; activeSeller?: Seller | null }) {
   const [syncVersion, setSyncVersion] = useState(0);
 
   useEffect(() => {

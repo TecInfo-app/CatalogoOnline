@@ -682,6 +682,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       total: cartTotal,
       status: isPaid ? 'completed' : 'budget',
       paymentMethod: isPaid ? 'AbacatePay (Pix/Cartão)' : undefined,
+      representedName: storeProfile.shopName || storeProfile.name || 'Minha Loja',
+      representedPhone: storeProfile.phone || '',
       items: cart.map(item => ({
         productId: item.product.id,
         name: item.product.name,

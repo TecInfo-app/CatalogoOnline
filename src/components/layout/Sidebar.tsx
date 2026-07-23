@@ -1,6 +1,7 @@
-import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings } from 'lucide-react';
+import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoreProfile } from '../../lib/store';
+import { Seller } from '../../types';
 import logoImg from '../../assets/shop-logo.png';
 
 interface SidebarProps {
@@ -9,25 +10,55 @@ interface SidebarProps {
   userEmail?: string;
   onLogout?: () => void;
   profileVersion?: number;
+  activeSeller?: Seller | null;
 }
 
-export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileVersion }: SidebarProps) {
+export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileVersion, activeSeller }: SidebarProps) {
   const profile = userEmail ? getStoreProfile(userEmail) : null;
   const shopName = profile?.shopName || 'Vitrine Pay';
-  const userName = profile?.name || userEmail?.split('@')[0] || 'Iranildo';
-  const userDisplayEmail = profile?.email || userEmail || 'iranildo.jobs@gmail.com';
+  
+  // Custom display name/role if seller is logged in
+  const userName = activeSeller 
+    ? activeSeller.name 
+    : (profile?.name || userEmail?.split('@')[0] || 'Iranildo');
+    
+  const userDisplayEmail = activeSeller 
+    ? `${activeSeller.role} - Portal` 
+    : (profile?.email || userEmail || 'iranildo.jobs@gmail.com');
+    
   const logoUrl = profile?.logoUrl;
 
-  const tabs = [
+  const baseTabs = [
     { id: 'indicators', label: 'Indicadores', icon: BarChart2 },
     { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
     { id: 'clients', label: 'Clientes', icon: Users },
     { id: 'products', label: 'Produtos', icon: Package },
     { id: 'portal', label: 'Portal', icon: Network },
     { id: 'agenda', label: 'Tarefas', icon: ClipboardList },
+    { id: 'sellers', label: 'Vendedores', icon: UserCheck },
     { id: 'profile', label: 'Perfil', icon: UserCircle },
     { id: 'settings', label: 'Configurações', icon: Settings },
   ];
+
+  // Dynamic filter based on activeSeller permissions
+  let tabs = baseTabs;
+  if (activeSeller) {
+    if (activeSeller.role === 'Comum') {
+      tabs = baseTabs.filter(tab => {
+        // Hide management tabs for Comum sellers
+        if (tab.id === 'sellers' || tab.id === 'settings' || tab.id === 'portal' || tab.id === 'profile') return false;
+        
+        // Check indicators permission
+        if (tab.id === 'indicators') {
+          return activeSeller.permissions.permitirAcessoRelatorioComissoes;
+        }
+        return true;
+      });
+    } else if (activeSeller.role === 'Administrador') {
+      // Admin sellers can see most things but we still keep profile/sellers/settings to the main owner for safety, or let them see depending on standard practices. Let's hide sellers and settings to prevent other sellers configuration change.
+      tabs = baseTabs.filter(tab => tab.id !== 'sellers' && tab.id !== 'settings' && tab.id !== 'profile');
+    }
+  }
 
   return (
     <nav className="hidden md:flex fixed inset-y-0 left-0 z-40 flex-col py-lg bg-surface h-full w-56 border-r border-outline-variant shadow-xl mt-14 md:mt-0">
@@ -49,6 +80,11 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
           )}
           <span className="truncate">{shopName}</span>
         </h1>
+        {/* User Info Capsule */}
+        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3 mt-2">
+          <p className="text-xs font-bold text-slate-800 truncate">{userName}</p>
+          <p className="text-[10px] text-slate-400 font-medium truncate">{userDisplayEmail}</p>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto px-1.5 space-y-1">
         {tabs.map((tab) => {
@@ -82,3 +118,4 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
     </nav>
   );
 }
+

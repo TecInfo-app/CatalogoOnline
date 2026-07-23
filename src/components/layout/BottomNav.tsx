@@ -1,26 +1,62 @@
 import { useState } from 'react';
-import { BarChart2, Receipt, Users, Package, Menu, CalendarDays, Network, UserCircle, Settings, X } from 'lucide-react';
+import { BarChart2, Receipt, Users, Package, Menu, CalendarDays, Network, UserCircle, Settings, X, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { Seller } from '../../types';
 
 interface BottomNavProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
+  activeSeller?: Seller | null;
 }
 
-export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
+export function BottomNav({ currentTab, onTabChange, activeSeller }: BottomNavProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Mobile uses slightly different icons/labels sometimes, but we'll stick closely to the provided screens.
-  // We'll define a mapping based on the active tab context if needed, but here's a generic one.
-  const tabs = [
+  // Dynamic tabs based on user permissions
+  let tabs = [
     { id: 'indicators', label: 'Indicadores', icon: BarChart2 },
     { id: 'orders', label: 'Pedidos', icon: Receipt },
     { id: 'clients', label: 'Clientes', icon: Users },
-    // Depending on the screen, the 4th item varies. In Agenda it's Agenda, in Products it's Products.
-    // Let's use a dynamic approach or just include the top 4 and 'Mais'
     { id: 'agenda', label: 'Agenda', icon: CalendarDays },
     { id: 'more', label: 'Mais', icon: Menu },
   ];
+
+  if (activeSeller && activeSeller.role === 'Comum' && !activeSeller.permissions.permitirAcessoRelatorioComissoes) {
+    // If indicators are hidden, swap with Products tab as a top-level choice
+    tabs = [
+      { id: 'products', label: 'Produtos', icon: Package },
+      { id: 'orders', label: 'Pedidos', icon: Receipt },
+      { id: 'clients', label: 'Clientes', icon: Users },
+      { id: 'agenda', label: 'Agenda', icon: CalendarDays },
+      { id: 'more', label: 'Mais', icon: Menu },
+    ];
+  }
+
+  // Dynamic options inside the 'Mais' drawer
+  let moreOptions = [
+    { id: 'indicators', label: 'Indicadores', icon: BarChart2 },
+    { id: 'orders', label: 'Pedidos', icon: Receipt },
+    { id: 'clients', label: 'Clientes', icon: Users },
+    { id: 'products', label: 'Produtos', icon: Package },
+    { id: 'portal', label: 'Portal', icon: Network },
+    { id: 'agenda', label: 'Tarefas / Agenda', icon: CalendarDays },
+    { id: 'sellers', label: 'Vendedores', icon: UserCheck },
+    { id: 'profile', label: 'Perfil', icon: UserCircle },
+    { id: 'settings', label: 'Configurações', icon: Settings },
+  ];
+
+  if (activeSeller) {
+    if (activeSeller.role === 'Comum') {
+      moreOptions = moreOptions.filter(tab => {
+        if (tab.id === 'sellers' || tab.id === 'settings' || tab.id === 'portal' || tab.id === 'profile') return false;
+        if (tab.id === 'indicators') return activeSeller.permissions.permitirAcessoRelatorioComissoes;
+        return true;
+      });
+    } else if (activeSeller.role === 'Administrador') {
+      // Admin sellers can access everything except direct seller management/settings/profile of the primary store owner
+      moreOptions = moreOptions.filter(tab => tab.id !== 'sellers' && tab.id !== 'settings' && tab.id !== 'profile');
+    }
+  }
 
   return (
     <>
@@ -30,8 +66,8 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
           let tabLabel = tab.label;
           let TabIcon = tab.icon;
           
-          // If we are on products tab, let's swap agenda for products dynamically to match screens
-          if (tabId === 'agenda' && currentTab === 'products') {
+          // Swap logic if we didn't filter out indicators but current view is products
+          if (tabId === 'agenda' && currentTab === 'products' && (!activeSeller || activeSeller.role !== 'Comum' || activeSeller.permissions.permitirAcessoRelatorioComissoes)) {
             tabId = 'products';
             tabLabel = 'Produtos';
             TabIcon = Package;
@@ -91,16 +127,7 @@ export function BottomNav({ currentTab, onTabChange }: BottomNavProps) {
 
             {/* Grid of Tabs */}
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { id: 'indicators', label: 'Indicadores', icon: BarChart2 },
-                { id: 'orders', label: 'Pedidos', icon: Receipt },
-                { id: 'clients', label: 'Clientes', icon: Users },
-                { id: 'products', label: 'Produtos', icon: Package },
-                { id: 'portal', label: 'Portal', icon: Network },
-                { id: 'agenda', label: 'Tarefas / Agenda', icon: CalendarDays },
-                { id: 'profile', label: 'Perfil', icon: UserCircle },
-                { id: 'settings', label: 'Configurações', icon: Settings },
-              ].map((mTab) => {
+              {moreOptions.map((mTab) => {
                 const isActive = currentTab === mTab.id;
                 const MIcon = mTab.icon;
                 return (

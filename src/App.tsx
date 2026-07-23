@@ -16,12 +16,19 @@ import { PortalView } from './views/PortalView';
 import { CustomerCatalogView } from './views/CustomerCatalogView';
 import { ProfileView } from './views/ProfileView';
 import { SettingsView } from './views/SettingsView';
+import { SellersView } from './views/SellersView';
+import { SellerLoginView } from './views/SellerLoginView';
+import { getSellers } from './lib/store';
+import { Seller } from './types';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { loadStoreData, startRealTimeSync, getEmailBySlug } from './lib/firebase-sync';
 
 export default function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [activeSeller, setActiveSeller] = useState<Seller | null>(null);
+  const [isSellerPortalMode, setIsSellerPortalMode] = useState(false);
+  const [sellerPortalOwner, setSellerPortalOwner] = useState<string | null>(null);
   const [currentTab, setCurrentTab] = useState('products');
   const [profileVersion, setProfileVersion] = useState(0);
   const [loadingAuth, setLoadingAuth] = useState(true);
@@ -57,7 +64,45 @@ export default function App() {
   }, [isCatalogMode, sellerParam]);
 
   useEffect(() => {
+    // 1. Detect if we are in seller portal mode from URL
+    const searchParams = new URLSearchParams(window.location.search);
+    const portal = searchParams.get('portal');
+    const owner = searchParams.get('owner');
+    if (portal === 'seller' && owner) {
+      setIsSellerPortalMode(true);
+      setSellerPortalOwner(owner);
+    }
+
+    // 2. Check for a saved seller session
+    const savedSession = localStorage.getItem('vitrine_pay_seller_session');
+    if (savedSession) {
+      try {
+        const { ownerEmail, sellerId } = JSON.parse(savedSession);
+        const sellers = getSellers(ownerEmail);
+        const matched = sellers.find(s => s.id === sellerId);
+        if (matched) {
+          setUserEmail(ownerEmail);
+          setActiveSeller(matched);
+          setLoadingAuth(false);
+          const loadData = async () => {
+            setLoadingData(true);
+            await loadStoreData(ownerEmail);
+            setLoadingData(false);
+          };
+          loadData();
+          return;
+        }
+      } catch (e) {
+        console.error("Error restoring seller session:", e);
+      }
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      // If we are restoring or already have a seller logged in, don't overwrite it
+      if (localStorage.getItem('vitrine_pay_seller_session')) {
+        return;
+      }
+
       if (user && user.email) {
         setUserEmail(user.email);
         if (!isCatalogMode) {
@@ -67,6 +112,7 @@ export default function App() {
         }
       } else {
         setUserEmail(null);
+        setActiveSeller(null);
       }
       setLoadingAuth(false);
     });
@@ -107,11 +153,35 @@ export default function App() {
   }
 
   if (!userEmail) {
+    if (isSellerPortalMode && sellerPortalOwner) {
+      return (
+        <SellerLoginView
+          ownerId={sellerPortalOwner}
+          onLoginSuccess={async (ownerEmail, seller) => {
+            setUserEmail(ownerEmail);
+            setActiveSeller(seller);
+            setLoadingData(true);
+            await loadStoreData(ownerEmail);
+            setLoadingData(false);
+          }}
+          onBackToOwnerLogin={() => {
+            setIsSellerPortalMode(false);
+            // Remove from URL
+            const url = new URL(window.location.href);
+            url.searchParams.delete('portal');
+            url.searchParams.delete('owner');
+            window.history.pushState({}, '', url.toString());
+          }}
+        />
+      );
+    }
     return <LoginView onLogin={(email) => setUserEmail(email)} />;
   }
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('vitrine_pay_seller_session');
+      setActiveSeller(null);
       await signOut(auth);
       setUserEmail(null);
     } catch (error) {
@@ -122,35 +192,48 @@ export default function App() {
   const renderView = () => {
     switch (currentTab) {
       case 'products':
-        return <ProductsView userEmail={userEmail} />;
+        return <ProductsView userEmail={userEmail} activeSeller={activeSeller} />;
       case 'clients':
-        return <ClientsView userEmail={userEmail} onNavigate={setCurrentTab} />;
+        return <ClientsView userEmail={userEmail} onNavigate={setCurrentTab} activeSeller={activeSeller} />;
       case 'orders':
-        return <OrdersView userEmail={userEmail} onNavigate={setCurrentTab} />;
+        return <OrdersView userEmail={userEmail} onNavigate={setCurrentTab} activeSeller={activeSeller} />;
       case 'agenda':
-        return <AgendaView userEmail={userEmail} />;
+        return <AgendaView userEmail={userEmail} activeSeller={activeSeller} />;
       case 'indicators':
-        return <IndicatorsView userEmail={userEmail} />;
+        return <IndicatorsView userEmail={userEmail} activeSeller={activeSeller} />;
       case 'portal':
         return <PortalView userEmail={userEmail} />;
       case 'profile':
         return <ProfileView userEmail={userEmail} onProfileSave={() => setProfileVersion(v => v + 1)} />;
       case 'settings':
         return <SettingsView userEmail={userEmail} />;
+      case 'sellers':
+        return <SellersView userEmail={userEmail} />;
       default:
-        return <ProductsView userEmail={userEmail} />;
+        return <ProductsView userEmail={userEmail} activeSeller={activeSeller} />;
     }
   };
 
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-background">
       <TopBar userEmail={userEmail} onLogout={handleLogout} profileVersion={profileVersion} />
-      <Sidebar currentTab={currentTab} onTabChange={setCurrentTab} userEmail={userEmail} onLogout={handleLogout} profileVersion={profileVersion} />
+      <Sidebar 
+        currentTab={currentTab} 
+        onTabChange={setCurrentTab} 
+        userEmail={userEmail} 
+        onLogout={handleLogout} 
+        profileVersion={profileVersion} 
+        activeSeller={activeSeller}
+      />
       
       <main className="flex-1 mt-14 md:mt-0 md:ml-56 p-edge_margin max-w-7xl mx-auto w-full pb-20 md:pb-8">
         {renderView()}
       </main>
-      <BottomNav currentTab={currentTab} onTabChange={setCurrentTab} />
+      <BottomNav 
+        currentTab={currentTab} 
+        onTabChange={setCurrentTab} 
+        activeSeller={activeSeller}
+      />
     </div>
   );
 }
