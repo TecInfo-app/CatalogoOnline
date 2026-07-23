@@ -18,7 +18,7 @@ import {
   Trash2,
   CalendarDays
 } from 'lucide-react';
-import { getClients } from '../lib/store';
+import { getClients, getSellers } from '../lib/store';
 import { Client, PlannedRoute, Seller } from '../types';
 
 // Helper to format YYYY-MM-DD date to DD/MM/YYYY
@@ -81,10 +81,13 @@ interface AgendaItem {
   salesperson: string;
   status: 'pending' | 'done'; // for tasks
   result?: string; // for activities
+  resolutionDetails?: string; // details when marking task as done
+  alarmDays?: number; // how many days before to alarm
 }
 
 export function AgendaView({ userEmail, activeSeller }: { userEmail: string; activeSeller?: Seller | null }) {
   const [clients, setClients] = useState<Client[]>([]);
+  const [sellers, setSellers] = useState<Seller[]>([]);
   const [showCreateTask, setShowCreateTask] = useState(false);
   const [showRegisterActivity, setShowRegisterActivity] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -101,7 +104,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
 
   // Route form states (Match Second Image)
   const [routeName, setRouteName] = useState('');
-  const [routeSalesperson, setRouteSalesperson] = useState('iranildo');
+  const [routeSalesperson, setRouteSalesperson] = useState('');
   const [routeActive, setRouteActive] = useState(true);
   const [routeDate, setRouteDate] = useState('2026-07-15');
   const [routeRepeat, setRouteRepeat] = useState('Nunca');
@@ -128,7 +131,8 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
   const [taskContactMedium, setTaskContactMedium] = useState('Ligação');
   const [taskClientId, setTaskClientId] = useState('');
   const [taskDetails, setTaskDetails] = useState('');
-  const [taskSalesperson, setTaskSalesperson] = useState('iranildo');
+  const [taskSalesperson, setTaskSalesperson] = useState('');
+  const [taskAlarmDays, setTaskAlarmDays] = useState<string>('');
 
   // Form states for Register Activity
   const [activityDate, setActivityDate] = useState('2026-07-15');
@@ -144,7 +148,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
   const [filterEndDate, setFilterEndDate] = useState('2026-10-15');
   const [selectedPeriodType, setSelectedPeriodType] = useState<'custom' | 'today' | 'week' | 'month' | 'all'>('custom');
   const [showCustomPeriod, setShowCustomPeriod] = useState(false);
-  const [filterSalespeople, setFilterSalespeople] = useState<string[]>(['iranildo']);
+  const [filterSalespeople, setFilterSalespeople] = useState<string[]>([]);
   const [filterClientId, setFilterClientId] = useState('all');
   const [filterContactMedium, setFilterContactMedium] = useState('all');
   const [filterStatus, setFilterStatus] = useState('pending'); // 'pending' (Não realizadas), 'done' (Realizadas), 'all' (Todas)
@@ -205,6 +209,8 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
   useEffect(() => {
     const loadedClients = getClients(userEmail);
     setClients(loadedClients);
+    const loadedSellers = getSellers(userEmail);
+    setSellers(loadedSellers);
 
     // Initial default items if none exist
     const agendaKey = getStorageKey('agenda_items');
@@ -257,6 +263,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
   const saveItemsToStorage = (newItems: AgendaItem[]) => {
     setItems(newItems);
     localStorage.setItem(getStorageKey('agenda_items'), JSON.stringify(newItems));
+    window.dispatchEvent(new Event('agenda_updated'));
   };
 
   // Helper to persist routes
@@ -281,7 +288,8 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
       clientName: clientName,
       details: taskDetails,
       salesperson: taskSalesperson,
-      status: 'pending'
+      status: 'pending',
+      alarmDays: taskAlarmDays ? parseInt(taskAlarmDays, 10) : undefined
     };
 
     const updated = [newTask, ...items];
@@ -291,6 +299,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
     setTaskTime('');
     setTaskDetails('');
     setTaskClientId('');
+    setTaskAlarmDays('');
     setShowCreateTask(false);
   };
 
@@ -308,7 +317,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
       clientId: activityClientId,
       clientName: clientName,
       details: activityDetails,
-      salesperson: 'iranildo', // matching screenshot defaults
+      salesperson: activeSeller?.id || '',
       status: 'done',
       result: activityResult
     };
@@ -329,7 +338,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
     const routeDataObj: PlannedRoute = {
       id: editingRouteId || `route-${Date.now()}`,
       name: routeName,
-      salesperson: routeSalesperson || 'iranildo',
+      salesperson: routeSalesperson || activeSeller?.id || '',
       date: routeDate,
       repeat: routeRepeat,
       active: routeActive,
@@ -416,7 +425,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
     setFilterEndDate('2026-10-15');
     setSelectedPeriodType('custom');
     setShowCustomPeriod(false);
-    setFilterSalespeople(['iranildo']);
+    setFilterSalespeople([]);
     setFilterClientId('all');
     setFilterContactMedium('all');
     setFilterStatus('all');
@@ -603,7 +612,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
             <button 
               onClick={() => setShowFilters(true)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border transition-all text-xs font-semibold ${
-                filterStatus !== 'all' || filterClientId !== 'all' || filterSalespeople.length !== 1 || filterSalespeople[0] !== 'iranildo' || selectedCalendarDate !== null
+                filterStatus !== 'all' || filterClientId !== 'all' || filterSalespeople.length > 0 || selectedCalendarDate !== null
                   ? 'bg-primary/10 border-primary text-primary' 
                   : 'border-slate-200 text-on-surface-variant hover:border-slate-300'
               }`}
@@ -654,7 +663,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                         <span className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-bold text-primary/70">
                           • {item.contactMedium}
                         </span>
-                        <span className="text-slate-400">• Vendedor: {item.salesperson}</span>
+                        <span className="text-slate-400">• Vendedor: {sellers.find(s => s.id === item.salesperson)?.name || item.salesperson}</span>
                       </div>
                     </div>
 
@@ -757,13 +766,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                         <tr key={route.id} className="border-b border-slate-50 text-xs text-slate-700 hover:bg-slate-50/50 transition-all">
                           <td className="py-3 px-2 font-bold text-slate-800">{route.name}</td>
                           <td className="py-3 px-2">
-                            {route.salesperson === 'iranildo' 
-                              ? 'iranildo' 
-                              : route.salesperson === 'maria_silva' 
-                                ? 'Maria Silva' 
-                                : route.salesperson === 'joao_p' 
-                                  ? 'João Pedro' 
-                                  : route.salesperson || 'Não selecionado'}
+                            {sellers.find(s => s.id === route.salesperson)?.name || route.salesperson || 'Não selecionado'}
                           </td>
                           <td className="py-3 px-2">{formatDateToBR(route.date)}</td>
                           <td className="py-3 px-2">{route.repeat}</td>
@@ -854,9 +857,9 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all appearance-none"
                     >
                       <option value="" disabled>Selecione...</option>
-                      <option value="iranildo">iranildo</option>
-                      <option value="maria_silva">Maria Silva</option>
-                      <option value="joao_p">João Pedro</option>
+                      {sellers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                   </div>
@@ -1135,6 +1138,22 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                 ></textarea>
               </div>
 
+              {/* ALARME Section */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ALARME (DIAS ANTES)</span>
+                  <div className="flex-1 h-[1px] bg-slate-100"></div>
+                </div>
+                <input 
+                  type="number" 
+                  min="1"
+                  value={taskAlarmDays}
+                  onChange={(e) => setTaskAlarmDays(e.target.value)}
+                  placeholder="Ex: 2 para avisar 2 dias antes"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all"
+                />
+              </div>
+
               {/* VENDEDOR Section */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -1143,13 +1162,15 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                 </div>
                 <div className="relative">
                   <select 
+                    required
                     value={taskSalesperson}
                     onChange={(e) => setTaskSalesperson(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-700 outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 transition-all appearance-none"
                   >
-                    <option value="iranildo">iranildo</option>
-                    <option value="maria_silva">Maria Silva</option>
-                    <option value="joao_p">João Pedro</option>
+                    <option value="" disabled>Selecione...</option>
+                    {sellers.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
                   </select>
                   <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
                 </div>
@@ -1441,7 +1462,7 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                 <div className="relative flex flex-wrap items-center gap-2 border border-slate-200 rounded-xl px-3 py-2.5 bg-white">
                   {filterSalespeople.map(sales => (
                     <span key={sales} className="flex items-center gap-1.5 bg-[#f5f2f9] border border-[#e5dfec] text-slate-700 px-3 py-1 rounded-lg text-xs font-semibold">
-                      <span>{sales}</span>
+                      <span>{sellers.find(s => s.id === sales)?.name || sales}</span>
                       <button 
                         onClick={() => setFilterSalespeople(filterSalespeople.filter(v => v !== sales))}
                         className="text-red-500 hover:text-red-700 font-bold ml-0.5 text-[11px] focus:outline-none"
@@ -1456,18 +1477,23 @@ export function AgendaView({ userEmail, activeSeller }: { userEmail: string; act
                   )}
 
                   <div className="ml-auto flex items-center gap-1.5">
-                    <button 
-                      onClick={() => {
-                        if (!filterSalespeople.includes('iranildo')) {
-                          setFilterSalespeople([...filterSalespeople, 'iranildo']);
+                    <select
+                      className="text-xs text-primary font-bold focus:outline-none appearance-none bg-transparent"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (val && !filterSalespeople.includes(val)) {
+                          setFilterSalespeople([...filterSalespeople, val]);
                         }
+                        e.target.value = "";
                       }}
-                      className="text-xs text-primary font-bold hover:underline"
+                      defaultValue=""
                     >
-                      + iranildo
-                    </button>
-                    <span className="text-slate-300">|</span>
-                    <ChevronDown size={16} className="text-slate-400" />
+                      <option value="" disabled>+ Adicionar</option>
+                      {sellers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <ChevronDown size={16} className="text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>

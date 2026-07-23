@@ -233,6 +233,7 @@ export default function App() {
         currentTab={currentTab} 
         onTabChange={setCurrentTab} 
         activeSeller={activeSeller}
+        userEmail={userEmail}
       />
     </div>
   );

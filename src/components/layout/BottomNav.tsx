@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart2, Receipt, Users, Package, Menu, CalendarDays, Network, UserCircle, Settings, X, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Seller } from '../../types';
@@ -7,10 +7,61 @@ interface BottomNavProps {
   currentTab: string;
   onTabChange: (tab: string) => void;
   activeSeller?: Seller | null;
+  userEmail?: string;
 }
 
-export function BottomNav({ currentTab, onTabChange, activeSeller }: BottomNavProps) {
+export function BottomNav({ currentTab, onTabChange, activeSeller, userEmail }: BottomNavProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [dueTasksCount, setDueTasksCount] = useState(0);
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const calculateDueTasks = () => {
+      const agendaKey = `vitrine_pay_${userEmail}_agenda_items`;
+      const stored = localStorage.getItem(agendaKey);
+      if (!stored) {
+        setDueTasksCount(0);
+        return;
+      }
+      try {
+        const items = JSON.parse(stored);
+        let count = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        items.forEach((item: any) => {
+          if (item.type === 'task' && item.status === 'pending') {
+            const dateParts = item.date.split('/');
+            if (dateParts.length === 3) {
+              const taskDate = new Date(parseInt(dateParts[2], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[0], 10));
+              const alarmDays = item.alarmDays || 0;
+              const alarmDate = new Date(taskDate);
+              alarmDate.setDate(alarmDate.getDate() - alarmDays);
+              
+              if (today >= alarmDate) {
+                count++;
+              }
+            }
+          }
+        });
+        setDueTasksCount(count);
+      } catch (e) {
+        console.error('Error parsing agenda items for notification', e);
+      }
+    };
+
+    calculateDueTasks();
+
+    const handleUpdate = () => calculateDueTasks();
+    window.addEventListener('agenda_updated', handleUpdate);
+    window.addEventListener('vitrine_pay_data_synced', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('agenda_updated', handleUpdate);
+      window.removeEventListener('vitrine_pay_data_synced', handleUpdate);
+    };
+  }, [userEmail]);
 
   // Dynamic tabs based on user permissions
   let tabs = [
@@ -87,13 +138,20 @@ export function BottomNav({ currentTab, onTabChange, activeSeller }: BottomNavPr
                 }
               }}
               className={cn(
-                "flex flex-col items-center justify-center pt-1 w-full h-full rounded-lg transition-colors px-1 cursor-pointer",
+                "flex flex-col items-center justify-center pt-1 w-full h-full rounded-lg transition-colors px-1 cursor-pointer relative",
                 isActive 
                   ? "text-[#851b42] border-t-2 border-[#851b42] bg-[#851b42]/5" 
                   : "text-on-surface-variant hover:bg-surface-container-low"
               )}
             >
-              <TabIcon size={20} className={cn("mb-1", isActive && "fill-current")} />
+              <div className="relative">
+                <TabIcon size={20} className={cn("mb-1", isActive && "fill-current")} />
+                {tabId === 'agenda' && dueTasksCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-[#851b42] text-white text-[9px] font-bold px-1 rounded-full min-w-[16px] text-center">
+                    {dueTasksCount > 9 ? '9+' : dueTasksCount}
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] leading-tight font-black">{tabLabel}</span>
             </button>
           );
@@ -144,13 +202,22 @@ export function BottomNav({ currentTab, onTabChange, activeSeller }: BottomNavPr
                         : "bg-slate-50/50 border-slate-100 hover:bg-slate-50 text-slate-700 hover:text-slate-900 font-bold"
                     )}
                   >
-                    <div className={cn(
-                      "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
-                      isActive ? "bg-[#851b42] text-white" : "bg-slate-100 text-slate-500"
-                    )}>
-                      <MIcon size={16} />
+                    <div className="flex-1 flex items-center justify-between overflow-hidden">
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-xl flex items-center justify-center shrink-0",
+                          isActive ? "bg-[#851b42] text-white" : "bg-slate-100 text-slate-500"
+                        )}>
+                          <MIcon size={16} />
+                        </div>
+                        <span className="text-xs font-black">{mTab.label}</span>
+                      </div>
+                      {mTab.id === 'agenda' && dueTasksCount > 0 && (
+                        <span className="bg-[#851b42] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center shrink-0">
+                          +{dueTasksCount}
+                        </span>
+                      )}
                     </div>
-                    <span className="text-xs font-black">{mTab.label}</span>
                   </button>
                 );
               })}

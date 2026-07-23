@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BarChart2, ShoppingCart, Users, Package, Network, ClipboardList, UserCircle, Settings, UserCheck } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getStoreProfile } from '../../lib/store';
@@ -14,6 +15,57 @@ interface SidebarProps {
 }
 
 export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileVersion, activeSeller }: SidebarProps) {
+  const [dueTasksCount, setDueTasksCount] = useState(0);
+
+  useEffect(() => {
+    if (!userEmail) return;
+
+    const calculateDueTasks = () => {
+      const agendaKey = `vitrine_pay_${userEmail}_agenda_items`;
+      const stored = localStorage.getItem(agendaKey);
+      if (!stored) {
+        setDueTasksCount(0);
+        return;
+      }
+      try {
+        const items = JSON.parse(stored);
+        let count = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        items.forEach((item: any) => {
+          if (item.type === 'task' && item.status === 'pending') {
+            const dateParts = item.date.split('/');
+            if (dateParts.length === 3) {
+              const taskDate = new Date(parseInt(dateParts[2], 10), parseInt(dateParts[1], 10) - 1, parseInt(dateParts[0], 10));
+              const alarmDays = item.alarmDays || 0;
+              const alarmDate = new Date(taskDate);
+              alarmDate.setDate(alarmDate.getDate() - alarmDays);
+              
+              if (today >= alarmDate) {
+                count++;
+              }
+            }
+          }
+        });
+        setDueTasksCount(count);
+      } catch (e) {
+        console.error('Error parsing agenda items for notification', e);
+      }
+    };
+
+    calculateDueTasks();
+
+    const handleUpdate = () => calculateDueTasks();
+    window.addEventListener('agenda_updated', handleUpdate);
+    window.addEventListener('vitrine_pay_data_synced', handleUpdate);
+    
+    return () => {
+      window.removeEventListener('agenda_updated', handleUpdate);
+      window.removeEventListener('vitrine_pay_data_synced', handleUpdate);
+    };
+  }, [userEmail]);
+
   const profile = userEmail ? getStoreProfile(userEmail) : null;
   const shopName = profile?.shopName || 'Vitrine Pay';
   
@@ -95,14 +147,21 @@ export function Sidebar({ currentTab, onTabChange, userEmail, onLogout, profileV
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
               className={cn(
-                "flex items-center w-full gap-3 px-3.5 py-2.5 rounded-full transition-all",
+                "flex items-center w-full gap-3 px-3.5 py-2.5 rounded-full transition-all relative",
                 isActive 
                   ? "bg-primary-container text-on-primary-container font-semibold translate-x-0.5" 
                   : "text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
               )}
             >
               <Icon size={18} className={cn(isActive && "fill-current", "shrink-0")} />
-              <span className="text-body-md truncate">{tab.label}</span>
+              <div className="flex-1 flex justify-between items-center overflow-hidden">
+                <span className="text-body-md truncate">{tab.label}</span>
+                {tab.id === 'agenda' && dueTasksCount > 0 && (
+                  <span className="bg-[#851b42] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center shrink-0">
+                    +{dueTasksCount}
+                  </span>
+                )}
+              </div>
             </button>
           );
         })}
