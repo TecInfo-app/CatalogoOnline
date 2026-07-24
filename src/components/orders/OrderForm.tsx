@@ -65,6 +65,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const [isEditingDetails, setIsEditingDetails] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [orderType, setOrderType] = useState('Venda');
+  const [orderSeller, setOrderSeller] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [installments, setInstallments] = useState(1);
@@ -158,6 +159,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         
         setOrderNumber(orderToEdit.orderNumber);
         setOrderType(orderToEdit.orderType || 'Venda');
+        setOrderSeller(orderToEdit.sellerId || storeProfile.name || '');
         setPaymentMethod(orderToEdit.paymentMethod || '');
         setDueDate(orderToEdit.dueDate || '');
         setInstallments(orderToEdit.installments || 1);
@@ -187,6 +189,11 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         setOrderNumber(Math.floor(Math.random() * 10000).toString());
         setRepresentedName(storeProfile.shopName || storeProfile.name || 'Minha Loja');
         setRepresentedPhone(storeProfile.phone || '');
+        if (sellers.length > 0) {
+          setOrderSeller(sellers[0].id);
+        } else {
+          setOrderSeller(storeProfile.name || '');
+        }
         const nextMonth = new Date();
         nextMonth.setDate(nextMonth.getDate() + 30);
         setDueDate(nextMonth.toISOString().split('T')[0]);
@@ -662,6 +669,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       date: orderToEdit ? orderToEdit.date : new Date().toLocaleDateString('pt-BR'),
       clientName: selectedClient.name,
       clientId: selectedClient.id,
+      sellerId: orderSeller,
       status: paymentMethod ? 'completed' : (orderToEdit ? orderToEdit.status : 'budget'),
       itemsCount: orderItems.reduce((acc, item) => acc + item.quantity, 0),
       total: totalValue,
@@ -1018,7 +1026,20 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-500 mb-1">* Vendedor</label>
-                  <input type="text" value="iranildo" disabled className="w-full border border-slate-200 bg-slate-50 rounded px-3 py-2 text-sm text-slate-500 cursor-not-allowed" />
+                  <select 
+                    value={orderSeller}
+                    onChange={e => setOrderSeller(e.target.value)}
+                    className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]"
+                  >
+                    <option value="" disabled>Selecione o vendedor...</option>
+                    {sellers.length > 0 ? (
+                      sellers.map(s => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))
+                    ) : (
+                      <option value={storeProfile.name || 'Loja'}>{storeProfile.name || 'Loja'}</option>
+                    )}
+                  </select>
                 </div>
               </div>
 
@@ -1176,7 +1197,9 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 </div>
                 <div className="grid grid-cols-2">
                   <span className="text-slate-400">Vendedor</span>
-                  <span className="text-slate-800 font-medium">iranildo</span>
+                  <span className="text-slate-800 font-medium">
+                    {sellers.find(s => s.id === orderSeller)?.name || orderSeller || 'Vendedor'}
+                  </span>
                 </div>
                 <div className="grid grid-cols-2">
                   <span className="text-slate-400">Contato no cliente</span>
@@ -1313,7 +1336,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           </div>
           <div className="text-right">
             <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">Vendedor</p>
-            <p className="font-semibold text-slate-700 mt-0.5">{storeProfile.name || 'Vendedor'}</p>
+            <p className="font-semibold text-slate-700 mt-0.5">{sellers.find(s => s.id === orderSeller)?.name || orderSeller || storeProfile.name || 'Vendedor'}</p>
             <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#851b42]">{paymentMethod || 'Não informado'}</span></p>
           </div>
         </div>

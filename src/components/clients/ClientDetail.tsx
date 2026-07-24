@@ -24,7 +24,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { getOrders, getClients } from '../../lib/store';
+import { getOrders, getClients, getSellers } from '../../lib/store';
 
 interface ClientDetailProps {
   client: Client & { isBlocked?: boolean; blockedReason?: string; blockedAt?: string };
@@ -82,11 +82,13 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
   const [newCustomReason, setNewCustomReason] = useState('');
 
   // Task Drawer Form States
+  const sellers = React.useMemo(() => getSellers(userEmail), [userEmail]);
+
   const [taskDate, setTaskDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [taskTime, setTaskTime] = useState('');
   const [taskContactMedium, setTaskContactMedium] = useState('Ligação');
   const [taskDetails, setTaskDetails] = useState('');
-  const [taskSalesperson, setTaskSalesperson] = useState('iranildo');
+  const [taskSalesperson, setTaskSalesperson] = useState('');
 
   // Activity Drawer Form States
   const [activityDate, setActivityDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -283,7 +285,7 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
       clientId: client.id,
       clientName: client.name,
       details: activityDetails,
-      salesperson: 'iranildo',
+      salesperson: taskSalesperson || (sellers.length > 0 ? sellers[0].name : ''),
       status: 'done' as const,
       result: activityResult
     };
@@ -1131,9 +1133,10 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                       onChange={(e) => setTaskSalesperson(e.target.value)}
                       className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 outline-none focus:border-[#851b42] focus:ring-1 focus:ring-[#851b42]/20 font-semibold appearance-none cursor-pointer"
                     >
-                      <option value="iranildo">iranildo</option>
-                      <option value="maria_silva">Maria Silva</option>
-                      <option value="joao_p">João Pedro</option>
+                      <option value="" disabled>Selecione o vendedor...</option>
+                      {sellers.map(s => (
+                        <option key={s.id} value={s.name}>{s.name}</option>
+                      ))}
                     </select>
                     <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={14} />
                   </div>

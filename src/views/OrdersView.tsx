@@ -114,7 +114,7 @@ export function OrdersView({ userEmail, onNavigate, activeSeller }: { userEmail:
     if (orderToEdit) {
       updateOrder(userEmail, { ...orderToEdit, ...partialOrder } as Order);
     } else {
-      const newOrder = { ...partialOrder, sellerId: activeSeller?.id } as Order;
+      const newOrder = { sellerId: activeSeller?.id, ...partialOrder } as Order;
       addOrder(userEmail, newOrder);
     }
     loadOrders();
