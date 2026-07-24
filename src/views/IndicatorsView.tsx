@@ -630,12 +630,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
               className="w-full pl-10 pr-4 py-2 bg-surface-container-lowest border border-outline-variant rounded-full text-body-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
             />
           </div>
-          {activeTab === 'panel' && (
-            <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-full hover:bg-primary/90 transition-colors whitespace-nowrap text-label-md">
-              <Plus size={18} />
-              Adicionar Indicador
-            </button>
-          )}
+
         </div>
       </div>
 
@@ -856,10 +851,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
             ))}
           </div>
 
-          <button className="w-full py-4 border-2 border-dashed border-outline-variant rounded-xl text-primary font-label-md hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 mb-8 print:hidden">
-            <PlusCircle size={20} />
-            Adicionar Indicador
-          </button>
+
         </>
       ) : (
         <div className="space-y-6">
