@@ -58,9 +58,11 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         const docRef = doc(db, 'users', normEmail, 'data', key);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-          const data = snap.data().value;
-          if (data !== undefined) {
-            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(data));
+          const docData = snap.data();
+          if (docData.valueStr !== undefined) {
+            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, docData.valueStr);
+          } else if (docData.value !== undefined) {
+            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(docData.value));
           }
         }
       } catch (e) {
@@ -360,7 +362,7 @@ export const patchLocalStorage = () => {
           try {
             const parsed = JSON.parse(value);
             const docRef = doc(db, 'users', email, 'data', knownKey);
-            setDoc(docRef, { value: parsed }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
+            setDoc(docRef, { valueStr: value }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
 
             // Sync slug if this is store_profile
             if (knownKey === 'store_profile' && parsed && typeof parsed === 'object') {
