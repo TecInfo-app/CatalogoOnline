@@ -141,6 +141,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
 
   useEffect(() => {
     const loadData = () => {
+      // Refresh store profile
+      const currentProfile = getStoreProfile(sellerEmail);
+      setStoreProfile(currentProfile);
+
+      // Auto-open login modal if required by store profile and client is not logged in
+      if (currentProfile.requireCatalogLogin && !loggedInClient) {
+        setIsLoginModalOpen(true);
+      }
+
       // Load products of the specific seller
       const loaded = getProducts(sellerEmail);
       // Filter to show only active products (isActive !== false)

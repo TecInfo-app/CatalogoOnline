@@ -583,7 +583,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
   }, [userEmail, startDate, endDate, filteredOrders, filteredClients]);
 
   return (
-    <div className="animate-in fade-in duration-300 max-w-7xl mx-auto space-y-6">
+    <div id="printable-area" className="animate-in fade-in duration-300 max-w-7xl mx-auto space-y-6">
       {/* Printable Header - Visible ONLY when printing */}
       <div className="hidden print:block mb-6 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">

@@ -355,6 +355,31 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
                   </button>
                 </div>
               </div>
+
+              {/* CATALOG LOGIN TOGGLE */}
+              <div className="mt-4 p-4 bg-white border border-slate-200/80 rounded-2xl flex items-center justify-between gap-4 shadow-2xs">
+                <div className="space-y-0.5">
+                  <label className="text-xs font-bold text-slate-800 block">
+                    Abrir Login ao Acessar o Catálogo Online
+                  </label>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Quando ativado, exibe a tela de login/área do cliente assim que o visitante acessa o catálogo online. Se desativado, o cliente pode visualizar os produtos diretamente.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setProfile(prev => ({ ...prev, requireCatalogLogin: !prev.requireCatalogLogin }))}
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                    profile.requireCatalogLogin ? 'bg-[#851b42]' : 'bg-slate-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      profile.requireCatalogLogin ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
             </div>
 
           </div>

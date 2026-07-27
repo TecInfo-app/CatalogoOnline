@@ -141,7 +141,8 @@
   body * {
     visibility: hidden;
   }
-  #printable-order-receipt, #printable-order-receipt * {
+  #printable-order-receipt, #printable-order-receipt *,
+  #printable-area, #printable-area * {
     visibility: visible;
   }
   #printable-order-receipt {
@@ -156,5 +157,26 @@
     color: black !important;
     box-shadow: none !important;
     border: none !important;
+  }
+  #printable-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: white !important;
+    color: black !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+  .print\:hidden,
+  .print\:hidden * {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  .print\:block {
+    display: block !important;
   }
 }

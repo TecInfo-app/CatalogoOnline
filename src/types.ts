@@ -106,6 +106,7 @@ export interface StoreProfile {
   asaasEnabled?: boolean;
   asaasApiKey?: string;
   asaasEnvironment?: 'sandbox' | 'production';
+  requireCatalogLogin?: boolean;
 }
 
 export interface Coupon {
