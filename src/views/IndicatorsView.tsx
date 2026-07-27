@@ -57,8 +57,18 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
 
     if (effectiveSellerId !== 'all') {
       if (effectiveSellerId === 'catalog') {
-        ords = ords.filter(o => o.sellerId === 'catalog' || !o.sellerId || o.orderNumber?.startsWith('CAT-'));
-        clis = clis.filter(c => c.sellerId === 'catalog' || !c.sellerId);
+        ords = ords.filter(o => 
+          o.sellerId === 'catalog' || 
+          (o.orderNumber && o.orderNumber.toString().startsWith('CAT-')) ||
+          (o as any).origin === 'catalog' ||
+          (o.representedName && o.representedName.toLowerCase().includes('catálogo'))
+        );
+        const catalogClientIds = new Set(ords.map(o => o.clientId).filter(Boolean));
+        clis = clis.filter(c => 
+          c.sellerId === 'catalog' || 
+          (c as any).isCatalogClient || 
+          catalogClientIds.has(c.id)
+        );
       } else {
         ords = ords.filter(o => o.sellerId === effectiveSellerId);
         clis = clis.filter(c => c.sellerId === effectiveSellerId);
