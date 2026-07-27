@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-import { getOrders, getClients, getProducts, getIndicatorSettings, getSellers } from '../lib/store';
+import { getOrders, getClients, getProducts, getIndicatorSettings, saveIndicatorSettings, getSellers } from '../lib/store';
 import { Seller } from '../types';
 
 const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
@@ -80,6 +80,35 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
   
   const [startDate, setStartDate] = useState(firstDayOfMonth);
   const [endDate, setEndDate] = useState(lastDayOfMonth);
+
+  const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
+
+  const remainingBusinessDays = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const todayNum = now.getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let count = 0;
+    for (let d = todayNum; d <= daysInMonth; d++) {
+      const dayOfWeek = new Date(year, month, d).getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+    }
+    return count;
+  }, [today]);
+
+  const monthlyGoal = settings.monthlyGoal || 0;
+  const remainingGoal = Math.max(0, monthlyGoal - totalVendidoMes);
+  const perBusinessDay = (monthlyGoal > 0 && remainingBusinessDays > 0)
+    ? (remainingGoal / remainingBusinessDays)
+    : 0;
+  const progressPercent = monthlyGoal > 0
+    ? Math.min(100, Math.round((totalVendidoMes / monthlyGoal) * 100))
+    : 0;
 
   const [chartData, setChartData] = useState<{name: string, current: number | null, goal: number | null, previsao: number | null, vendidoDia: number | null, previsaoDia: number | null}[]>([]);
 
@@ -741,17 +770,43 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
               <div className="flex justify-between items-start">
                 <div>
                   <div className="text-label-md text-on-surface-variant mb-1">OBJETIVO DO MÊS</div>
-                  <div className="text-headline-lg text-on-surface">R$ 0,00</div>
+                  <div className="text-headline-lg font-bold text-on-surface">
+                    R$ {monthlyGoal > 0 ? monthlyGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0,00'}
+                  </div>
                 </div>
-                <button className="text-primary text-label-md hover:underline">Definir metas</button>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    setGoalInput(monthlyGoal > 0 ? monthlyGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '');
+                    setIsGoalModalOpen(true);
+                  }}
+                  className="text-primary text-label-md hover:underline font-semibold cursor-pointer"
+                >
+                  Definir metas
+                </button>
               </div>
-              <div className="w-full bg-surface-variant h-2 rounded-full mt-4 overflow-hidden">
-                <div className="bg-primary h-full" style={{ width: '0%' }}></div>
+              <div className="w-full bg-slate-100 h-2.5 rounded-full mt-4 overflow-hidden">
+                <div 
+                  className="bg-[#851b42] h-full transition-all duration-500 rounded-full" 
+                  style={{ width: `${progressPercent}%` }} 
+                />
               </div>
               <div className="mt-4 pt-4 border-t border-outline-variant/30">
                 <div className="text-label-md text-on-surface-variant mb-1">NECESSÁRIO VENDER</div>
-                <div className="text-headline-sm text-on-surface">R$ por dia útil</div>
-                <div className="text-body-sm text-outline">Nenhuma meta definida</div>
+                <div className="text-headline-sm font-bold text-on-surface">
+                  {monthlyGoal > 0 
+                    ? `R$ ${perBusinessDay.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} por dia útil`
+                    : 'R$ por dia útil'}
+                </div>
+                <div className="text-body-sm text-slate-500">
+                  {monthlyGoal > 0 
+                    ? (remainingGoal === 0 
+                        ? 'Meta do mês atingida! 🎉' 
+                        : remainingBusinessDays > 0 
+                          ? `Faltam ${remainingBusinessDays} ${remainingBusinessDays === 1 ? 'dia útil' : 'dias úteis'} no mês (Falta R$ ${remainingGoal.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`
+                          : 'Nenhum dia útil restante no mês')
+                    : 'Nenhuma meta definida'}
+                </div>
               </div>
             </div>
           </div>
@@ -1723,6 +1778,72 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
                 Fechar Detalhamento
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Definir Meta do Mês */}
+      {isGoalModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200 print:hidden">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Definir Meta do Mês</h3>
+              <button 
+                type="button"
+                onClick={() => setIsGoalModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Informe o objetivo total de vendas para o mês. Este valor será utilizado para calcular o progresso e o valor necessário por dia útil.
+            </p>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const cleanStr = goalInput.trim();
+              let parsed = 0;
+              if (cleanStr) {
+                const normalized = cleanStr.replace(/\./g, '').replace(',', '.');
+                parsed = parseFloat(normalized) || 0;
+              }
+              saveIndicatorSettings(userEmail, { ...settings, monthlyGoal: parsed });
+              setIsGoalModalOpen(false);
+            }} className="space-y-4 pt-2">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Valor da Meta (R$)
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">R$</span>
+                  <input
+                    type="text"
+                    value={goalInput}
+                    onChange={(e) => setGoalInput(e.target.value)}
+                    placeholder="Ex: 10.000,00"
+                    className="w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#851b42] focus:border-transparent"
+                    autoFocus
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsGoalModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-xs font-semibold text-white bg-[#851b42] hover:bg-[#6b1534] rounded-xl transition-colors shadow-xs cursor-pointer"
+                >
+                  Salvar Meta
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

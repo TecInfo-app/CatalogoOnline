@@ -218,6 +218,7 @@ export interface IndicatorSettings {
   carteiraAntigoDias: number;
   positivacaoRecenteDias: number;
   positivacaoAntigoDias: number;
+  monthlyGoal?: number;
 }
 
 export const getIndicatorSettings = (email: string): IndicatorSettings => {
