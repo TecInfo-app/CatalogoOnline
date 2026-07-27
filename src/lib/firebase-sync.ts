@@ -59,7 +59,16 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const docData = snap.data();
-          if (docData.valueStr !== undefined) {
+          if (docData.isChunked) {
+            let fullStr = '';
+            for (let i = 0; i < docData.numChunks; i++) {
+              const chunkSnap = await getDoc(doc(db, 'users', normEmail, 'data', `${key}_chunk_${i}`));
+              if (chunkSnap.exists()) {
+                fullStr += chunkSnap.data().chunk;
+              }
+            }
+            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, fullStr);
+          } else if (docData.valueStr !== undefined) {
             localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, docData.valueStr);
           } else if (docData.value !== undefined) {
             localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(docData.value));
@@ -362,7 +371,17 @@ export const patchLocalStorage = () => {
           try {
             const parsed = JSON.parse(value);
             const docRef = doc(db, 'users', email, 'data', knownKey);
-            setDoc(docRef, { valueStr: value }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
+            const MAX_DOC_SIZE = 900000;
+            if (value.length > MAX_DOC_SIZE) {
+              const numChunks = Math.ceil(value.length / MAX_DOC_SIZE);
+              setDoc(docRef, { isChunked: true, numChunks }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
+              for (let i = 0; i < numChunks; i++) {
+                const chunkRef = doc(db, 'users', email, 'data', `${knownKey}_chunk_${i}`);
+                setDoc(chunkRef, { chunk: value.slice(i * MAX_DOC_SIZE, (i + 1) * MAX_DOC_SIZE) }).catch(e => console.error(`Firebase sync chunk error for ${email}:`, e));
+              }
+            } else {
+              setDoc(docRef, { valueStr: value }).catch(e => console.error(`Firebase sync error for ${email}:`, e));
+            }
 
             // Sync slug if this is store_profile
             if (knownKey === 'store_profile' && parsed && typeof parsed === 'object') {

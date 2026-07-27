@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Phone, Mail, FileText, Camera, Check, RotateCcw, Building, Hash, Image as ImageIcon, Copy, ExternalLink } from 'lucide-react';
+import { User, Phone, Mail, FileText, Camera, Check, RotateCcw, Building, Hash, Image as ImageIcon, Copy, ExternalLink, AlertTriangle } from 'lucide-react';
 import { getStoreProfile, saveStoreProfile } from '../lib/store';
 import { StoreProfile } from '../types';
+import { processAndCompressImage } from '../lib/image-utils';
 
 interface ProfileViewProps {
   userEmail: string;
@@ -22,6 +23,8 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
   const [initialProfile, setInitialProfile] = useState<StoreProfile | null>(null);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [imageNotice, setImageNotice] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,17 +72,23 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
     }));
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      setImageNotice(null);
+      setImageError(null);
+      try {
+        const result = await processAndCompressImage(file, 800 * 1024, 800, 800);
         setProfile(prev => ({
           ...prev,
-          logoUrl: reader.result as string
+          logoUrl: result.dataUrl
         }));
-      };
-      reader.readAsDataURL(file);
+        if (result.warning) {
+          setImageNotice(result.warning);
+        }
+      } catch (err: any) {
+        setImageError(err.message || 'Erro ao processar imagem.');
+      }
     }
   };
 
@@ -168,6 +177,20 @@ export function ProfileView({ userEmail, onProfileSave }: ProfileViewProps) {
               <p className="text-[10px] text-slate-400 max-w-md leading-relaxed">
                 Clique no ícone de câmera para selecionar a imagem da sua marca. Ela aparecerá no topo do seu catálogo online.
               </p>
+
+              {imageNotice && (
+                <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-1.5 text-[10px] text-amber-800">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-600" />
+                  <span>{imageNotice}</span>
+                </div>
+              )}
+
+              {imageError && (
+                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded-lg flex items-start gap-1.5 text-[10px] text-red-800">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5 text-red-600" />
+                  <span>{imageError}</span>
+                </div>
+              )}
             </div>
           </div>
 

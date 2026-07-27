@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Upload, Info, ChevronDown } from 'lucide-react';
+import { X, Plus, Trash2, Upload, Info, ChevronDown, AlertTriangle } from 'lucide-react';
 import { Product } from '../types';
+import { processAndCompressImage } from '../lib/image-utils';
 
 interface ProductFormModalProps {
   isOpen: boolean;
@@ -55,6 +56,8 @@ export function ProductFormModal({
   // Image Upload / URL
   const [imageUrl, setImageUrl] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [imageNotice, setImageNotice] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   // Preset Mock Images
   const presetImages = [
@@ -111,16 +114,23 @@ export function ProductFormModal({
   if (!isOpen) return null;
 
   // Handle image upload from local file
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsUploading(true);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageUrl(reader.result as string);
+      setImageNotice(null);
+      setImageError(null);
+      try {
+        const result = await processAndCompressImage(file);
+        setImageUrl(result.dataUrl);
+        if (result.warning) {
+          setImageNotice(result.warning);
+        }
+      } catch (err: any) {
+        setImageError(err.message || 'Erro ao processar imagem.');
+      } finally {
         setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
+      }
     }
   };
 
@@ -286,6 +296,20 @@ export function ProductFormModal({
                 <span>Escolher do Dispositivo</span>
                 <input type="file" accept="image/*" onChange={handleImageFileChange} className="hidden" />
               </label>
+
+              {imageNotice && (
+                <div className="w-full p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-1.5 text-[10px] text-amber-800">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-600" />
+                  <span>{imageNotice}</span>
+                </div>
+              )}
+
+              {imageError && (
+                <div className="w-full p-2 bg-red-50 border border-red-200 rounded-lg flex items-start gap-1.5 text-[10px] text-red-800">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5 text-red-600" />
+                  <span>{imageError}</span>
+                </div>
+              )}
               
               {/* Presets Row */}
               <div className="w-full">
