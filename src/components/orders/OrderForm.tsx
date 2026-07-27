@@ -1365,43 +1365,94 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               </tr>
             </thead>
             <tbody>
-              {orderItems.map((item, idx) => (
-                <tr key={item.id || item.product.id || idx} className="border-b border-slate-100">
-                  <td className="py-2 font-medium text-slate-800">
-                    {item.product.name}
-                    {item.product.sku && <span className="block text-[10px] text-slate-400 font-normal">REF: {item.product.sku}</span>}
-                    {item.priceTable && item.priceTable !== 'Preço de Tabela' && (
-                      <span className="block text-[9px] text-slate-500 font-normal">{item.priceTable}</span>
-                    )}
-                  </td>
-                  <td className="py-2 text-center text-slate-700">{item.quantity}</td>
-                  <td className="py-2 text-right text-slate-700">R$ {(item.price ?? item.product.price).toFixed(2).replace('.', ',')}</td>
-                  <td className="py-2 text-right font-bold text-slate-800">R$ {((item.price ?? item.product.price) * item.quantity).toFixed(2).replace('.', ',')}</td>
-                </tr>
-              ))}
+              {orderItems.map((item, idx) => {
+                const netUnitPrice = item.price ?? item.product.price;
+                const grossUnitPrice = item.product.price > 0 ? item.product.price : netUnitPrice;
+                const hasDiscount = (grossUnitPrice > netUnitPrice) || (item.discount1 && item.discount1 > 0) || (item.discount2 && item.discount2 > 0);
+
+                const discountBadges: string[] = [];
+                if (item.discount1 && item.discount1 > 0) {
+                  discountBadges.push(`Desc. ${item.discount1}%`);
+                }
+                if (item.discount2 && item.discount2 > 0) {
+                  discountBadges.push(`Desc. R$ ${item.discount2.toFixed(2).replace('.', ',')}`);
+                }
+                if (discountBadges.length === 0 && grossUnitPrice > netUnitPrice) {
+                  const diffVal = grossUnitPrice - netUnitPrice;
+                  const diffPct = Math.round((diffVal / grossUnitPrice) * 100);
+                  if (diffPct > 0) {
+                    discountBadges.push(`Desc. ${diffPct}%`);
+                  } else {
+                    discountBadges.push(`Desc. R$ ${diffVal.toFixed(2).replace('.', ',')}`);
+                  }
+                }
+
+                return (
+                  <tr key={item.id || item.product.id || idx} className="border-b border-slate-100">
+                    <td className="py-2 font-medium text-slate-800">
+                      {item.product.name}
+                      {item.product.sku && <span className="block text-[10px] text-slate-400 font-normal">REF: {item.product.sku}</span>}
+                      {item.priceTable && item.priceTable !== 'Preço de Tabela' && (
+                        <span className="block text-[9px] text-slate-500 font-normal">{item.priceTable}</span>
+                      )}
+                      {hasDiscount && (
+                        <span className="block text-[10px] text-emerald-700 font-semibold mt-0.5">
+                          {discountBadges.join(' + ')}
+                        </span>
+                      )}
+                    </td>
+                    <td className="py-2 text-center text-slate-700">{item.quantity}</td>
+                    <td className="py-2 text-right text-slate-700">
+                      {hasDiscount && grossUnitPrice > netUnitPrice && (
+                        <span className="block text-[10px] text-slate-400 line-through">
+                          R$ {grossUnitPrice.toFixed(2).replace('.', ',')}
+                        </span>
+                      )}
+                      R$ {netUnitPrice.toFixed(2).replace('.', ',')}
+                    </td>
+                    <td className="py-2 text-right font-bold text-slate-800">
+                      R$ {(netUnitPrice * item.quantity).toFixed(2).replace('.', ',')}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {/* RESUMO DE VALORES */}
-        <div className="border-t border-dashed border-slate-300 pt-3 flex flex-col items-end text-xs space-y-1">
-          <div className="flex justify-between w-48 text-slate-600">
-            <span>Subtotal:</span>
-            <span>R$ {totalValue.toFixed(2).replace('.', ',')}</span>
-          </div>
-          <div className="flex justify-between w-48 text-slate-600">
-            <span>Frete:</span>
-            <span>R$ 0,00</span>
-          </div>
-          <div className="flex justify-between w-48 text-slate-600">
-            <span>Descontos:</span>
-            <span>R$ 0,00</span>
-          </div>
-          <div className="flex justify-between w-48 text-base font-black text-slate-800 border-t border-slate-100 pt-1.5 mt-1">
-            <span>TOTAL:</span>
-            <span>R$ {totalValue.toFixed(2).replace('.', ',')}</span>
-          </div>
-        </div>
+        {(() => {
+          const totalGross = orderItems.reduce((acc, item) => {
+            const netUnitPrice = item.price ?? item.product.price;
+            const grossUnitPrice = item.product.price > 0 ? item.product.price : netUnitPrice;
+            const effectiveGross = Math.max(grossUnitPrice, netUnitPrice);
+            return acc + (effectiveGross * item.quantity);
+          }, 0);
+
+          const totalNet = totalValue;
+          const totalDiscountsCalculated = Math.max(0, totalGross - totalNet);
+
+          return (
+            <div className="border-t border-dashed border-slate-300 pt-3 flex flex-col items-end text-xs space-y-1">
+              <div className="flex justify-between w-48 text-slate-600">
+                <span>Subtotal:</span>
+                <span>R$ {totalGross.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div className="flex justify-between w-48 text-slate-600">
+                <span>Frete:</span>
+                <span>R$ 0,00</span>
+              </div>
+              <div className="flex justify-between w-48 text-emerald-700 font-semibold">
+                <span>Descontos:</span>
+                <span>R$ {totalDiscountsCalculated.toFixed(2).replace('.', ',')}</span>
+              </div>
+              <div className="flex justify-between w-48 text-base font-black text-slate-800 border-t border-slate-100 pt-1.5 mt-1">
+                <span>TOTAL:</span>
+                <span>R$ {totalNet.toFixed(2).replace('.', ',')}</span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* RODAPÉ DO COMPROVANTE */}
         <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-6 mt-8">
