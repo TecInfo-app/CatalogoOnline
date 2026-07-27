@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Plus, Info, MoreVertical, BarChart2, PlusCircle, Printer, Calendar, FileText, ShoppingBag, Users, TrendingUp, DollarSign, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from 'recharts';
-import { getOrders, getClients, getProducts, getIndicatorSettings, saveIndicatorSettings, getSellers } from '../lib/store';
+import { getOrders, getClients, getProducts, getIndicatorSettings, saveIndicatorSettings, getSellers, getStoreProfile } from '../lib/store';
 import { Seller } from '../types';
 
 const parseOrderDate = (dateStr: string, currentYear = new Date().getFullYear()): Date | null => {
@@ -41,6 +41,8 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
 
   const settings = useMemo(() => getIndicatorSettings(userEmail), [userEmail, syncVersion]);
   const sellers = useMemo(() => getSellers(userEmail), [userEmail, syncVersion]);
+  const storeProfile = useMemo(() => getStoreProfile(userEmail), [userEmail, syncVersion]);
+  const storeName = storeProfile.shopName || storeProfile.name || 'Sistema de Vendas';
 
   const [activeTab, setActiveTab] = useState<'panel' | 'reports'>('panel');
   const [selectedSellerId, setSelectedSellerId] = useState<string>('all');
@@ -632,7 +634,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
       <div className="hidden print:block mb-6 border-b-2 border-slate-900 pb-4">
         <div className="flex justify-between items-end">
           <div>
-            <h1 className="text-2xl font-bold text-slate-950 uppercase tracking-wide">Cia do Chopp - Sistema de Vendas</h1>
+            <h1 className="text-2xl font-bold text-slate-950 uppercase tracking-wide">{storeName} - Sistema de Vendas</h1>
             <p className="text-sm text-slate-600">
               Relatório: <span className="font-semibold text-slate-800">
                 {selectedReport === 'summary' ? 'Resumo Geral de Vendas' :
