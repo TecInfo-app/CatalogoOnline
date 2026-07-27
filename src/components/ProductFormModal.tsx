@@ -45,7 +45,7 @@ export function ProductFormModal({
   const [originalPrice, setOriginalPrice] = useState<number | undefined>(undefined);
 
   // Variations Tab
-  const [variations, setVariations] = useState<Array<{ name: string; values: string[] }>>([]);
+  const [variations, setVariations] = useState<Array<{ name: string; values: string[]; valuePrices?: Record<string, number> }>>([]);
   const [newVarName, setNewVarName] = useState('');
   const [newVarValue, setNewVarValue] = useState('');
 
@@ -152,6 +152,20 @@ export function ProductFormModal({
   // Remove variation
   const handleRemoveVariation = (index: number) => {
     setVariations(variations.filter((_, i) => i !== index));
+  };
+
+  // Update variation value price addition
+  const handleUpdateValuePrice = (varIndex: number, optionVal: string, priceAdd: number) => {
+    setVariations(prev => prev.map((v, i) => {
+      if (i !== varIndex) return v;
+      const updatedPrices = { ...(v.valuePrices || {}) };
+      if (priceAdd > 0) {
+        updatedPrices[optionVal] = priceAdd;
+      } else {
+        delete updatedPrices[optionVal];
+      }
+      return { ...v, valuePrices: updatedPrices };
+    }));
   };
 
   // Add dynamic category
@@ -656,26 +670,50 @@ export function ProductFormModal({
                   {variations.length === 0 ? (
                     <p className="text-xs text-slate-400 italic">Nenhuma variação criada. Ex: Tamanhos P, M, G ou Cores Preto, Azul.</p>
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3">
                       {variations.map((v, idx) => (
-                        <div key={idx} className="bg-white border border-slate-100 rounded-xl p-3 flex justify-between items-center shadow-xs">
-                          <div>
-                            <span className="text-xs font-bold text-[#851b42] block">{v.name}</span>
-                            <div className="flex gap-1 flex-wrap mt-1">
-                              {v.values.map((val, i) => (
-                                <span key={i} className="text-[10px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
-                                  {val}
-                                </span>
-                              ))}
-                            </div>
+                        <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs space-y-2.5">
+                          <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                            <span className="text-xs font-extrabold text-[#851b42] uppercase tracking-wide">{v.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveVariation(idx)}
+                              className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Remover variação"
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveVariation(idx)}
-                            className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Valores e acréscimos ao preço base (R$ adicional):
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                            {v.values.map((val, i) => {
+                              const priceAdd = v.valuePrices?.[val] || 0;
+                              return (
+                                <div key={i} className="flex items-center justify-between gap-2 bg-slate-50 border border-slate-200/80 rounded-lg px-2.5 py-1.5">
+                                  <span className="text-xs font-bold text-slate-700 truncate">{val}</span>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <span className="text-[10px] font-semibold text-slate-400">+R$</span>
+                                    <input
+                                      type="number"
+                                      step="0.01"
+                                      min="0"
+                                      placeholder="0,00"
+                                      value={priceAdd > 0 ? priceAdd : ''}
+                                      onChange={(e) => {
+                                        const num = parseFloat(e.target.value) || 0;
+                                        handleUpdateValuePrice(idx, val, num);
+                                      }}
+                                      className="w-16 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs font-extrabold text-[#851b42] outline-none focus:border-[#851b42]"
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       ))}
                     </div>

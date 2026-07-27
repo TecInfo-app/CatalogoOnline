@@ -18,7 +18,7 @@ export interface Product {
   description?: string;
   weight?: string;
   dimensions?: string;
-  variations?: Array<{ name: string; values: string[] }>;
+  variations?: Array<{ name: string; values: string[]; valuePrices?: Record<string, number> }>;
 }
 
 export interface Client {

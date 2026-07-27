@@ -1538,11 +1538,11 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
 
                 <div className="bg-slate-50/50 border border-slate-150 p-2.5 rounded-lg flex flex-col justify-center text-[11px] font-semibold text-slate-400 space-y-1 h-[42px]">
                   <span className="flex items-center gap-1">
-                    Peso bruto: <strong className="text-slate-600">{productConfiguring.weight || '2,350 kg'}</strong>
+                    Peso bruto: <strong className="text-slate-600">{productConfiguring.weight?.trim() ? productConfiguring.weight : 'Não informado'}</strong>
                     <Info size={11} className="text-slate-300 inline" />
                   </span>
                   <span>
-                    Volume: <strong className="text-slate-600">{productConfiguring.dimensions || '0,321 m³'}</strong>
+                    Volume: <strong className="text-slate-600">{productConfiguring.dimensions?.trim() ? productConfiguring.dimensions : 'Não informado'}</strong>
                   </span>
                 </div>
               </div>

@@ -1111,11 +1111,17 @@ export function ProductsView({ userEmail, activeSeller }: { userEmail: string; a
                       <td className="py-3.5 px-4 text-slate-500 max-w-xs truncate" title={variationsStr}>
                         {hasVariations ? (
                           <div className="flex flex-wrap gap-1">
-                            {product.variations!.slice(0, 2).map((v, i) => (
-                              <span key={i} className="text-[9px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded border border-purple-100 font-semibold">
-                                {v.name}: {v.values.join('/')}
-                              </span>
-                            ))}
+                            {product.variations!.slice(0, 2).map((v, i) => {
+                              const valuesStr = v.values.map(val => {
+                                const p = v.valuePrices?.[val];
+                                return p && p > 0 ? `${val} (+R$ ${p.toFixed(2).replace('.', ',')})` : val;
+                              }).join('/');
+                              return (
+                                <span key={i} className="text-[9px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded border border-purple-100 font-semibold">
+                                  {v.name}: {valuesStr}
+                                </span>
+                              );
+                            })}
                             {product.variations!.length > 2 && (
                               <span className="text-[9px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded font-bold">
                                 +{product.variations!.length - 2}
@@ -1293,11 +1299,17 @@ export function ProductsView({ userEmail, activeSeller }: { userEmail: string; a
                   {/* Variations tag inside card */}
                   {hasVariations && (
                     <div className="flex gap-1 flex-wrap">
-                      {product.variations!.slice(0, 2).map((v, i) => (
-                        <span key={i} className="text-[8.5px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded font-bold border border-purple-100">
-                          {v.name}: {v.values.join('/')}
-                        </span>
-                      ))}
+                      {product.variations!.slice(0, 2).map((v, i) => {
+                        const valuesStr = v.values.map(val => {
+                          const p = v.valuePrices?.[val];
+                          return p && p > 0 ? `${val} (+R$ ${p.toFixed(2).replace('.', ',')})` : val;
+                        }).join('/');
+                        return (
+                          <span key={i} className="text-[8.5px] bg-purple-50 text-[#851b42] px-1.5 py-0.5 rounded font-bold border border-purple-100">
+                            {v.name}: {valuesStr}
+                          </span>
+                        );
+                      })}
                       {product.variations!.length > 2 && (
                         <span className="text-[8.5px] bg-slate-100 text-slate-500 px-1 py-0.5 rounded font-extrabold">
                           +{product.variations!.length - 2}

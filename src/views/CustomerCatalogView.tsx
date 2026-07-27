@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Check, AlertTriangle, Plus, Minus, ArrowLeft, Send, CheckCircle2, X, Trash2, User, History, LogOut, LogIn, Edit3, ClipboardList, FileText, Calendar, CreditCard, Sparkles, Loader2, Copy, ChevronRight, ChevronDown } from 'lucide-react';
 import { getProducts, saveProducts, addOrder, getClients, addClient, updateClient, getOrders, getStoreProfile, getCoupons } from '../lib/store';
 import { Product, Order, Client, Coupon } from '../types';
-import { cn } from '../lib/utils';
+import { cn, getItemUnitPrice } from '../lib/utils';
 import { AbacatePayCheckoutView } from './AbacatePayCheckoutView';
 import { loadStoreData } from '../lib/firebase-sync';
 
@@ -501,7 +501,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
   };
 
   // Calculate cart total & discounts
-  const subtotal = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+  const subtotal = cart.reduce((sum, item) => sum + (getItemUnitPrice(item.product, item.selectedVariations) * item.quantity), 0);
   const cartItemsCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   // Auto coupon for minimum order value
@@ -697,9 +697,9 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
       representedPhone: storeProfile.phone || '',
       items: cart.map(item => ({
         productId: item.product.id,
-        name: item.product.name,
+        name: item.product.name + (Object.keys(item.selectedVariations || {}).length > 0 ? ' (' + Object.entries(item.selectedVariations).map(([k, v]) => `${k}: ${v}`).join(', ') + ')' : ''),
         quantity: item.quantity,
-        price: item.product.price
+        price: getItemUnitPrice(item.product, item.selectedVariations)
       }))
     };
 
@@ -889,7 +889,8 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
         .map(([k, v]) => `${k}: ${v}`)
         .join(', ');
       const varsStr = vars ? ` (${vars})` : '';
-      text += `• ${item.quantity}x ${item.product.name}${varsStr} - R$ ${(item.product.price * item.quantity).toFixed(2).replace('.', ',')}\n`;
+      const unitPrice = getItemUnitPrice(item.product, item.selectedVariations);
+      text += `• ${item.quantity}x ${item.product.name}${varsStr} - R$ ${(unitPrice * item.quantity).toFixed(2).replace('.', ',')}\n`;
     });
 
     text += `----------------------------------------\n`;
@@ -1396,7 +1397,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 <p className="text-[10px] font-bold text-[#851b42] uppercase tracking-widest mb-1">{productToView.category}</p>
                 <h3 className="text-lg font-black text-slate-800 leading-tight">{productToView.name}</h3>
                 <p className="text-xl font-black text-[#851b42] mt-2">
-                  R$ {productToView.price.toFixed(2).replace('.', ',')}
+                  R$ {getItemUnitPrice(productToView, selectedVariations).toFixed(2).replace('.', ',')}
                   {productToView.unit && <span className="text-sm font-semibold text-slate-400 ml-1">/ {productToView.unit}</span>}
                 </p>
                 {productToView.description && (
@@ -1412,19 +1413,25 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       <div className="flex flex-wrap gap-2">
                         {variation.values.map(val => {
                           const isSelected = selectedVariations[variation.name] === val;
+                          const addOn = variation.valuePrices?.[val] || 0;
                           return (
                             <button
                               key={val}
                               type="button"
                               onClick={() => setSelectedVariations({ ...selectedVariations, [variation.name]: val })}
                               className={cn(
-                                "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border",
+                                "px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5",
                                 isSelected 
                                   ? "bg-[#851b42] text-white border-[#851b42] shadow-sm"
                                   : "bg-white text-slate-600 border-slate-200 hover:border-[#851b42]/40 hover:bg-slate-50"
                               )}
                             >
-                              {val}
+                              <span>{val}</span>
+                              {addOn > 0 && (
+                                <span className={cn("text-[10px] font-bold px-1.5 py-0.2 rounded", isSelected ? "bg-white/20 text-white" : "bg-emerald-50 text-emerald-700 border border-emerald-200/60")}>
+                                  + R$ {addOn.toFixed(2).replace('.', ',')}
+                                </span>
+                              )}
                             </button>
                           );
                         })}
@@ -1550,7 +1557,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           <p className="text-[9px] font-semibold text-slate-400">{itemVars}</p>
                         )}
                         <p className="text-xs font-extrabold text-[#851b42]">
-                          R$ {(product.price * item.quantity).toFixed(2).replace('.', ',')}
+                          R$ {(getItemUnitPrice(product, item.selectedVariations) * item.quantity).toFixed(2).replace('.', ',')}
                         </p>
 
                         {/* quantity controls */}
