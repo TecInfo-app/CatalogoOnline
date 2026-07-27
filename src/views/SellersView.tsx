@@ -1,10 +1,11 @@
 import { useState, useEffect, FormEvent } from 'react';
 import { 
   Users, User, Plus, Edit2, Trash2, Copy, Check, ExternalLink, 
-  Lock, Unlock, Info, Shield, Building2, Eye, HelpCircle, Save, X, Phone, Mail, Award, CheckSquare, Square, Radio, FileText, CheckCircle2
+  Lock, Unlock, Info, Shield, Building2, Eye, HelpCircle, Save, X, Phone, Mail, Award, CheckSquare, Square, Radio, FileText, CheckCircle2,
+  LayoutGrid, List, Trophy, TrendingUp, BarChart3, Medal, DollarSign, ShoppingBag
 } from 'lucide-react';
-import { getSellers, addSeller, updateSeller, deleteSeller, getStoreProfile } from '../lib/store';
-import { Seller, SellerPermissions, RepresentedItem } from '../types';
+import { getSellers, addSeller, updateSeller, deleteSeller, getStoreProfile, getOrders } from '../lib/store';
+import { Seller, SellerPermissions, RepresentedItem, Order } from '../types';
 import { cn } from '../lib/utils';
 
 interface SellersViewProps {
@@ -29,7 +30,10 @@ const defaultPermissions: SellerPermissions = {
 
 export function SellersView({ userEmail }: SellersViewProps) {
   const [sellers, setSellers] = useState<Seller[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [viewState, setViewState] = useState<'list' | 'form'>('list');
+  const [activeTab, setActiveTab] = useState<'sellers' | 'ranking'>('sellers');
+  const [displayMode, setDisplayMode] = useState<'mosaico' | 'lista'>('mosaico');
   const [currentSeller, setCurrentSeller] = useState<Seller | null>(null);
   
   // Form states
@@ -54,10 +58,10 @@ export function SellersView({ userEmail }: SellersViewProps) {
   const shopName = storeProfile.shopName || 'perfumaria';
 
   useEffect(() => {
-    loadSellers();
+    loadSellersAndOrders();
     
     const handleSync = () => {
-      loadSellers();
+      loadSellersAndOrders();
     };
 
     window.addEventListener('vitrine_pay_data_synced', handleSync);
@@ -93,9 +97,11 @@ export function SellersView({ userEmail }: SellersViewProps) {
     }
   }, [name, viewState]);
 
-  const loadSellers = () => {
-    const data = getSellers(userEmail);
-    setSellers(data);
+  const loadSellersAndOrders = () => {
+    const sellerData = getSellers(userEmail);
+    const orderData = getOrders(userEmail);
+    setSellers(sellerData);
+    setOrders(orderData);
   };
 
   const getSellerPortalUrl = () => {
@@ -186,7 +192,7 @@ export function SellersView({ userEmail }: SellersViewProps) {
       addSeller(userEmail, sellerData);
     }
 
-    loadSellers();
+    loadSellersAndOrders();
     setViewState('list');
     setCurrentSeller(null);
   };
@@ -194,7 +200,7 @@ export function SellersView({ userEmail }: SellersViewProps) {
   const handleDelete = (id: string) => {
     deleteSeller(userEmail, id);
     setShowDeleteConfirm(null);
-    loadSellers();
+    loadSellersAndOrders();
   };
 
   const handleCopyPortalLink = (sellerEmail?: string, sellerPhone?: string) => {
@@ -272,172 +278,595 @@ export function SellersView({ userEmail }: SellersViewProps) {
 
       {viewState === 'list' ? (
         <div className="space-y-6">
-          {/* SELLER PORTAL QUICK INSTRUCTION */}
-          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="space-y-1.5 flex-1 max-w-2xl">
-              <span className="bg-blue-100 text-blue-800 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                Portal do Vendedor Integrado
-              </span>
-              <h4 className="text-xs font-bold text-slate-800">Seus vendedores acessam a plataforma por um link exclusivo</h4>
-              <p className="text-[11px] text-slate-500 leading-relaxed">
-                Cada vendedor cadastrado pode fazer login no portal utilizando apenas o <strong>E-mail</strong> e o <strong>Telefone/Celular</strong> cadastrados por você. Não precisam de senha. Ao entrar, o painel deles exibirá apenas os módulos que você permitir nas opções de segurança.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => handleCopyPortalLink()}
-                className={cn(
-                  "py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border",
-                  copiedSellerId === 'portal_link'
-                    ? "bg-emerald-600 border-emerald-600 text-white"
-                    : "bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-800"
-                )}
-              >
-                {copiedSellerId === 'portal_link' ? (
-                  <>
-                    <Check size={14} /> Link Copiado!
-                  </>
-                ) : (
-                  <>
-                    <Copy size={14} /> Copiar Link do Portal
-                  </>
-                )}
-              </button>
-              <a
-                href={getSellerPortalUrl()}
-                target="_blank"
-                rel="noreferrer"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-1.5"
-              >
-                Testar Portal <ExternalLink size={13} />
-              </a>
-            </div>
+          
+          {/* TABS: CADASTROS DE VENDEDORES VS RANKING DE VENDEDORES */}
+          <div className="flex items-center gap-2 border-b border-slate-200/80 pb-3 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setActiveTab('sellers')}
+              className={cn(
+                "px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 border",
+                activeTab === 'sellers'
+                  ? "bg-[#851b42] text-white border-[#851b42] shadow-sm"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              )}
+            >
+              <Users size={15} /> Cadastros ({sellers.length})
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab('ranking')}
+              className={cn(
+                "px-4 py-2.5 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer shrink-0 border",
+                activeTab === 'ranking'
+                  ? "bg-[#851b42] text-white border-[#851b42] shadow-sm"
+                  : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+              )}
+            >
+              <Trophy size={15} className={activeTab === 'ranking' ? "text-amber-300" : "text-amber-500"} /> Ranking de Vendedores & Comissões
+            </button>
           </div>
 
-          {/* SELLERS LIST */}
-          {sellers.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center flex flex-col items-center max-w-xl mx-auto space-y-4">
-              <div className="w-14 h-14 rounded-full bg-[#851b42]/5 text-[#851b42] flex items-center justify-center">
-                <Users size={28} />
+          {activeTab === 'sellers' ? (
+            <div className="space-y-6">
+              {/* SELLER PORTAL QUICK INSTRUCTION */}
+              <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="space-y-1.5 flex-1 max-w-2xl">
+                  <span className="bg-blue-100 text-blue-800 text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    Portal do Vendedor Integrado
+                  </span>
+                  <h4 className="text-xs font-bold text-slate-800">Seus vendedores acessam a plataforma por um link exclusivo</h4>
+                  <p className="text-[11px] text-slate-500 leading-relaxed">
+                    Cada vendedor cadastrado pode fazer login no portal utilizando apenas o <strong>E-mail</strong> e o <strong>Telefone/Celular</strong> cadastrados por você. Não precisam de senha. Ao entrar, o painel deles exibirá apenas os módulos que você permitir nas opções de segurança.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyPortalLink()}
+                    className={cn(
+                      "py-2.5 px-4 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer border",
+                      copiedSellerId === 'portal_link'
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "bg-white border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-800"
+                    )}
+                  >
+                    {copiedSellerId === 'portal_link' ? (
+                      <>
+                        <Check size={14} /> Link Copiado!
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} /> Copiar Link do Portal
+                      </>
+                    )}
+                  </button>
+                  <a
+                    href={getSellerPortalUrl()}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all flex items-center gap-1.5"
+                  >
+                    Testar Portal <ExternalLink size={13} />
+                  </a>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <h3 className="text-sm font-extrabold text-slate-800">Nenhum vendedor cadastrado</h3>
-                <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
-                  Comece cadastrando seu primeiro vendedor para que ele possa utilizar a plataforma Vitrine Pay com as permissões que você definir.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleCreateNew}
-                className="bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all cursor-pointer shadow-sm"
-              >
-                Cadastrar Primeiro Vendedor
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {sellers.map((seller) => (
-                <div key={seller.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    {/* Seller Photo Circle */}
-                    <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 overflow-hidden font-black">
-                      {seller.avatarUrl ? (
-                        <img src={seller.avatarUrl} alt={seller.name} className="w-full h-full object-cover" />
-                      ) : (
-                        seller.name.charAt(0).toUpperCase()
-                      )}
-                    </div>
-                    {/* Seller details */}
-                    <div className="space-y-1 flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm font-bold text-slate-800 truncate">{seller.name}</h4>
-                        <span className={cn(
-                          "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0",
-                          seller.role === 'Administrador' 
-                            ? "bg-purple-100 text-purple-800" 
-                            : "bg-slate-100 text-slate-600"
-                        )}>
-                          {seller.role}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
-                        <Mail size={12} className="shrink-0" /> {seller.email}
-                      </p>
-                      {seller.phone && (
-                        <p className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
-                          <Phone size={12} className="shrink-0" /> {seller.phone}
-                        </p>
-                      )}
-                      {seller.bio && (
-                        <p className="text-[11px] text-slate-500 line-clamp-1 italic mt-1 bg-slate-50 p-1.5 rounded-md">
-                          "{seller.bio}"
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Actions area */}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3.5 mt-1.5">
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                      Comissão: {seller.representedList?.[0]?.commission || 5}%
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => handleCopyPortalLink(seller.email, seller.phone)}
-                        className={cn(
-                          "py-1.5 px-2.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border cursor-pointer",
-                          copiedSellerId === seller.email
-                            ? "bg-emerald-600 border-emerald-600 text-white"
-                            : "bg-slate-50 border-slate-200 text-slate-600 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-100"
-                        )}
-                        title="Copiar dados de acesso do portal"
-                      >
-                        {copiedSellerId === seller.email ? 'Acesso Copiado!' : 'Copiar Acesso'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleEdit(seller)}
-                        className="p-1.5 rounded-lg bg-slate-50 hover:bg-[#851b42]/10 hover:text-[#851b42] text-slate-500 transition-colors border border-slate-100 cursor-pointer"
-                        title="Editar vendedor"
-                      >
-                        <Edit2 size={13} />
-                      </button>
-                      
-                      {showDeleteConfirm === seller.id ? (
-                        <div className="flex items-center gap-1 bg-red-50 p-0.5 rounded-lg border border-red-100">
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(seller.id)}
-                            className="text-[9px] font-bold text-red-600 px-1.5 py-1 hover:bg-red-100 rounded"
-                          >
-                            Sim
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setShowDeleteConfirm(null)}
-                            className="text-[9px] font-bold text-slate-500 px-1.5 py-1 hover:bg-slate-100 rounded"
-                          >
-                            Não
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setShowDeleteConfirm(seller.id)}
-                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors border border-slate-100 cursor-pointer"
-                          title="Excluir vendedor"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+              {/* VIEW MODE SELECTOR (MOSAICO VS LISTA) */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/80 border border-slate-200/60 p-3 rounded-2xl">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1">Exibição:</span>
+                  <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200/80 shadow-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('mosaico')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer",
+                        displayMode === 'mosaico'
+                          ? "bg-[#851b42] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
                       )}
-                    </div>
+                    >
+                      <LayoutGrid size={14} /> Mosaico
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDisplayMode('lista')}
+                      className={cn(
+                        "px-3 py-1.5 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 cursor-pointer",
+                        displayMode === 'lista'
+                          ? "bg-[#851b42] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      )}
+                    >
+                      <List size={14} /> Lista
+                    </button>
                   </div>
                 </div>
-              ))}
+
+                <span className="text-xs font-extrabold text-slate-500 pr-1">
+                  {sellers.length} {sellers.length === 1 ? 'vendedor cadastrado' : 'vendedores cadastrados'}
+                </span>
+              </div>
+
+              {/* SELLERS DISPLAY */}
+              {sellers.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-100 p-12 text-center flex flex-col items-center max-w-xl mx-auto space-y-4">
+                  <div className="w-14 h-14 rounded-full bg-[#851b42]/5 text-[#851b42] flex items-center justify-center">
+                    <Users size={28} />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-sm font-extrabold text-slate-800">Nenhum vendedor cadastrado</h3>
+                    <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                      Comece cadastrando seu primeiro vendedor para que ele possa utilizar a plataforma Vitrine Pay com as permissões que você definir.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateNew}
+                    className="bg-[#851b42] hover:bg-[#5e132e] text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all cursor-pointer shadow-sm"
+                  >
+                    Cadastrar Primeiro Vendedor
+                  </button>
+                </div>
+              ) : displayMode === 'mosaico' ? (
+                /* MOSAICO (GRID CARDS) MODE */
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sellers.map((seller) => (
+                    <div key={seller.id} className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        {/* Seller Photo Circle */}
+                        <div className="w-12 h-12 rounded-full bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center shrink-0 overflow-hidden font-black">
+                          {seller.avatarUrl ? (
+                            <img src={seller.avatarUrl} alt={seller.name} className="w-full h-full object-cover" />
+                          ) : (
+                            seller.name.charAt(0).toUpperCase()
+                          )}
+                        </div>
+                        {/* Seller details */}
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-bold text-slate-800 truncate">{seller.name}</h4>
+                            <span className={cn(
+                              "text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full shrink-0",
+                              seller.role === 'Administrador' 
+                                ? "bg-purple-100 text-purple-800" 
+                                : "bg-slate-100 text-slate-600"
+                            )}>
+                              {seller.role}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
+                            <Mail size={12} className="shrink-0" /> {seller.email}
+                          </p>
+                          {seller.phone && (
+                            <p className="text-[11px] text-slate-400 flex items-center gap-1.5 truncate">
+                              <Phone size={12} className="shrink-0" /> {seller.phone}
+                            </p>
+                          )}
+                          {seller.bio && (
+                            <p className="text-[11px] text-slate-500 line-clamp-1 italic mt-1 bg-slate-50 p-1.5 rounded-md">
+                              "{seller.bio}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Actions area */}
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-3.5 mt-1.5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          Comissão: {seller.representedList?.[0]?.commission || 5}%
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPortalLink(seller.email, seller.phone)}
+                            className={cn(
+                              "py-1.5 px-2.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border cursor-pointer",
+                              copiedSellerId === seller.email
+                                ? "bg-emerald-600 border-emerald-600 text-white"
+                                : "bg-slate-50 border-slate-200 text-slate-600 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-100"
+                            )}
+                            title="Copiar dados de acesso do portal"
+                          >
+                            {copiedSellerId === seller.email ? 'Acesso Copiado!' : 'Copiar Acesso'}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEdit(seller)}
+                            className="p-1.5 rounded-lg bg-slate-50 hover:bg-[#851b42]/10 hover:text-[#851b42] text-slate-500 transition-colors border border-slate-100 cursor-pointer"
+                            title="Editar vendedor"
+                          >
+                            <Edit2 size={13} />
+                          </button>
+                          
+                          {showDeleteConfirm === seller.id ? (
+                            <div className="flex items-center gap-1 bg-red-50 p-0.5 rounded-lg border border-red-100">
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(seller.id)}
+                                className="text-[9px] font-bold text-red-600 px-1.5 py-1 hover:bg-red-100 rounded"
+                              >
+                                Sim
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setShowDeleteConfirm(null)}
+                                className="text-[9px] font-bold text-slate-500 px-1.5 py-1 hover:bg-slate-100 rounded"
+                              >
+                                Não
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setShowDeleteConfirm(seller.id)}
+                              className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors border border-slate-100 cursor-pointer"
+                              title="Excluir vendedor"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* LISTA (TABLE) MODE */
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="bg-slate-50/80 border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                          <th className="py-3.5 px-4">Vendedor</th>
+                          <th className="py-3.5 px-4">Função</th>
+                          <th className="py-3.5 px-4">E-mail</th>
+                          <th className="py-3.5 px-4">Telefone</th>
+                          <th className="py-3.5 px-4 text-center">Comissão</th>
+                          <th className="py-3.5 px-4 text-right">Ações</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs">
+                        {sellers.map((seller) => {
+                          const repCommission = seller.representedList?.[0]?.commission || 5;
+                          return (
+                            <tr key={seller.id} className="hover:bg-slate-50/60 transition-colors">
+                              <td className="py-3.5 px-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-slate-100 border border-slate-200 text-slate-600 flex items-center justify-center font-extrabold overflow-hidden shrink-0">
+                                    {seller.avatarUrl ? (
+                                      <img src={seller.avatarUrl} alt={seller.name} className="w-full h-full object-cover" />
+                                    ) : (
+                                      seller.name.charAt(0).toUpperCase()
+                                    )}
+                                  </div>
+                                  <div>
+                                    <span className="font-extrabold text-slate-800 block">{seller.name}</span>
+                                    {seller.bio && <span className="text-[10px] text-slate-400 italic block">{seller.bio}</span>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4">
+                                <span className={cn(
+                                  "text-[9px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full inline-block",
+                                  seller.role === 'Administrador' ? "bg-purple-100 text-purple-800" : "bg-slate-100 text-slate-600"
+                                )}>
+                                  {seller.role}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-slate-600 font-semibold">{seller.email}</td>
+                              <td className="py-3.5 px-4 text-slate-600 font-semibold">{seller.phone || '-'}</td>
+                              <td className="py-3.5 px-4 text-center">
+                                <span className="text-xs font-black text-[#851b42] bg-purple-50 px-2.5 py-1 rounded-lg border border-purple-100">
+                                  {repCommission}%
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCopyPortalLink(seller.email, seller.phone)}
+                                    className={cn(
+                                      "py-1.5 px-2.5 rounded-lg text-[10px] font-bold flex items-center gap-1 transition-all border cursor-pointer",
+                                      copiedSellerId === seller.email
+                                        ? "bg-emerald-600 border-emerald-600 text-white"
+                                        : "bg-slate-50 border-slate-200 text-slate-600 hover:text-blue-700 hover:bg-blue-50"
+                                    )}
+                                  >
+                                    {copiedSellerId === seller.email ? 'Copiado!' : 'Copiar Acesso'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleEdit(seller)}
+                                    className="p-1.5 rounded-lg bg-slate-50 hover:bg-[#851b42]/10 hover:text-[#851b42] text-slate-500 transition-colors border border-slate-100 cursor-pointer"
+                                  >
+                                    <Edit2 size={13} />
+                                  </button>
+                                  {showDeleteConfirm === seller.id ? (
+                                    <div className="flex items-center gap-1 bg-red-50 p-0.5 rounded-lg border border-red-100">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDelete(seller.id)}
+                                        className="text-[9px] font-bold text-red-600 px-1.5 py-1 hover:bg-red-100 rounded"
+                                      >
+                                        Sim
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setShowDeleteConfirm(null)}
+                                        className="text-[9px] font-bold text-slate-500 px-1.5 py-1 hover:bg-slate-100 rounded"
+                                      >
+                                        Não
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setShowDeleteConfirm(seller.id)}
+                                      className="p-1.5 rounded-lg bg-slate-50 hover:bg-red-50 hover:text-red-600 text-slate-500 transition-colors border border-slate-100 cursor-pointer"
+                                    >
+                                      <Trash2 size={13} />
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* RANKING DE VENDEDORES & COMISSÕES TAB */
+            <div className="space-y-6">
+              {(() => {
+                const validOrders = orders.filter(o => o.status !== 'canceled');
+
+                const rankingData = sellers.map(seller => {
+                  const sellerIdLower = seller.id.trim().toLowerCase();
+                  const sellerEmailLower = seller.email.trim().toLowerCase();
+                  const sellerNameLower = seller.name.trim().toLowerCase();
+
+                  const sellerOrders = validOrders.filter(o => {
+                    const oSellerId = (o.sellerId || '').trim().toLowerCase();
+                    const oRepName = (o.representedName || '').trim().toLowerCase();
+                    
+                    if (oSellerId) {
+                      if (oSellerId === sellerIdLower || oSellerId === sellerEmailLower || oSellerId === sellerNameLower) {
+                        return true;
+                      }
+                    }
+                    if (oRepName) {
+                      if (oRepName === sellerNameLower || oRepName === sellerEmailLower) {
+                        return true;
+                      }
+                    }
+                    return false;
+                  });
+
+                  const totalSales = sellerOrders.reduce((sum, o) => sum + (o.total || 0), 0);
+                  const ordersCount = sellerOrders.length;
+
+                  // Find checked represented item
+                  const checkedRepItem = seller.representedList?.find(r => r.checked);
+                  const repItem = checkedRepItem || seller.representedList?.[0];
+                  const isCommissionChecked = checkedRepItem ? true : false;
+                  const commissionRate = repItem ? (repItem.commission || 0) : 0;
+
+                  let commissionValue = totalSales;
+                  let isCommissionActive = false;
+
+                  if (isCommissionChecked && commissionRate > 0) {
+                    commissionValue = totalSales * (commissionRate / 100);
+                    isCommissionActive = true;
+                  } else {
+                    // When not marked, displays the full total amount in ranking of commissions
+                    commissionValue = totalSales;
+                    isCommissionActive = false;
+                  }
+
+                  return {
+                    seller,
+                    totalSales,
+                    ordersCount,
+                    commissionRate,
+                    isCommissionChecked,
+                    isCommissionActive,
+                    commissionValue
+                  };
+                }).sort((a, b) => b.totalSales - a.totalSales);
+
+                const maxSales = rankingData.length > 0 && rankingData[0].totalSales > 0 ? rankingData[0].totalSales : 1;
+                const grandTotalSales = rankingData.reduce((sum, r) => sum + r.totalSales, 0);
+                const grandTotalCommissions = rankingData.reduce((sum, r) => sum + r.commissionValue, 0);
+                const grandTotalOrders = rankingData.reduce((sum, r) => sum + r.ordersCount, 0);
+                const topSeller = rankingData.length > 0 ? rankingData[0] : null;
+
+                return (
+                  <div className="space-y-6">
+                    {/* STATS HEADER CARDS */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="bg-gradient-to-br from-[#851b42] to-[#5e132e] rounded-2xl p-4 text-white shadow-md space-y-1">
+                        <div className="flex items-center justify-between opacity-80">
+                          <span className="text-[10px] font-black uppercase tracking-wider">Vendas do Time</span>
+                          <TrendingUp size={16} />
+                        </div>
+                        <p className="text-xl font-black">
+                          R$ {grandTotalSales.toFixed(2).replace('.', ',')}
+                        </p>
+                        <p className="text-[10px] opacity-70">Total acumulado de pedidos</p>
+                      </div>
+
+                      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between text-emerald-600">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Comissões Totais</span>
+                          <DollarSign size={16} />
+                        </div>
+                        <p className="text-xl font-black text-slate-800">
+                          R$ {grandTotalCommissions.toFixed(2).replace('.', ',')}
+                        </p>
+                        <p className="text-[10px] text-slate-400">Valores a pagar/calculados</p>
+                      </div>
+
+                      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between text-amber-500">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Líder de Vendas</span>
+                          <Trophy size={16} />
+                        </div>
+                        <p className="text-sm font-black text-slate-800 truncate">
+                          {topSeller && topSeller.totalSales > 0 ? topSeller.seller.name : 'Nenhum pedido'}
+                        </p>
+                        <p className="text-[10px] text-emerald-600 font-bold">
+                          {topSeller && topSeller.totalSales > 0 ? `R$ ${topSeller.totalSales.toFixed(2).replace('.', ',')}` : 'Sem vendas'}
+                        </p>
+                      </div>
+
+                      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-1">
+                        <div className="flex items-center justify-between text-blue-600">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Pedidos Faturados</span>
+                          <ShoppingBag size={16} />
+                        </div>
+                        <p className="text-xl font-black text-slate-800">
+                          {grandTotalOrders}
+                        </p>
+                        <p className="text-[10px] text-slate-400">Total de pedidos finalizados</p>
+                      </div>
+                    </div>
+
+                    {/* RANKING LIST */}
+                    <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <Trophy size={18} className="text-amber-500" />
+                          <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">
+                            Pódio de Vendedores e Comissões
+                          </h3>
+                        </div>
+                        <span className="text-[11px] font-bold text-slate-400">
+                          Ordenado pelo maior volume de vendas
+                        </span>
+                      </div>
+
+                      {rankingData.length === 0 ? (
+                        <div className="p-8 text-center text-slate-400 text-xs">
+                          Nenhum vendedor cadastrado.
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {rankingData.map((item, idx) => {
+                            const isFirst = idx === 0 && item.totalSales > 0;
+                            const isSecond = idx === 1 && item.totalSales > 0;
+                            const isThird = idx === 2 && item.totalSales > 0;
+                            const pctOfMax = maxSales > 0 ? (item.totalSales / maxSales) * 100 : 0;
+
+                            return (
+                              <div 
+                                key={item.seller.id}
+                                className={cn(
+                                  "p-4 rounded-xl border transition-all space-y-3",
+                                  isFirst 
+                                    ? "bg-amber-50/40 border-amber-200 shadow-sm" 
+                                    : isSecond
+                                    ? "bg-slate-50/70 border-slate-200"
+                                    : isThird
+                                    ? "bg-orange-50/30 border-orange-200"
+                                    : "bg-white border-slate-100 hover:border-slate-200"
+                                )}
+                              >
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                  {/* Left: Position badge & seller info */}
+                                  <div className="flex items-center gap-3">
+                                    <div className={cn(
+                                      "w-8 h-8 rounded-full flex items-center justify-center font-black text-xs shrink-0 shadow-xs",
+                                      isFirst ? "bg-amber-400 text-amber-950" :
+                                      isSecond ? "bg-slate-300 text-slate-800" :
+                                      isThird ? "bg-amber-700 text-white" :
+                                      "bg-slate-100 text-slate-500 border border-slate-200"
+                                    )}>
+                                      {isFirst ? '1º' : isSecond ? '2º' : isThird ? '3º' : `${idx + 1}º`}
+                                    </div>
+
+                                    <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 overflow-hidden font-extrabold text-slate-500 flex items-center justify-center shrink-0">
+                                      {item.seller.avatarUrl ? (
+                                        <img src={item.seller.avatarUrl} alt={item.seller.name} className="w-full h-full object-cover" />
+                                      ) : (
+                                        item.seller.name.charAt(0).toUpperCase()
+                                      )}
+                                    </div>
+
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-xs font-black text-slate-800">{item.seller.name}</h4>
+                                        {isFirst && (
+                                          <span className="bg-amber-100 text-amber-800 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                                            <Trophy size={10} /> Campeão
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-[10px] text-slate-400 font-bold">
+                                        {item.ordersCount} {item.ordersCount === 1 ? 'pedido realizado' : 'pedidos realizados'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Right: Sales volume & Commission */}
+                                  <div className="flex items-center gap-4 sm:gap-6 shrink-0 justify-between sm:justify-end border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0">
+                                    <div className="text-left sm:text-right">
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total de Vendas</span>
+                                      <span className="text-sm font-black text-slate-800">
+                                        R$ {item.totalSales.toFixed(2).replace('.', ',')}
+                                      </span>
+                                    </div>
+
+                                    <div className="text-right bg-slate-50 border border-slate-200/80 p-2 rounded-xl">
+                                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Valor de Comissão</span>
+                                      <div className="flex items-center gap-1.5 justify-end mt-0.5">
+                                        {item.isCommissionActive ? (
+                                          <span className="bg-emerald-100 text-emerald-800 text-[9px] font-black px-1.5 py-0.5 rounded">
+                                            {item.commissionRate}%
+                                          </span>
+                                        ) : (
+                                          <span className="bg-blue-100 text-blue-800 text-[9px] font-black px-1.5 py-0.5 rounded">
+                                            Valor Total
+                                          </span>
+                                        )}
+                                        <span className="text-xs font-black text-[#851b42]">
+                                          R$ {item.commissionValue.toFixed(2).replace('.', ',')}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Progress bar */}
+                                <div className="space-y-1 pt-1">
+                                  <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className={cn(
+                                        "h-full rounded-full transition-all duration-500",
+                                        isFirst ? "bg-amber-500" : "bg-[#851b42]"
+                                      )}
+                                      style={{ width: `${Math.max(pctOfMax, 2)}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           )}
+
         </div>
       ) : (
         /* FORM VIEW (REGISTRATION / EDIT) MATCHING THE THREE SCREENSHOT IMAGES */
