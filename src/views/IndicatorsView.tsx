@@ -56,8 +56,13 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
       : selectedSellerId;
 
     if (effectiveSellerId !== 'all') {
-      ords = ords.filter(o => o.sellerId === effectiveSellerId);
-      clis = clis.filter(c => c.sellerId === effectiveSellerId);
+      if (effectiveSellerId === 'catalog') {
+        ords = ords.filter(o => o.sellerId === 'catalog' || !o.sellerId || o.orderNumber?.startsWith('CAT-'));
+        clis = clis.filter(c => c.sellerId === 'catalog' || !c.sellerId);
+      } else {
+        ords = ords.filter(o => o.sellerId === effectiveSellerId);
+        clis = clis.filter(c => c.sellerId === effectiveSellerId);
+      }
     }
     return { filteredOrders: ords, filteredClients: clis };
   }, [userEmail, selectedSellerId, activeSeller, syncVersion]);
@@ -656,6 +661,7 @@ export function IndicatorsView({ userEmail, activeSeller }: { userEmail: string;
             className="w-full sm:w-1/2 bg-surface border border-outline-variant rounded-md py-2 px-3 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary"
           >
             <option value="all">Todos os vendedores</option>
+            <option value="catalog">Catálogo Online</option>
             {sellers.map(s => (
               <option key={s.id} value={s.id}>{s.name}</option>
             ))}

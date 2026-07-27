@@ -682,6 +682,7 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
     const newOrder: Order = {
       id: `ord-${Math.floor(100000 + Math.random() * 900000)}`,
       orderNumber: orderNum,
+      sellerId: 'catalog',
       clientName: finalName,
       clientId: targetClientId,
       date: formattedDate,
