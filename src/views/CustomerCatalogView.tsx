@@ -1878,13 +1878,15 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                 <LogIn size={16} />
                 <h3 className="text-sm font-extrabold uppercase tracking-wider">Acessar Área do Cliente</h3>
               </div>
-              <button 
-                type="button"
-                onClick={() => setIsLoginModalOpen(false)}
-                className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <X size={18} />
-              </button>
+              {!(storeProfile.requireCatalogLogin && !loggedInClient) && (
+                <button 
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(false)}
+                  className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
 
             <form onSubmit={handleLoginSubmit} className="p-6 space-y-4">

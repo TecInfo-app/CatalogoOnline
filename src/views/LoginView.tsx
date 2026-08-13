@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { auth } from '../lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 import logoImg from '../assets/shop-logo.png';
 
@@ -9,26 +9,59 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
+    setSuccessMsg('');
     setLoading(true);
 
     try {
-      if (isRegistering) {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } else {
-        await signInWithEmailAndPassword(auth, email, password);
-      }
-      // onLogin will be called indirectly through onAuthStateChanged in App.tsx
-      // or we can call it explicitly
+      await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
       console.error(error);
-      setErrorMsg(error.message || 'Erro de autenticação');
+      let message = 'Erro de autenticação';
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        message = 'E-mail ou senha incorretos.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'E-mail inválido.';
+      } else {
+        message = error.message || 'Erro de autenticação';
+      }
+      setErrorMsg(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    setErrorMsg('');
+    setSuccessMsg('');
+
+    if (!email) {
+      setErrorMsg('Por favor, digite seu e-mail no campo acima para redefinir a senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccessMsg(`E-mail de redefinição enviado com sucesso para ${email}! Verifique sua caixa de entrada e spam.`);
+    } catch (error: any) {
+      console.error(error);
+      let message = 'Erro ao enviar e-mail de redefinição';
+      if (error.code === 'auth/user-not-found') {
+        message = 'Nenhum usuário encontrado com este e-mail.';
+      } else if (error.code === 'auth/invalid-email') {
+        message = 'E-mail inválido.';
+      } else {
+        message = error.message || 'Erro ao enviar e-mail de redefinição';
+      }
+      setErrorMsg(message);
     } finally {
       setLoading(false);
     }
@@ -50,15 +83,21 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
         </div>
 
         <h1 className="text-2xl sm:text-3xl font-bold text-slate-800 mb-2 text-center">
-          {isRegistering ? 'Criar uma conta' : 'Acessar o sistema'}
+          Acessar o sistema
         </h1>
         <p className="text-sm text-slate-500 mb-8 text-center">
-          {isRegistering ? 'Insira seus dados para se cadastrar' : 'Entre com suas credenciais para continuar'}
+          Entre com suas credenciais para continuar
         </p>
 
         {errorMsg && (
           <div className="w-full bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-6 border border-red-100 text-center">
             {errorMsg}
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="w-full bg-emerald-50 text-emerald-700 text-sm p-3.5 rounded-lg mb-6 border border-emerald-100 text-center font-medium">
+            {successMsg}
           </div>
         )}
 
@@ -84,11 +123,13 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
               <label className="text-sm font-semibold text-slate-700 block">
                 Senha
               </label>
-              {!isRegistering && (
-                <a href="#" className="text-xs font-semibold text-primary hover:underline">
-                  Esqueci minha senha
-                </a>
-              )}
+              <button 
+                type="button"
+                onClick={handleForgotPassword}
+                className="text-xs font-semibold text-primary hover:underline bg-transparent border-none p-0 cursor-pointer"
+              >
+                Esqueci minha senha
+              </button>
             </div>
             
             <div className="relative">
@@ -115,28 +156,14 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#00d166] hover:bg-[#00b859] active:scale-[0.98] disabled:opacity-70 text-white font-bold py-4 rounded-xl transition-all text-base shadow-md shadow-[#00d166]/10 mt-2"
+            className="w-full bg-[#00d166] hover:bg-[#00b859] active:scale-[0.98] disabled:opacity-70 text-white font-bold py-4 rounded-xl transition-all text-base shadow-md shadow-[#00d166]/10 mt-2 cursor-pointer"
           >
-            {loading ? 'Aguarde...' : (isRegistering ? 'CADASTRAR' : 'ENTRAR')}
+            {loading ? 'Aguarde...' : 'ENTRAR'}
           </button>
         </form>
 
         {/* Footer info */}
         <div className="mt-8 text-center space-y-4 w-full border-t border-slate-100 pt-6">
-          <p className="text-xs sm:text-sm text-slate-500">
-            {isRegistering ? 'Já possui uma conta?' : 'Ainda não possui uma conta?'}
-            {' '}
-            <button
-              type="button"
-              onClick={() => {
-                setIsRegistering(!isRegistering);
-                setErrorMsg('');
-              }}
-              className="text-primary font-bold hover:underline"
-            >
-              {isRegistering ? 'Faça login' : 'Crie uma agora'}
-            </button>
-          </p>
           <p className="text-[11px] text-slate-400 leading-relaxed">
             Para saber como tratamos os dados pessoais visite nosso{' '}
             <a href="#" className="underline hover:text-slate-600">
