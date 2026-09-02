@@ -18,7 +18,7 @@ import { ProfileView } from './views/ProfileView';
 import { SettingsView } from './views/SettingsView';
 import { SellersView } from './views/SellersView';
 import { SellerLoginView } from './views/SellerLoginView';
-import { getSellers } from './lib/store';
+import { getSellers, getStoreProfile } from './lib/store';
 import { Seller } from './types';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
@@ -35,6 +35,40 @@ export default function App() {
   const [loadingData, setLoadingData] = useState(false);
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [resolvedSellerEmail, setResolvedSellerEmail] = useState<string | null>(null);
+
+  // Helper to update the browser URL when logged in as admin/seller
+  const updateAdminUrl = (email: string) => {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      // If we are in catalog or seller portal view, keep those intact
+      if (searchParams.get('view') === 'catalog' || searchParams.get('portal') === 'seller') {
+        return;
+      }
+      const profile = getStoreProfile(email);
+      const storeIdentifier = profile.slug || profile.shopName?.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-_]/g, '') || email.split('@')[0];
+      
+      const currentUrl = new URL(window.location.href);
+      if (storeIdentifier && currentUrl.searchParams.get('loja') !== storeIdentifier) {
+        currentUrl.searchParams.set('loja', storeIdentifier);
+        window.history.replaceState({}, '', currentUrl.toString());
+      }
+    } catch (e) {
+      console.error("Error updating admin URL:", e);
+    }
+  };
+
+  // Helper to clean the URL back to clean initial URL on logout
+  const cleanAdminUrl = () => {
+    try {
+      const currentUrl = new URL(window.location.href);
+      if (currentUrl.searchParams.has('loja')) {
+        currentUrl.searchParams.delete('loja');
+        window.history.replaceState({}, '', currentUrl.toString());
+      }
+    } catch (e) {
+      console.error("Error cleaning admin URL:", e);
+    }
+  };
 
   // Check if we are in customer catalog mode
   const searchParams = new URLSearchParams(window.location.search);
@@ -120,9 +154,11 @@ export default function App() {
     return () => unsubscribe();
   }, [isCatalogMode]);
 
-  // Listen to incoming orders/clients in real-time instantly when owner is logged in
   useEffect(() => {
     if (!userEmail || isCatalogMode) return;
+
+    // Update URL to match store name / slug
+    updateAdminUrl(userEmail);
 
     const unsubscribe = startRealTimeSync(userEmail, () => {
       // Notify all views to refresh their local states
@@ -130,7 +166,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [userEmail, isCatalogMode]);
+  }, [userEmail, isCatalogMode, profileVersion]);
 
   if (isCatalogMode && sellerParam) {
     if (!catalogLoaded) {
@@ -162,6 +198,7 @@ export default function App() {
             setActiveSeller(seller);
             setLoadingData(true);
             await loadStoreData(ownerEmail);
+            updateAdminUrl(ownerEmail);
             setLoadingData(false);
           }}
           onBackToOwnerLogin={() => {
@@ -175,13 +212,21 @@ export default function App() {
         />
       );
     }
-    return <LoginView onLogin={(email) => setUserEmail(email)} />;
+    return (
+      <LoginView
+        onLogin={(email) => {
+          setUserEmail(email);
+          updateAdminUrl(email);
+        }}
+      />
+    );
   }
 
   const handleLogout = async () => {
     try {
       localStorage.removeItem('vitrine_pay_seller_session');
       setActiveSeller(null);
+      cleanAdminUrl();
       await signOut(auth);
       setUserEmail(null);
     } catch (error) {
