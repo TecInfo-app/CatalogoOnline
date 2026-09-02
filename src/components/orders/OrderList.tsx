@@ -1,7 +1,7 @@
 import { Order } from '../../types';
-import { Package, Plus, Receipt, Settings, Lightbulb, MessageCircle, X, Edit2, Trash2, LayoutGrid, List } from 'lucide-react';
+import { Package, Plus, Receipt, Settings, Lightbulb, MessageCircle, X, Edit2, Trash2, LayoutGrid, List, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 interface OrderListProps {
   orders: Order[];
@@ -14,17 +14,34 @@ interface OrderListProps {
 export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, canEditOrders = true }: OrderListProps) {
   const [showDemo, setShowDemo] = useState(true);
   const [displayMode, setDisplayMode] = useState<'mosaico' | 'lista'>('mosaico');
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm.trim()) return orders;
+    const term = searchTerm.toLowerCase().trim();
+    const cleanTerm = term.replace(/^#/, '').trim();
+
+    return orders.filter(order => {
+      const clientMatch = order.clientName?.toLowerCase().includes(term);
+      const orderNumStr = String(order.orderNumber || '').toLowerCase();
+      const orderNumMatch = orderNumStr.includes(term) || (cleanTerm && orderNumStr.includes(cleanTerm));
+      const orderIdMatch = order.id?.toLowerCase().includes(term);
+      return clientMatch || orderNumMatch || orderIdMatch;
+    });
+  }, [orders, searchTerm]);
 
   return (
     <div className="flex flex-col h-full animate-in fade-in duration-300">
       <div className="flex border-b border-slate-200 mb-6 font-bold text-sm">
         <button 
+          id="tab-orders"
           className="px-4 py-3 flex items-center gap-2 border-b-2 border-[#333] text-[#333]"
         >
           <Receipt size={16} />
           PEDIDOS
         </button>
         <button 
+          id="tab-orders-config"
           className="px-4 py-3 flex items-center gap-2 text-slate-500 hover:text-[#333]"
         >
           <Settings size={16} />
@@ -55,14 +72,41 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-4">
+      {/* TOP HEADER WITH TITLE, SEARCH BAR & CREATE BUTTON */}
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-4">
         <h2 className="text-lg font-bold text-slate-800">Meus Pedidos</h2>
-        <button 
-          onClick={onCreateNew}
-          className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2 transition-colors shadow-sm"
-        >
-          <Plus size={16} /> NOVO PEDIDO
-        </button>
+        
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-72">
+            <input 
+              id="search-orders-input"
+              type="text" 
+              placeholder="Pesquisar por nome ou número..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-white border border-slate-300 rounded-lg px-3 py-2 pl-9 pr-8 text-sm focus:outline-none focus:border-[#851b42] shadow-xs placeholder:text-slate-400 font-medium"
+            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={16} />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-100 cursor-pointer"
+                title="Limpar busca"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          
+          <button 
+            id="btn-new-order"
+            onClick={onCreateNew}
+            className="bg-[#851b42] hover:bg-[#5e132e] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition-colors shadow-sm shrink-0 cursor-pointer"
+          >
+            <Plus size={16} /> <span className="hidden sm:inline">NOVO PEDIDO</span><span className="sm:hidden">NOVO</span>
+          </button>
+        </div>
       </div>
 
       {/* DISPLAY MODE SELECTOR (MOSAICO VS LISTA) */}
@@ -71,6 +115,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
           <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider pl-1">Exibição:</span>
           <div className="flex items-center bg-white p-1 rounded-lg border border-slate-200 shadow-xs">
             <button
+              id="btn-view-mosaico"
               type="button"
               onClick={() => setDisplayMode('mosaico')}
               className={cn(
@@ -83,6 +128,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
               <LayoutGrid size={14} /> Mosaico
             </button>
             <button
+              id="btn-view-lista"
               type="button"
               onClick={() => setDisplayMode('lista')}
               className={cn(
@@ -98,7 +144,8 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
         </div>
 
         <span className="text-xs font-extrabold text-slate-500 pr-1">
-          {orders.length} {orders.length === 1 ? 'pedido' : 'pedidos'}
+          {filteredOrders.length} {filteredOrders.length === 1 ? 'pedido' : 'pedidos'}
+          {searchTerm.trim() && ` encontrado${filteredOrders.length === 1 ? '' : 's'}`}
         </span>
       </div>
 
@@ -106,12 +153,26 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
         <div className="py-12 text-center text-slate-500 bg-white rounded border border-slate-200">
           Nenhum pedido encontrado.
         </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="py-12 text-center bg-white rounded-xl border border-slate-200 p-6 flex flex-col items-center justify-center gap-3">
+          <Search size={32} className="text-slate-300" />
+          <p className="text-sm font-bold text-slate-700">Nenhum pedido encontrado para "{searchTerm}"</p>
+          <p className="text-xs text-slate-500 max-w-sm">Tente buscar por outro nome de cliente ou número de pedido.</p>
+          <button
+            type="button"
+            onClick={() => setSearchTerm('')}
+            className="mt-2 text-xs font-bold text-[#851b42] hover:underline cursor-pointer"
+          >
+            Limpar busca
+          </button>
+        </div>
       ) : displayMode === 'mosaico' ? (
         /* MOSAICO (CARDS GRID) MODE */
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20 md:pb-0">
-          {orders.map(order => (
+          {filteredOrders.map(order => (
             <div 
               key={order.id} 
+              onClick={() => onEditOrder(order)}
               className="bg-white rounded border border-slate-200 p-4 flex flex-col gap-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden group"
             >
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-transparent group-hover:bg-[#851b42] transition-colors" />
@@ -209,8 +270,12 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
-                {orders.map(order => (
-                  <tr key={order.id} className="hover:bg-slate-50/60 transition-colors">
+                {filteredOrders.map(order => (
+                  <tr 
+                    key={order.id} 
+                    onClick={() => onEditOrder(order)}
+                    className="hover:bg-slate-50/60 transition-colors cursor-pointer"
+                  >
                     <td className="py-3.5 px-4 font-black text-slate-800">
                       #{order.orderNumber}
                     </td>
@@ -246,6 +311,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                             href={order.asaasUrl}
                             target="_blank"
                             rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
                             className="text-blue-600 hover:underline text-[10px] font-extrabold"
                           >
                             Ver Boleto
@@ -267,7 +333,7 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                       R$ {order.total.toFixed(2).replace('.', ',')}
                     </td>
                     {canEditOrders && (
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => onEditOrder(order)}
