@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef, ChangeEvent } from 'react';
 import { Client } from '../../types';
-import { Search, Users, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info, Settings, Save, CheckCircle } from 'lucide-react';
+import { Search, Users, Plus, MapPin, Phone, Mail, Edit2, Trash2, Download, Upload, Info, Settings, Save, CheckCircle, X, BarChart2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { cn } from '../../lib/utils';
 import { getOrders, getIndicatorSettings, saveIndicatorSettings } from '../../lib/store';
@@ -54,6 +54,10 @@ export function ClientList({
 }: ClientListProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState<'CLIENTES' | 'CONFIGURAÇÕES'>('CLIENTES');
+  const [syncVersion, setSyncVersion] = useState(0);
+  const [isCarteiraModalOpen, setIsCarteiraModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<'ativos' | 'inativos_recentes' | 'inativos_antigos' | 'prospects'>('ativos');
+  const [modalSearch, setModalSearch] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Configurations states
@@ -64,12 +68,22 @@ export function ClientList({
   const [settingsSavedMessage, setSettingsSavedMessage] = useState('');
 
   useEffect(() => {
+    const handleSync = () => {
+      setSyncVersion(v => v + 1);
+    };
+    window.addEventListener('vitrine_pay_data_synced', handleSync);
+    return () => {
+      window.removeEventListener('vitrine_pay_data_synced', handleSync);
+    };
+  }, []);
+
+  useEffect(() => {
     const sets = getIndicatorSettings(userEmail || '');
     setCarteiraRecente(sets.carteiraRecenteDias);
     setCarteiraAntigo(sets.carteiraAntigoDias);
     setPositivacaoRecente(sets.positivacaoRecenteDias);
     setPositivacaoAntigo(sets.positivacaoAntigoDias);
-  }, [userEmail]);
+  }, [userEmail, syncVersion]);
 
   const handleSaveSettings = () => {
     saveIndicatorSettings(userEmail || '', {
@@ -239,13 +253,14 @@ export function ClientList({
     );
   }, [clients, searchTerm, showAdvancedSearch, appliedFilters]);
 
-  const stats = useMemo(() => {
+  const carteiraData = useMemo(() => {
     const orders = getOrders(userEmail || '');
     const currentYear = new Date().getFullYear();
     const nowTime = new Date().getTime();
     
-    const carteiraRecenteMs = carteiraRecente * 24 * 60 * 60 * 1000;
-    const carteiraAntigoMs = carteiraAntigo * 24 * 60 * 60 * 1000;
+    const sets = getIndicatorSettings(userEmail || '');
+    const carteiraRecenteMs = sets.carteiraRecenteDias * 24 * 60 * 60 * 1000;
+    const carteiraAntigoMs = sets.carteiraAntigoDias * 24 * 60 * 60 * 1000;
 
     // Group orders by client
     const clientOrdersMap = new Map<string, typeof orders>();
@@ -255,7 +270,10 @@ export function ClientList({
         existing.push(order);
         clientOrdersMap.set(order.clientId, existing);
       } else if (order.clientName) {
-        const matchedClient = clients.find(c => c.name.toLowerCase() === order.clientName?.toLowerCase() || c.legalName.toLowerCase() === order.clientName?.toLowerCase());
+        const matchedClient = clients.find(c => 
+          c.name.toLowerCase() === order.clientName?.toLowerCase() || 
+          c.legalName.toLowerCase() === order.clientName?.toLowerCase()
+        );
         if (matchedClient) {
           const existing = clientOrdersMap.get(matchedClient.id) || [];
           existing.push(order);
@@ -264,44 +282,66 @@ export function ClientList({
       }
     });
 
-    let ativos = 0;
-    let inativosRecentes = 0;
-    let inativosAntigos = 0;
-    let prospects = 0;
+    const ativos: { id: string; name: string; phone: string; lastOrder: string; totalOrders: number; client: Client }[] = [];
+    const inativosRecentes: { id: string; name: string; phone: string; lastOrder: string; totalOrders: number; client: Client }[] = [];
+    const inativosAntigos: { id: string; name: string; phone: string; lastOrder: string; totalOrders: number; client: Client }[] = [];
+    const prospects: { id: string; name: string; phone: string; date: string; client: Client }[] = [];
 
     clients.forEach(client => {
-      if (client.status === 'prospect') {
-        prospects++;
-        return;
-      }
-
       const clientOrders = clientOrdersMap.get(client.id) || [];
       const completedOrders = clientOrders.filter(o => o.status === 'completed');
+      const phone = client.phones?.[0] || 'Sem telefone';
+      const clientName = client.name || client.legalName;
 
+      // 1. CARTEIRA CLASSIFICATION (Identical to IndicatorsView)
       if (completedOrders.length === 0) {
-        prospects++;
+        prospects.push({
+          id: client.id,
+          name: clientName,
+          phone,
+          date: 'Sem pedidos',
+          client
+        });
       } else {
+        let latestOrder: typeof orders[0] | null = null;
         let latestOrderDate: Date | null = null;
+        
         completedOrders.forEach(o => {
           const d = parseOrderDate(o.date, currentYear);
           if (d) {
             if (!latestOrderDate || d > latestOrderDate) {
               latestOrderDate = d;
+              latestOrder = o;
             }
           }
         });
 
         if (latestOrderDate) {
           const age = nowTime - (latestOrderDate as Date).getTime();
+          const info = {
+            id: client.id,
+            name: clientName,
+            phone,
+            lastOrder: latestOrder ? (latestOrder as any).date : 'N/A',
+            totalOrders: completedOrders.length,
+            client
+          };
+
           if (age <= carteiraRecenteMs) {
-            ativos++;
+            ativos.push(info);
           } else if (age <= carteiraAntigoMs) {
-            inativosRecentes++;
+            inativosRecentes.push(info);
           } else {
-            inativosAntigos++;
+            inativosAntigos.push(info);
           }
         } else {
-          prospects++;
+          prospects.push({
+            id: client.id,
+            name: clientName,
+            phone,
+            date: 'Sem pedidos',
+            client
+          });
         }
       }
     });
@@ -311,9 +351,18 @@ export function ClientList({
       ativos,
       inativosRecentes,
       inativosAntigos,
-      prospects
+      prospects,
+      settings: sets
     };
-  }, [clients, userEmail, carteiraRecente, carteiraAntigo]);
+  }, [clients, userEmail, carteiraRecente, carteiraAntigo, syncVersion]);
+
+  const stats = useMemo(() => ({
+    total: carteiraData.total,
+    ativos: carteiraData.ativos.length,
+    inativosRecentes: carteiraData.inativosRecentes.length,
+    inativosAntigos: carteiraData.inativosAntigos.length,
+    prospects: carteiraData.prospects.length
+  }), [carteiraData]);
 
   const chartData = useMemo(() => [
     { name: 'ativos', value: stats.ativos, color: '#10b981' }, // green
@@ -321,6 +370,10 @@ export function ClientList({
     { name: 'inativos recentes', value: stats.inativosRecentes, color: '#eab308' }, // yellow
     { name: 'prospects', value: stats.prospects, color: '#d1d5db' }, // gray
   ], [stats]);
+
+  const currentMonthYear = useMemo(() => {
+    return new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(new Date()).toUpperCase();
+  }, []);
 
   const exportClients = () => {
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(clients, null, 2));
@@ -633,7 +686,7 @@ export function ClientList({
               <h3 className="text-slate-500 font-bold text-xs uppercase flex items-center gap-1">
                 CARTEIRA DE CLIENTES <Info size={14} className="text-slate-400" />
               </h3>
-              <span className="text-slate-500 text-xs font-bold uppercase">JULHO DE 2026</span>
+              <span className="text-slate-500 text-xs font-bold uppercase">{currentMonthYear}</span>
             </div>
             
             <div className="p-6">
@@ -661,27 +714,44 @@ export function ClientList({
               </div>
 
               <div className="grid grid-cols-2 gap-y-4 mt-6">
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <button 
+                  onClick={() => { setModalTab('ativos'); setIsCarteiraModalOpen(true); }}
+                  className="flex items-center gap-2 text-xs text-left hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                   <span className="font-bold text-slate-700">{stats.ativos} ativos</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                  <span className="font-bold text-slate-500">{chartData[2].value} inativos recentes</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-red-500" />
-                  <span className="font-bold text-slate-700">{stats.inativos} inativos antigos</span>
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <div className="w-2 h-2 rounded-full bg-slate-300" />
+                </button>
+                <button 
+                  onClick={() => { setModalTab('inativos_recentes'); setIsCarteiraModalOpen(true); }}
+                  className="flex items-center gap-2 text-xs text-left hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-yellow-500 shrink-0" />
+                  <span className="font-bold text-slate-500">{stats.inativosRecentes} inativos recentes</span>
+                </button>
+                <button 
+                  onClick={() => { setModalTab('inativos_antigos'); setIsCarteiraModalOpen(true); }}
+                  className="flex items-center gap-2 text-xs text-left hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
+                  <span className="font-bold text-slate-700">{stats.inativosAntigos} inativos antigos</span>
+                </button>
+                <button 
+                  onClick={() => { setModalTab('prospects'); setIsCarteiraModalOpen(true); }}
+                  className="flex items-center gap-2 text-xs text-left hover:opacity-80 transition-opacity cursor-pointer"
+                >
+                  <div className="w-2 h-2 rounded-full bg-slate-300 shrink-0" />
                   <span className="font-bold text-slate-400">{stats.prospects} prospects</span>
-                </div>
+                </button>
               </div>
 
               <div className="mt-8">
-                <button className="w-full bg-slate-50 hover:bg-slate-100 text-[#851b42] py-2 rounded text-sm font-bold flex justify-center items-center gap-2 transition-colors">
-                  <span className="bg-[#851b42] text-white p-1 rounded-sm"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></span>
+                <button 
+                  onClick={() => setIsCarteiraModalOpen(true)}
+                  className="w-full bg-slate-50 hover:bg-slate-100 text-[#851b42] py-2 rounded text-sm font-bold flex justify-center items-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span className="bg-[#851b42] text-white p-1 rounded-sm">
+                    <BarChart2 size={12} />
+                  </span>
                   Detalhar carteira
                 </button>
               </div>
@@ -801,6 +871,198 @@ export function ClientList({
             >
               <Save size={14} /> Salvar Configurações
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Detalhamento da Carteira Modal */}
+      {isCarteiraModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-100 max-w-4xl w-full max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <BarChart2 className="text-[#851b42] animate-pulse" size={22} />
+                  Detalhamento da Carteira de Clientes
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Dados sincronizados em tempo real com a tela de Indicadores
+                </p>
+              </div>
+              <button 
+                onClick={() => setIsCarteiraModalOpen(false)}
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition-all cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+              {/* Context Explanation */}
+              <div className="p-4 bg-[#851b42]/5 border border-[#851b42]/15 rounded-xl">
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  O indicador de situação da carteira classifica os clientes em:
+                  <br /><span className="font-bold text-slate-900">● Prospects</span>: clientes cadastrados que ainda não efetuaram nenhum pedido;
+                  <br /><span className="font-bold text-slate-900">● Clientes ativos</span>: clientes que compraram nos últimos {carteiraData.settings.carteiraRecenteDias} dias;
+                  <br /><span className="font-bold text-slate-900">● Inativos Recentes</span>: clientes sem comprar entre {carteiraData.settings.carteiraRecenteDias} e {carteiraData.settings.carteiraAntigoDias} dias;
+                  <br /><span className="font-bold text-slate-900">● Inativos Antigos</span>: clientes sem comprar há {carteiraData.settings.carteiraAntigoDias} dias ou mais.
+                </p>
+              </div>
+
+              {/* Category selector grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                <button
+                  onClick={() => setModalTab('ativos')}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all text-center cursor-pointer",
+                    modalTab === 'ativos'
+                      ? "bg-emerald-50 border-emerald-300 ring-2 ring-emerald-500/20 shadow-xs"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  <div className="text-xl font-black text-emerald-700">{carteiraData.ativos.length}</div>
+                  <div className="text-[10px] font-bold text-emerald-800 uppercase mt-0.5">Ativos</div>
+                </button>
+
+                <button
+                  onClick={() => setModalTab('inativos_recentes')}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all text-center cursor-pointer",
+                    modalTab === 'inativos_recentes'
+                      ? "bg-amber-50 border-amber-300 ring-2 ring-amber-500/20 shadow-xs"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  <div className="text-xl font-black text-amber-700">{carteiraData.inativosRecentes.length}</div>
+                  <div className="text-[10px] font-bold text-amber-800 uppercase mt-0.5">Inat. Recentes</div>
+                </button>
+
+                <button
+                  onClick={() => setModalTab('inativos_antigos')}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all text-center cursor-pointer",
+                    modalTab === 'inativos_antigos'
+                      ? "bg-red-50 border-red-300 ring-2 ring-red-500/20 shadow-xs"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  <div className="text-xl font-black text-red-700">{carteiraData.inativosAntigos.length}</div>
+                  <div className="text-[10px] font-bold text-red-800 uppercase mt-0.5">Inat. Antigos</div>
+                </button>
+
+                <button
+                  onClick={() => setModalTab('prospects')}
+                  className={cn(
+                    "p-3 rounded-xl border transition-all text-center cursor-pointer",
+                    modalTab === 'prospects'
+                      ? "bg-slate-100 border-slate-300 ring-2 ring-slate-400/20 shadow-xs"
+                      : "bg-slate-50 border-slate-200 hover:bg-slate-100"
+                  )}
+                >
+                  <div className="text-xl font-black text-slate-700">{carteiraData.prospects.length}</div>
+                  <div className="text-[10px] font-bold text-slate-800 uppercase mt-0.5">Prospects</div>
+                </button>
+              </div>
+
+              {/* Category List */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-2 border-b border-slate-100">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase">
+                    {modalTab === 'ativos' && `Clientes Ativos (${carteiraData.ativos.length})`}
+                    {modalTab === 'inativos_recentes' && `Inativos Recentes (${carteiraData.inativosRecentes.length})`}
+                    {modalTab === 'inativos_antigos' && `Inativos Antigos (${carteiraData.inativosAntigos.length})`}
+                    {modalTab === 'prospects' && `Prospects Sem Pedidos (${carteiraData.prospects.length})`}
+                  </h4>
+
+                  <div className="relative w-full sm:w-60">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input 
+                      type="text"
+                      placeholder="Pesquisar nesta lista..."
+                      value={modalSearch}
+                      onChange={(e) => setModalSearch(e.target.value)}
+                      className="w-full pl-8 pr-3 py-1 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:outline-none focus:border-[#851b42] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Items */}
+                <div className="border border-slate-200 rounded-xl overflow-hidden max-h-72 overflow-y-auto divide-y divide-slate-100 bg-white">
+                  {(() => {
+                    const list = modalTab === 'ativos' 
+                      ? carteiraData.ativos 
+                      : modalTab === 'inativos_recentes'
+                      ? carteiraData.inativosRecentes
+                      : modalTab === 'inativos_antigos'
+                      ? carteiraData.inativosAntigos
+                      : carteiraData.prospects;
+
+                    const filteredList = list.filter(item => {
+                      if (!modalSearch) return true;
+                      const s = modalSearch.toLowerCase();
+                      return item.name.toLowerCase().includes(s) || item.phone.includes(s);
+                    });
+
+                    if (filteredList.length === 0) {
+                      return (
+                        <div className="p-8 text-center text-xs text-slate-400">
+                          Nenhum cliente encontrado nesta categoria.
+                        </div>
+                      );
+                    }
+
+                    return filteredList.map(c => (
+                      <div 
+                        key={c.id} 
+                        onClick={() => {
+                          setIsCarteiraModalOpen(false);
+                          onClientClick(c.client);
+                        }}
+                        className="p-3 flex justify-between items-center hover:bg-slate-50 transition-colors cursor-pointer group"
+                      >
+                        <div>
+                          <p className="font-semibold text-xs text-slate-800 group-hover:text-[#851b42] transition-colors">
+                            {c.name}
+                          </p>
+                          <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                            <Phone size={10} /> {c.phone}
+                          </p>
+                        </div>
+
+                        <div className="text-right">
+                          {'lastOrder' in c ? (
+                            <>
+                              <p className="text-[10px] text-slate-500">
+                                Última compra: <span className="font-semibold text-slate-700">{c.lastOrder}</span>
+                              </p>
+                              <p className="text-[9px] font-bold text-[#851b42] mt-0.5">
+                                {c.totalOrders} {c.totalOrders === 1 ? 'pedido concluído' : 'pedidos concluídos'}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
+                              Sem pedidos
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button
+                onClick={() => setIsCarteiraModalOpen(false)}
+                className="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}

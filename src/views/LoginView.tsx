@@ -19,17 +19,36 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
     setSuccessMsg('');
     setLoading(true);
 
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail || !cleanPassword) {
+      setErrorMsg('Por favor, preencha o e-mail e a senha.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
     } catch (error: any) {
-      console.error(error);
-      let message = 'Erro de autenticação';
-      if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'E-mail ou senha incorretos.';
+      console.error("Firebase auth error:", error);
+      let message = 'Erro ao realizar login.';
+      if (
+        error.code === 'auth/invalid-credential' ||
+        error.code === 'auth/wrong-password' ||
+        error.code === 'auth/user-not-found'
+      ) {
+        message = 'E-mail ou senha incorretos. Verifique os dados digitados ou utilize "Esqueci minha senha" abaixo.';
       } else if (error.code === 'auth/invalid-email') {
-        message = 'E-mail inválido.';
+        message = 'O formato do e-mail informado é inválido.';
+      } else if (error.code === 'auth/too-many-requests') {
+        message = 'Muitas tentativas consecutivas com falha. Por segurança, aguarde alguns minutos ou redefina sua senha.';
+      } else if (error.code === 'auth/user-disabled') {
+        message = 'Esta conta foi desativada. Entre em contato com o suporte.';
+      } else if (error.code === 'auth/network-request-failed') {
+        message = 'Falha de conexão com o servidor. Verifique sua conexão com a internet.';
       } else {
-        message = error.message || 'Erro de autenticação';
+        message = error.message || 'Erro de autenticação.';
       }
       setErrorMsg(message);
     } finally {
@@ -37,25 +56,26 @@ export function LoginView({ onLogin }: { onLogin: (email: string) => void }) {
     }
   };
 
-  const handleForgotPassword = async (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleForgotPassword = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!email) {
-      setErrorMsg('Por favor, digite seu e-mail no campo acima para redefinir a senha.');
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail) {
+      setErrorMsg('Por favor, digite seu e-mail no campo acima para enviarmos o link de redefinição de senha.');
       return;
     }
 
     setLoading(true);
     try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccessMsg(`E-mail de redefinição enviado com sucesso para ${email}! Verifique sua caixa de entrada e spam.`);
+      await sendPasswordResetEmail(auth, cleanEmail);
+      setSuccessMsg(`E-mail de redefinição de senha enviado para ${cleanEmail}! Verifique sua caixa de entrada e spam.`);
     } catch (error: any) {
       console.error(error);
       let message = 'Erro ao enviar e-mail de redefinição';
       if (error.code === 'auth/user-not-found') {
-        message = 'Nenhum usuário encontrado com este e-mail.';
+        message = 'Nenhum usuário cadastrado encontrado com este e-mail.';
       } else if (error.code === 'auth/invalid-email') {
         message = 'E-mail inválido.';
       } else {
