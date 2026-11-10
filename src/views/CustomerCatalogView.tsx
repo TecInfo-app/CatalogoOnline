@@ -2324,9 +2324,20 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                     <div className="grid grid-cols-2 gap-4 text-xs">
                       <div>
                         <span className="block text-[9px] text-slate-400 font-bold uppercase">Forma de Pagamento</span>
-                        <span className="font-extrabold text-slate-700 mt-0.5 block">
-                          {selectedOrderForDetail.paymentMethod || 'A combinar'}
-                        </span>
+                        {selectedOrderForDetail.paymentSplits && selectedOrderForDetail.paymentSplits.length > 0 ? (
+                          <div className="space-y-1 mt-1">
+                            {selectedOrderForDetail.paymentSplits.map((split, i) => (
+                              <div key={i} className="flex items-center justify-between text-[11px] bg-slate-50 border border-slate-100 px-2 py-1 rounded font-semibold text-slate-700">
+                                <span>{split.method}</span>
+                                <span className="font-extrabold text-[#851b42]">R$ {split.amount.toFixed(2).replace('.', ',')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="font-extrabold text-slate-700 mt-0.5 block">
+                            {selectedOrderForDetail.paymentMethod || 'A combinar'}
+                          </span>
+                        )}
                       </div>
                       {selectedOrderForDetail.dueDate && (
                         <div>

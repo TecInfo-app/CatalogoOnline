@@ -544,11 +544,19 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                         {order.itemsCount} {order.itemsCount === 1 ? 'item' : 'itens'} &bull; Total: <strong>R$ {order.total.toFixed(2).replace('.', ',')}</strong>
                       </p>
                     </div>
-                    {order.paymentMethod && (
+                    {order.paymentSplits && order.paymentSplits.length > 0 ? (
+                      <div className="flex flex-wrap gap-1 max-w-xs justify-end">
+                        {order.paymentSplits.map((s, idx) => (
+                          <span key={idx} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200/80">
+                            {s.method}: <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : order.paymentMethod ? (
                       <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">
                         {order.paymentMethod}
                       </span>
-                    )}
+                    ) : null}
                   </div>
                 ))}
 

@@ -302,7 +302,15 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                       </span>
                     </td>
                     <td className="py-3.5 px-4">
-                      {order.paymentMethod === 'Boleto' && order.asaasUrl ? (
+                      {order.paymentSplits && order.paymentSplits.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          {order.paymentSplits.map((s, idx) => (
+                            <span key={idx} className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-200/80 whitespace-nowrap">
+                              {s.method}: <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
+                            </span>
+                          ))}
+                        </div>
+                      ) : order.paymentMethod === 'Boleto' && order.asaasUrl ? (
                         <div className="flex items-center gap-2">
                           <span className="bg-blue-50 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px] border border-blue-100">
                             Boleto Asaas

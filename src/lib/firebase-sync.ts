@@ -59,19 +59,52 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
         const snap = await getDoc(docRef);
         if (snap.exists()) {
           const docData = snap.data();
+          let rawDataStr = '';
           if (docData.isChunked) {
-            let fullStr = '';
             for (let i = 0; i < docData.numChunks; i++) {
               const chunkSnap = await getDoc(doc(db, 'users', normEmail, 'data', `${key}_chunk_${i}`));
               if (chunkSnap.exists()) {
-                fullStr += chunkSnap.data().chunk;
+                rawDataStr += chunkSnap.data().chunk;
               }
             }
-            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, fullStr);
           } else if (docData.valueStr !== undefined) {
-            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, docData.valueStr);
+            rawDataStr = docData.valueStr;
           } else if (docData.value !== undefined) {
-            localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(docData.value));
+            rawDataStr = JSON.stringify(docData.value);
+          }
+
+          if (rawDataStr) {
+            if (key === 'orders' || key === 'clients') {
+              const existingLocalStr = localStorage.getItem(`vitrine_pay_${normEmail}_${key}`);
+              if (existingLocalStr) {
+                try {
+                  const remoteArray: any[] = JSON.parse(rawDataStr);
+                  const localArray: any[] = JSON.parse(existingLocalStr);
+                  if (Array.isArray(remoteArray) && Array.isArray(localArray)) {
+                    // Merge remote and local without losing items present locally but not yet in remote
+                    const mergedMap = new Map<string, any>();
+                    remoteArray.forEach(item => {
+                      if (item && item.id) mergedMap.set(item.id, item);
+                    });
+                    localArray.forEach(item => {
+                      if (item && item.id && !mergedMap.has(item.id)) {
+                        mergedMap.set(item.id, item);
+                      }
+                    });
+                    const mergedList = Array.from(mergedMap.values());
+                    localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, JSON.stringify(mergedList));
+                  } else {
+                    localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, rawDataStr);
+                  }
+                } catch (e) {
+                  localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, rawDataStr);
+                }
+              } else {
+                localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, rawDataStr);
+              }
+            } else {
+              localStorage.setItem(`vitrine_pay_${normEmail}_${key}`, rawDataStr);
+            }
           }
         }
       } catch (e) {
@@ -113,8 +146,8 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
 
           for (const orderDoc of ordersSnap.docs) {
             const orderData = orderDoc.data() as Order;
-            // Avoid duplicates
-            if (!currentOrders.some(o => o.id === orderData.id || o.orderNumber === orderData.orderNumber)) {
+            // Avoid duplicates strictly by ID
+            if (!currentOrders.some(o => o.id === orderData.id)) {
               currentOrders.unshift(orderData);
 
               // Deduct product stock
@@ -144,6 +177,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
 
           // Save merged orders
           localStorage.setItem(storedOrdersKey, JSON.stringify(currentOrders));
+          window.dispatchEvent(new Event('vitrine_pay_data_synced'));
 
           // Save updated products if stock changed
           if (updatedAnyProduct && currentProducts.length > 0) {
@@ -178,6 +212,7 @@ export const loadStoreData = async (email: string, onlyPublic: boolean = false) 
           }
 
           localStorage.setItem(storedClientsKey, JSON.stringify(currentClients));
+          window.dispatchEvent(new Event('vitrine_pay_data_synced'));
         }
       } catch (err) {
         console.error(`Error processing incoming clients queue for ${normEmail}:`, err);
@@ -227,8 +262,8 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
     for (const change of snapshot.docChanges()) {
       if (change.type === 'added') {
         const orderData = change.doc.data() as Order;
-        // Avoid duplicates
-        if (!currentOrders.some(o => o.id === orderData.id || o.orderNumber === orderData.orderNumber)) {
+        // Avoid duplicates strictly by ID
+        if (!currentOrders.some(o => o.id === orderData.id)) {
           currentOrders.unshift(orderData);
           anyMerged = true;
 
@@ -268,6 +303,7 @@ export const startRealTimeSync = (email: string, onSync: () => void) => {
       if (updatedAnyProduct && currentProducts.length > 0) {
         localStorage.setItem(storedProductsKey, JSON.stringify(currentProducts));
       }
+      window.dispatchEvent(new Event('vitrine_pay_data_synced'));
       onSync();
     }
   }, (err) => {

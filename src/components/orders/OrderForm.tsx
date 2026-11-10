@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Order, Product, Client } from '../../types';
-import { Building2, Package, Info, Search, Plus, List, Edit2, Send, Check, UserSquare2, X, Printer, ArrowDown, ArrowUp } from 'lucide-react';
+import { Order, Product, Client, PaymentSplit } from '../../types';
+import { Building2, Package, Info, Search, Plus, List, Edit2, Send, Check, UserSquare2, X, Printer, ArrowDown, ArrowUp, Trash2, DollarSign, CheckCircle2, Split, Layers } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getClients, getProducts, getStoreProfile, getSellers } from '../../lib/store';
 
@@ -67,6 +67,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   const [orderType, setOrderType] = useState('Venda');
   const [orderSeller, setOrderSeller] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
+  const [paymentSplits, setPaymentSplits] = useState<PaymentSplit[]>([]);
+  const [isSplitPayment, setIsSplitPayment] = useState(false);
   const [dueDate, setDueDate] = useState('');
   const [installments, setInstallments] = useState(1);
   const [billingFrequency, setBillingFrequency] = useState<'semanal' | 'quinzenal' | 'mensal'>('mensal');
@@ -113,14 +115,10 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
     if (draftStr) {
       try {
         const draft = JSON.parse(draftStr);
-        // Ensure it matches our context:
-        // if orderToEdit exists, draft.orderToEditId must equal orderToEdit.id.
-        // if orderToEdit is null/undefined, draft.orderToEditId must be null/undefined.
         const isEditMatch = orderToEdit && draft.orderToEditId === orderToEdit.id;
         const isNewMatch = !orderToEdit && !draft.orderToEditId;
 
         if (isEditMatch || isNewMatch) {
-          // Check if there is actual content in the draft
           if (draft.selectedClientId || (draft.orderItems && draft.orderItems.length > 0)) {
             if (draft.selectedClientId) {
               const client = loadedClients.find(c => c.id === draft.selectedClientId);
@@ -131,6 +129,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             setOrderNumber(draft.orderNumber || '');
             setOrderType(draft.orderType || 'Venda');
             setPaymentMethod(draft.paymentMethod || '');
+            setPaymentSplits(draft.paymentSplits || []);
+            setIsSplitPayment(draft.isSplitPayment || false);
             setDueDate(draft.dueDate || '');
             setInstallments(draft.installments || 1);
             setBillingFrequency(draft.billingFrequency || 'mensal');
@@ -161,6 +161,16 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         setOrderType(orderToEdit.orderType || 'Venda');
         setOrderSeller(orderToEdit.sellerId || storeProfile.name || '');
         setPaymentMethod(orderToEdit.paymentMethod || '');
+        if (orderToEdit.paymentSplits && orderToEdit.paymentSplits.length > 0) {
+          setPaymentSplits(orderToEdit.paymentSplits);
+          setIsSplitPayment(orderToEdit.paymentSplits.length > 1);
+        } else if (orderToEdit.paymentMethod) {
+          setPaymentSplits([{ method: orderToEdit.paymentMethod, amount: orderToEdit.total || 0 }]);
+          setIsSplitPayment(false);
+        } else {
+          setPaymentSplits([]);
+          setIsSplitPayment(false);
+        }
         setDueDate(orderToEdit.dueDate || '');
         setInstallments(orderToEdit.installments || 1);
         setBillingFrequency(orderToEdit.billingFrequency || 'mensal');
@@ -199,6 +209,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
         setDueDate(nextMonth.toISOString().split('T')[0]);
         setInstallments(1);
         setBillingFrequency('mensal');
+        setPaymentSplits([]);
+        setIsSplitPayment(false);
 
         const preselectedClientStr = sessionStorage.getItem('preselected_order_client');
         if (preselectedClientStr) {
@@ -228,6 +240,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       orderNumber,
       orderType,
       paymentMethod,
+      paymentSplits,
+      isSplitPayment,
       dueDate,
       installments,
       billingFrequency,
@@ -242,7 +256,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
     } else {
       localStorage.removeItem(`order_draft_${userEmail}`);
     }
-  }, [isInitialized, userEmail, selectedClient, orderNumber, orderType, paymentMethod, dueDate, installments, billingFrequency, orderItems, orderToEdit, representedName, representedPhone]);
+  }, [isInitialized, userEmail, selectedClient, orderNumber, orderType, paymentMethod, paymentSplits, isSplitPayment, dueDate, installments, billingFrequency, orderItems, orderToEdit, representedName, representedPhone]);
 
   const handleClearDraft = () => {
     localStorage.removeItem(`order_draft_${userEmail}`);
@@ -432,6 +446,79 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
   };
 
   const totalValue = orderItems.reduce((acc, item) => acc + ((item.price ?? item.product.price) * item.quantity), 0);
+  
+  const allocatedTotal = useMemo(() => {
+    if (!isSplitPayment) return totalValue;
+    return paymentSplits.reduce((sum, s) => sum + (Number(s.amount) || 0), 0);
+  }, [isSplitPayment, paymentSplits, totalValue]);
+
+  const remainingToAllocate = useMemo(() => {
+    return totalValue - allocatedTotal;
+  }, [totalValue, allocatedTotal]);
+
+  const hasBoletoInSplits = useMemo(() => {
+    if (isSplitPayment) {
+      return paymentSplits.some(s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)');
+    }
+    return paymentMethod === 'Boleto' || paymentMethod === 'Boleto (Asaas)';
+  }, [isSplitPayment, paymentSplits, paymentMethod]);
+
+  const boletoSplitAmount = useMemo(() => {
+    if (isSplitPayment) {
+      const b = paymentSplits.find(s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)');
+      return b ? b.amount : totalValue;
+    }
+    return totalValue;
+  }, [isSplitPayment, paymentSplits, totalValue]);
+
+  const finalPaymentMethodString = useMemo(() => {
+    if (isSplitPayment && paymentSplits.length > 0) {
+      const activeSplits = paymentSplits.filter(s => s.method && s.amount > 0);
+      if (activeSplits.length > 0) {
+        return activeSplits.map(s => `${s.method} (R$ ${s.amount.toFixed(2).replace('.', ',')})`).join(' + ');
+      }
+    }
+    return paymentMethod;
+  }, [isSplitPayment, paymentSplits, paymentMethod]);
+
+  const handleAddSplit = () => {
+    if (paymentSplits.length === 0) {
+      const initialMethod = paymentMethod || 'Dinheiro';
+      const paidFirst = 100 < totalValue ? 100 : Math.round(totalValue / 2);
+      const remainder = Math.max(0, totalValue - paidFirst);
+      setPaymentSplits([
+        { method: initialMethod, amount: paidFirst },
+        { method: 'Boleto', amount: remainder }
+      ]);
+    } else {
+      const currentSum = paymentSplits.reduce((acc, s) => acc + (Number(s.amount) || 0), 0);
+      const rem = Math.max(0, totalValue - currentSum);
+      setPaymentSplits([...paymentSplits, { method: 'PIX', amount: rem }]);
+    }
+    setIsSplitPayment(true);
+  };
+
+  const handleUpdateSplit = (index: number, field: keyof PaymentSplit, value: any) => {
+    const updated = [...paymentSplits];
+    if (field === 'amount') {
+      updated[index] = { ...updated[index], amount: Math.max(0, parseFloat(value) || 0) };
+    } else {
+      updated[index] = { ...updated[index], method: value };
+    }
+    setPaymentSplits(updated);
+  };
+
+  const handleRemoveSplit = (index: number) => {
+    const updated = paymentSplits.filter((_, i) => i !== index);
+    setPaymentSplits(updated);
+    if (updated.length <= 1) {
+      setIsSplitPayment(false);
+      if (updated.length === 1) {
+        setPaymentMethod(updated[0].method);
+      }
+    }
+  };
+
   const [isGeneratingAsaas, setIsGeneratingAsaas] = useState(false);
   const [asaasStatusMsg, setAsaasStatusMsg] = useState('');
 
@@ -453,12 +540,13 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       asaasStatus: undefined as 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED' | undefined
     };
 
-    if (paymentMethod === 'Boleto') {
+    if (hasBoletoInSplits) {
       setIsGeneratingAsaas(true);
       setAsaasStatusMsg(storeProfile.asaasEnabled ? "Conectando ao Asaas..." : "Iniciando simulação do Asaas...");
 
       try {
         const cleanCpfCnpj = selectedClient.cnpj ? selectedClient.cnpj.replace(/\D/g, '') : '';
+        const valueToBill = boletoSplitAmount;
         
         if (storeProfile.asaasEnabled && storeProfile.asaasApiKey) {
           const workerUrl = 'https://vercos.iranildo-jobs.workers.dev';
@@ -532,7 +620,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                 description: `Pedido #${orderNumber || 'Auto'}`,
                 externalReference: orderNumber,
                 installmentCount: installments,
-                totalValue: totalValue
+                totalValue: valueToBill
               };
 
               const createPayRes = await fetch(`${baseUrl}/payments`, {
@@ -562,7 +650,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                   customer: customerId,
                   billingType: 'BOLETO',
                   dueDate: installmentDueDate,
-                  value: parseFloat((totalValue / installments).toFixed(2)),
+                  value: parseFloat((valueToBill / installments).toFixed(2)),
                   description: `Pedido #${orderNumber || 'Auto'} (Parcela ${i + 1}/${installments})`,
                   externalReference: `${orderNumber}_${i + 1}`
                 };
@@ -591,7 +679,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               }
 
               payData = {
-                installment: paymentIds[0], // Use first payment as representative installment ID
+                installment: paymentIds[0],
                 id: paymentIds[0],
                 invoiceUrl: invoiceUrl
               };
@@ -604,7 +692,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               dueDate: dueDate,
               description: `Pedido #${orderNumber || 'Auto'}`,
               externalReference: orderNumber,
-              value: totalValue
+              value: valueToBill
             };
 
             const createPayRes = await fetch(`${baseUrl}/payments`, {
@@ -641,7 +729,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             dueDate: dueDate,
             installments: installments,
             asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
-            asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}&frequency=${billingFrequency}`,
+            asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${valueToBill}&installments=${installments}&frequency=${billingFrequency}`,
             asaasStatus: 'SIMULATED'
           };
           setAsaasStatusMsg("Simulação concluída!");
@@ -654,13 +742,18 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           dueDate: dueDate,
           installments: installments,
           asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
-          asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${totalValue}&installments=${installments}&frequency=${billingFrequency}`,
+          asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${boletoSplitAmount}&installments=${installments}&frequency=${billingFrequency}`,
           asaasStatus: 'SIMULATED'
         };
       } finally {
         setIsGeneratingAsaas(false);
       }
     }
+
+    const savedPaymentMethod = finalPaymentMethodString || paymentMethod;
+    const savedPaymentSplits = isSplitPayment && paymentSplits.length > 0 
+      ? paymentSplits.filter(s => s.method && s.amount > 0)
+      : (savedPaymentMethod ? [{ method: savedPaymentMethod, amount: totalValue }] : []);
 
     localStorage.removeItem(`order_draft_${userEmail}`);
     onSave({
@@ -670,10 +763,11 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       clientName: selectedClient.name,
       clientId: selectedClient.id,
       sellerId: orderSeller,
-      status: paymentMethod ? 'completed' : (orderToEdit ? orderToEdit.status : 'budget'),
+      status: savedPaymentMethod ? 'completed' : (orderToEdit ? orderToEdit.status : 'budget'),
       itemsCount: orderItems.reduce((acc, item) => acc + item.quantity, 0),
       total: totalValue,
-      paymentMethod,
+      paymentMethod: savedPaymentMethod,
+      paymentSplits: savedPaymentSplits,
       orderType,
       billingFrequency,
       items: orderItems.map(item => ({
@@ -1044,134 +1138,337 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               </div>
 
               <div>
-                <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide border-b border-slate-100 pb-2 mb-4">Pagamento</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 mb-1">* Condição de pagamento</label>
-                      <select 
-                        value={paymentMethod} 
-                        onChange={e => setPaymentMethod(e.target.value)} 
-                        className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]"
-                      >
-                        <option value="">Selecione...</option>
-                        <option value="Cartão">Cartão</option>
-                        <option value="Dinheiro">Dinheiro</option>
-                        <option value="PIX">PIX</option>
-                        <option value="Boleto">Boleto (Asaas)</option>
-                      </select>
+                <div className="flex justify-between items-center border-b border-slate-100 pb-2 mb-4">
+                  <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wide">Pagamento</h4>
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (!isSplitPayment) {
+                        handleAddSplit();
+                      } else {
+                        setIsSplitPayment(false);
+                        setPaymentSplits([]);
+                      }
+                    }}
+                    className="text-xs text-[#851b42] font-bold hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Split size={14} />
+                    {isSplitPayment ? 'Usar pagamento único' : '+ Dividir pagamento (Múltiplas formas)'}
+                  </button>
+                </div>
+
+                {!isSplitPayment ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 mb-1">* Condição de pagamento</label>
+                        <select 
+                          value={paymentMethod} 
+                          onChange={e => setPaymentMethod(e.target.value)} 
+                          className="w-full border border-slate-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#851b42]"
+                        >
+                          <option value="">Selecione...</option>
+                          <option value="Dinheiro">Dinheiro</option>
+                          <option value="Boleto">Boleto (Asaas)</option>
+                          <option value="PIX">PIX</option>
+                          <option value="Cartão de Crédito">Cartão de Crédito</option>
+                          <option value="Cartão de Débito">Cartão de Débito</option>
+                          <option value="Transferência / TED">Transferência / TED</option>
+                          <option value="Cheque">Cheque</option>
+                        </select>
+                      </div>
+
+                      {paymentMethod === 'Boleto' && (
+                        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase">
+                              Configuração do Boleto
+                            </span>
+                            {!storeProfile.asaasEnabled && (
+                              <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase">
+                                Modo Simulação
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                * Vencimento (1ª)
+                              </label>
+                              <input 
+                                type="date" 
+                                required
+                                value={dueDate} 
+                                onChange={e => setDueDate(e.target.value)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                * Parcelas
+                              </label>
+                              <select 
+                                value={installments} 
+                                onChange={e => setInstallments(parseInt(e.target.value) || 1)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                              >
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                  <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Frequência
+                              </label>
+                              <select 
+                                value={billingFrequency} 
+                                onChange={e => setBillingFrequency(e.target.value as any)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                              >
+                                <option value="semanal">Semanal</option>
+                                <option value="quinzenal">Quinzenal</option>
+                                <option value="mensal">Mensal</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="pt-2 border-t border-slate-200">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Demonstrativo de Parcelas
+                            </span>
+                            <div className="space-y-1 max-h-36 overflow-y-auto">
+                              {Array.from({ length: installments }).map((_, i) => {
+                                const valuePerInstallment = totalValue / installments;
+                                const currentDueDate = new Date(dueDate + 'T12:00:00');
+                                if (billingFrequency === 'semanal') {
+                                  currentDueDate.setDate(currentDueDate.getDate() + (i * 7));
+                                } else if (billingFrequency === 'quinzenal') {
+                                  currentDueDate.setDate(currentDueDate.getDate() + (i * 14));
+                                } else {
+                                  currentDueDate.setMonth(currentDueDate.getMonth() + i);
+                                }
+                                
+                                return (
+                                  <div key={i} className="flex justify-between items-center text-xs font-semibold py-1 border-b border-dashed border-slate-100 last:border-0 text-slate-700">
+                                    <span>Parcela {i + 1}/{installments}</span>
+                                    <span className="text-slate-400 font-normal">Vencimento: {currentDueDate.toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-blue-600 font-bold">R$ {valuePerInstallment.toFixed(2).replace('.', ',')}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex justify-between items-center text-xs font-black text-slate-800 border-t border-slate-200 pt-2.5 mt-2">
+                              <span>TOTAL DO PARCELAMENTO</span>
+                              <span className="text-sm text-blue-600 font-extrabold">R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     {paymentMethod === 'Boleto' && (
-                      <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full uppercase">
-                            Configuração do Boleto
+                      <div className="bg-blue-50/50 border border-blue-100/60 rounded-xl p-4 text-xs text-blue-800 space-y-2.5">
+                        <h5 className="font-bold uppercase tracking-wider text-[10px] text-blue-900">
+                          {storeProfile.asaasEnabled ? "💡 INTEGRAÇÃO ASAAS ATIVA" : "ℹ️ INFORMAÇÃO DA INTEGRAÇÃO"}
+                        </h5>
+                        <p className="leading-relaxed text-slate-600 font-medium">
+                          {storeProfile.asaasEnabled 
+                            ? `Ao confirmar este pedido, o sistema enviará os dados de ${selectedClient?.name || 'Cliente'} para o Asaas e gerará um parcelamento de ${installments}x de forma automatizada.`
+                            : "A API do Asaas não está configurada no painel de Configurações, então o sistema irá gerar uma fatura em modo de simulação inteligente para visualização e testes dos fluxos."
+                          }
+                        </p>
+                        <p className="leading-relaxed text-slate-500 font-medium">
+                          O cliente receberá o link da fatura contendo o código de barras do Boleto e o Pix de forma integrada para realizar o pagamento.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-4 bg-slate-50/70 border border-slate-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                      <span className="text-xs font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider">
+                        <Layers size={15} className="text-[#851b42]" /> Pagamento Misto / Dividido
+                      </span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-500 font-semibold">Total do Pedido:</span>
+                        <span className="font-extrabold text-slate-900">R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      {paymentSplits.map((split, index) => (
+                        <div key={index} className="flex flex-wrap sm:flex-nowrap items-center gap-3 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+                          <div className="flex-1 min-w-[140px]">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              Forma #{index + 1}
+                            </label>
+                            <select
+                              value={split.method}
+                              onChange={e => handleUpdateSplit(index, 'method', e.target.value)}
+                              className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs font-semibold text-slate-800 focus:outline-none focus:border-[#851b42]"
+                            >
+                              <option value="Dinheiro">Dinheiro</option>
+                              <option value="Boleto">Boleto (Asaas)</option>
+                              <option value="PIX">PIX</option>
+                              <option value="Cartão de Crédito">Cartão de Crédito</option>
+                              <option value="Cartão de Débito">Cartão de Débito</option>
+                              <option value="Transferência / TED">Transferência / TED</option>
+                              <option value="Cheque">Cheque</option>
+                            </select>
+                          </div>
+
+                          <div className="w-36">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">
+                              Valor (R$)
+                            </label>
+                            <div className="relative">
+                              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">R$</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={split.amount || ''}
+                                onChange={e => handleUpdateSplit(index, 'amount', e.target.value)}
+                                className="w-full pl-8 pr-2.5 py-1.5 border border-slate-300 rounded text-xs font-bold text-slate-900 focus:outline-none focus:border-[#851b42]"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSplit(index)}
+                            className="mt-5 p-1.5 rounded text-red-500 hover:bg-red-50 hover:text-red-700 transition-colors cursor-pointer"
+                            title="Remover forma de pagamento"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 text-xs">
+                      <button
+                        type="button"
+                        onClick={handleAddSplit}
+                        className="text-xs font-bold text-[#851b42] hover:bg-[#851b42]/10 px-3 py-1.5 rounded-lg border border-[#851b42]/20 flex items-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Plus size={14} /> Adicionar outra forma de pagamento
+                      </button>
+
+                      <div className="flex items-center gap-3">
+                        <span className="text-slate-500 font-medium">Alocado: <strong className="text-slate-800">R$ {allocatedTotal.toFixed(2).replace('.', ',')}</strong></span>
+                        {Math.abs(remainingToAllocate) < 0.01 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800">
+                            <CheckCircle2 size={13} /> 100% distribuído
                           </span>
-                          {!storeProfile.asaasEnabled && (
-                            <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full uppercase">
-                              Modo Simulação
+                        ) : remainingToAllocate > 0 ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900">
+                            Faltam R$ {remainingToAllocate.toFixed(2).replace('.', ',')}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-900">
+                            Excede R$ {Math.abs(remainingToAllocate).toFixed(2).replace('.', ',')}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {hasBoletoInSplits && (
+                      <div className="mt-4 pt-4 border-t border-slate-200">
+                        <div className="bg-white border border-blue-200 rounded-xl p-4 space-y-4 shadow-2xs">
+                          <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
+                            <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full uppercase">
+                              Configuração do Boleto ({`Parcela Boleto: R$ ${boletoSplitAmount.toFixed(2).replace('.', ',')}`})
                             </span>
-                          )}
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3">
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              * Vencimento (1ª)
-                            </label>
-                            <input 
-                              type="date" 
-                              required
-                              value={dueDate} 
-                              onChange={e => setDueDate(e.target.value)} 
-                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500"
-                            />
-                          </div>
-                          
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              * Parcelas
-                            </label>
-                            <select 
-                              value={installments} 
-                              onChange={e => setInstallments(parseInt(e.target.value) || 1)} 
-                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
-                            >
-                              {Array.from({ length: 12 }).map((_, i) => (
-                                <option key={i + 1} value={i + 1}>{i + 1}x</option>
-                              ))}
-                            </select>
                           </div>
 
-                          <div>
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                              Frequência
-                            </label>
-                            <select 
-                              value={billingFrequency} 
-                              onChange={e => setBillingFrequency(e.target.value as any)} 
-                              className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
-                            >
-                              <option value="semanal">Semanal</option>
-                              <option value="quinzenal">Quinzenal</option>
-                              <option value="mensal">Mensal</option>
-                            </select>
-                          </div>
-                        </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                * Vencimento (1ª)
+                              </label>
+                              <input 
+                                type="date" 
+                                required
+                                value={dueDate} 
+                                onChange={e => setDueDate(e.target.value)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500"
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                * Parcelas
+                              </label>
+                              <select 
+                                value={installments} 
+                                onChange={e => setInstallments(parseInt(e.target.value) || 1)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                              >
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                  <option key={i + 1} value={i + 1}>{i + 1}x</option>
+                                ))}
+                              </select>
+                            </div>
 
-                        <div className="pt-2 border-t border-slate-200">
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                            Demonstrativo de Parcelas
-                          </span>
-                          <div className="space-y-1 max-h-36 overflow-y-auto">
-                            {Array.from({ length: installments }).map((_, i) => {
-                              const valuePerInstallment = totalValue / installments;
-                              const currentDueDate = new Date(dueDate + 'T12:00:00');
-                              if (billingFrequency === 'semanal') {
-                                currentDueDate.setDate(currentDueDate.getDate() + (i * 7));
-                              } else if (billingFrequency === 'quinzenal') {
-                                currentDueDate.setDate(currentDueDate.getDate() + (i * 14));
-                              } else {
-                                currentDueDate.setMonth(currentDueDate.getMonth() + i);
-                              }
-                              
-                              return (
-                                <div key={i} className="flex justify-between items-center text-xs font-semibold py-1 border-b border-dashed border-slate-100 last:border-0 text-slate-700">
-                                  <span>Parcela {i + 1}/{installments}</span>
-                                  <span className="text-slate-400 font-normal">Vencimento: {currentDueDate.toLocaleDateString('pt-BR')}</span>
-                                  <span className="text-blue-600 font-bold">R$ {valuePerInstallment.toFixed(2).replace('.', ',')}</span>
-                                </div>
-                              );
-                            })}
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                                Frequência
+                              </label>
+                              <select 
+                                value={billingFrequency} 
+                                onChange={e => setBillingFrequency(e.target.value as any)} 
+                                className="w-full border border-slate-300 rounded bg-white px-2.5 py-1.5 text-xs focus:outline-none focus:border-blue-500 font-semibold"
+                              >
+                                <option value="semanal">Semanal</option>
+                                <option value="quinzenal">Quinzenal</option>
+                                <option value="mensal">Mensal</option>
+                              </select>
+                            </div>
                           </div>
 
-                          <div className="flex justify-between items-center text-xs font-black text-slate-800 border-t border-slate-200 pt-2.5 mt-2">
-                            <span>TOTAL DO PARCELAMENTO</span>
-                            <span className="text-sm text-blue-600 font-extrabold">R$ {totalValue.toFixed(2).replace('.', ',')}</span>
+                          <div className="pt-2 border-t border-slate-100">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                              Demonstrativo de Parcelas do Boleto
+                            </span>
+                            <div className="space-y-1 max-h-36 overflow-y-auto">
+                              {Array.from({ length: installments }).map((_, i) => {
+                                const valuePerInstallment = boletoSplitAmount / installments;
+                                const currentDueDate = new Date(dueDate + 'T12:00:00');
+                                if (billingFrequency === 'semanal') {
+                                  currentDueDate.setDate(currentDueDate.getDate() + (i * 7));
+                                } else if (billingFrequency === 'quinzenal') {
+                                  currentDueDate.setDate(currentDueDate.getDate() + (i * 14));
+                                } else {
+                                  currentDueDate.setMonth(currentDueDate.getMonth() + i);
+                                }
+                                
+                                return (
+                                  <div key={i} className="flex justify-between items-center text-xs font-semibold py-1 border-b border-dashed border-slate-100 last:border-0 text-slate-700">
+                                    <span>Parcela {i + 1}/{installments}</span>
+                                    <span className="text-slate-400 font-normal">Vencimento: {currentDueDate.toLocaleDateString('pt-BR')}</span>
+                                    <span className="text-blue-600 font-bold">R$ {valuePerInstallment.toFixed(2).replace('.', ',')}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex justify-between items-center text-xs font-black text-slate-800 border-t border-slate-200 pt-2.5 mt-2">
+                              <span>TOTAL DO PARCELAMENTO BOLETO</span>
+                              <span className="text-sm text-blue-600 font-extrabold">R$ {boletoSplitAmount.toFixed(2).replace('.', ',')}</span>
+                            </div>
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
-
-                  {paymentMethod === 'Boleto' && (
-                    <div className="bg-blue-50/50 border border-blue-100/60 rounded-xl p-4 text-xs text-blue-800 space-y-2.5">
-                      <h5 className="font-bold uppercase tracking-wider text-[10px] text-blue-900">
-                        {storeProfile.asaasEnabled ? "💡 INTEGRAÇÃO ASAAS ATIVA" : "ℹ️ INFORMAÇÃO DA INTEGRAÇÃO"}
-                      </h5>
-                      <p className="leading-relaxed text-slate-600 font-medium">
-                        {storeProfile.asaasEnabled 
-                          ? `Ao confirmar este pedido, o sistema enviará os dados de ${selectedClient?.name || 'Cliente'} para o Asaas e gerará um parcelamento de ${installments}x de forma automatizada.`
-                          : "A API do Asaas não está configurada no painel de Configurações, então o sistema irá gerar uma fatura em modo de simulação inteligente para visualização e testes dos fluxos."
-                        }
-                      </p>
-                      <p className="leading-relaxed text-slate-500 font-medium">
-                        O cliente receberá o link da fatura contendo o código de barras do Boleto e o Pix de forma integrada para realizar o pagamento.
-                      </p>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-4">
@@ -1216,14 +1513,25 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               <div className="space-y-4">
                 <div className="grid grid-cols-2">
                   <span className="text-slate-400">* Cond. de pagamento</span>
-                  <span className={cn("font-medium", paymentMethod ? "text-slate-800" : "text-slate-400")}>
-                    {paymentMethod === 'Boleto' ? `Boleto (${installments}x - ${billingFrequency})` : (paymentMethod || '---')}
-                  </span>
+                  <div className={cn("font-medium", (finalPaymentMethodString || paymentMethod) ? "text-slate-800" : "text-slate-400")}>
+                    {isSplitPayment && paymentSplits.length > 0 ? (
+                      <div className="space-y-1">
+                        {paymentSplits.map((s, idx) => (
+                          <div key={idx} className="text-xs font-bold text-slate-800 flex items-center justify-between gap-2 bg-slate-50 border border-slate-100 p-1.5 rounded">
+                            <span>{s.method}</span>
+                            <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      paymentMethod === 'Boleto' ? `Boleto (${installments}x - ${billingFrequency})` : (paymentMethod || '---')
+                    )}
+                  </div>
                 </div>
-                {paymentMethod === 'Boleto' && (
+                {hasBoletoInSplits && (
                   <>
                     <div className="grid grid-cols-2">
-                      <span className="text-slate-400">Periodicidade</span>
+                      <span className="text-slate-400">Periodicidade Boleto</span>
                       <span className="text-slate-800 font-medium capitalize">
                         {billingFrequency}
                       </span>
@@ -1235,9 +1543,9 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
                       </span>
                     </div>
                     <div className="grid grid-cols-2">
-                      <span className="text-slate-400">Valor da parcela</span>
+                      <span className="text-slate-400">Valor parcela Boleto</span>
                       <span className="text-blue-600 font-bold">
-                        R$ {(totalValue / installments).toFixed(2).replace('.', ',')}
+                        R$ {(boletoSplitAmount / installments).toFixed(2).replace('.', ',')}
                       </span>
                     </div>
                   </>
@@ -1337,7 +1645,7 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           <div className="text-right">
             <p className="text-slate-500 font-bold uppercase text-[9px] tracking-wider">Vendedor</p>
             <p className="font-semibold text-slate-700 mt-0.5">{sellers.find(s => s.id === orderSeller)?.name || orderSeller || storeProfile.name || 'Vendedor'}</p>
-            <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#851b42]">{paymentMethod || 'Não informado'}</span></p>
+            <p className="text-slate-600 mt-1">Pagamento: <span className="font-bold text-[#851b42]">{finalPaymentMethodString || paymentMethod || 'Não informado'}</span></p>
           </div>
         </div>
 

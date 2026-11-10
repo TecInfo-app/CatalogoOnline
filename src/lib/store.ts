@@ -181,8 +181,15 @@ export const deleteClient = (email: string, id: string) => {
 
 export const addOrder = (email: string, order: Order) => {
   const orders = getOrders(email);
-  orders.push(order);
+  const exists = orders.some(o => o.id === order.id);
+  if (!exists) {
+    orders.unshift(order);
+  } else {
+    const idx = orders.findIndex(o => o.id === order.id);
+    orders[idx] = order;
+  }
   localStorage.setItem(getStorageKey(email, 'orders'), JSON.stringify(orders));
+  window.dispatchEvent(new Event('vitrine_pay_data_synced'));
 
   try {
     const currentUser = auth.currentUser;
@@ -204,6 +211,7 @@ export const updateOrder = (email: string, order: Order) => {
   if (index !== -1) {
     orders[index] = order;
     localStorage.setItem(getStorageKey(email, 'orders'), JSON.stringify(orders));
+    window.dispatchEvent(new Event('vitrine_pay_data_synced'));
   }
 };
 
@@ -211,6 +219,7 @@ export const deleteOrder = (email: string, id: string) => {
   let orders = getOrders(email);
   orders = orders.filter(o => o.id !== id);
   localStorage.setItem(getStorageKey(email, 'orders'), JSON.stringify(orders));
+  window.dispatchEvent(new Event('vitrine_pay_data_synced'));
 };
 
 export interface IndicatorSettings {

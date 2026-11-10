@@ -55,6 +55,11 @@ export interface Client {
   }>;
 }
 
+export interface PaymentSplit {
+  method: string;
+  amount: number;
+}
+
 export interface Order {
   id: string;
   orderNumber: string;
@@ -66,6 +71,7 @@ export interface Order {
   total: number;
   status: 'budget' | 'completed' | 'canceled';
   paymentMethod?: string;
+  paymentSplits?: PaymentSplit[];
   orderType?: string;
   representedName?: string;
   representedPhone?: string;
