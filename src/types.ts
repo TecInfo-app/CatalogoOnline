@@ -83,6 +83,8 @@ export interface Order {
   installments?: number;
   billingFrequency?: 'semanal' | 'quinzenal' | 'mensal';
   asaasPaymentId?: string;
+  asaasInstallmentId?: string;
+  asaasPaymentIds?: string[];
   asaasUrl?: string;
   asaasStatus?: 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED';
 }

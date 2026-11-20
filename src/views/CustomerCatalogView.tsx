@@ -2018,6 +2018,16 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         canceled: { label: 'Cancelado', styles: 'bg-rose-50 text-rose-700 border-rose-200' },
                       }[order.status || 'budget'];
 
+                      const boletoSplit = order.paymentSplits?.find(
+                        s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)'
+                      );
+                      const hasBoleto = Boolean(order.asaasUrl) && (
+                        Boolean(boletoSplit) ||
+                        order.paymentMethod === 'Boleto' ||
+                        Boolean(order.paymentMethod?.includes('Boleto'))
+                      );
+                      const boletoValue = boletoSplit ? boletoSplit.amount : order.total;
+
                       return (
                         <button
                           key={order.id}
@@ -2025,12 +2035,17 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                           onClick={() => setSelectedOrderForDetail(order)}
                           className="w-full text-left bg-white border border-slate-100/95 hover:border-[#851b42]/30 hover:bg-slate-50/50 rounded-2xl p-4 shadow-2xs hover:shadow-xs transition-all flex items-center justify-between gap-3 cursor-pointer group"
                         >
-                          <div className="space-y-1.5 flex-1">
-                            <div className="flex items-center gap-2">
+                          <div className="space-y-1.5 flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-xs font-black text-slate-800">#{order.orderNumber}</span>
                               <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider", statusConfig.styles)}>
                                 {statusConfig.label}
                               </span>
+                              {hasBoleto && (
+                                <span className="text-[9px] font-black px-2 py-0.5 rounded-full border bg-blue-50 text-blue-700 border-blue-200 uppercase tracking-wider inline-flex items-center gap-1">
+                                  <FileText size={9} /> Boleto R$ {boletoValue.toFixed(2).replace('.', ',')}
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-3 text-[10px] text-slate-400 font-semibold font-mono">
                               <span className="flex items-center gap-1">
@@ -2039,9 +2054,22 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                               <span>&bull;</span>
                               <span>{order.itemsCount} {order.itemsCount === 1 ? 'item' : 'itens'}</span>
                             </div>
+                            {order.paymentSplits && order.paymentSplits.length > 1 ? (
+                              <div className="flex flex-wrap gap-1 pt-0.5">
+                                {order.paymentSplits.map((s, idx) => (
+                                  <span key={idx} className="text-[9px] font-bold bg-slate-50 text-slate-600 border border-slate-200/80 px-1.5 py-0.5 rounded">
+                                    {s.method}: R$ {s.amount.toFixed(2).replace('.', ',')}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : order.paymentMethod ? (
+                              <div className="text-[10px] font-semibold text-slate-500 truncate">
+                                Pagamento: <span className="text-slate-700 font-bold">{order.paymentMethod}</span>
+                              </div>
+                            ) : null}
                           </div>
 
-                          <div className="flex items-center gap-2.5">
+                          <div className="flex items-center gap-2.5 shrink-0">
                             <div className="text-right">
                               <span className="block text-[8px] text-slate-400 font-bold uppercase tracking-wider">Total</span>
                               <span className="text-sm font-extrabold text-[#851b42]">
@@ -2321,13 +2349,13 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                       <div>
                         <span className="block text-[9px] text-slate-400 font-bold uppercase">Forma de Pagamento</span>
                         {selectedOrderForDetail.paymentSplits && selectedOrderForDetail.paymentSplits.length > 0 ? (
                           <div className="space-y-1 mt-1">
                             {selectedOrderForDetail.paymentSplits.map((split, i) => (
-                              <div key={i} className="flex items-center justify-between text-[11px] bg-slate-50 border border-slate-100 px-2 py-1 rounded font-semibold text-slate-700">
+                              <div key={i} className="flex items-center justify-between text-[11px] bg-slate-50 border border-slate-100 px-2.5 py-1.5 rounded-lg font-semibold text-slate-700">
                                 <span>{split.method}</span>
                                 <span className="font-extrabold text-[#851b42]">R$ {split.amount.toFixed(2).replace('.', ',')}</span>
                               </div>
@@ -2343,11 +2371,65 @@ export function CustomerCatalogView({ sellerEmail }: CustomerCatalogViewProps) {
                         <div>
                           <span className="block text-[9px] text-slate-400 font-bold uppercase">Vencimento</span>
                           <span className="font-extrabold text-slate-700 mt-0.5 block">
-                            {new Date(selectedOrderForDetail.dueDate).toLocaleDateString('pt-BR')}
+                            {new Date(selectedOrderForDetail.dueDate.includes('T') ? selectedOrderForDetail.dueDate : selectedOrderForDetail.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </span>
+                          {selectedOrderForDetail.installments && selectedOrderForDetail.installments > 1 && (
+                            <span className="text-[10px] text-slate-500 font-semibold block mt-0.5">
+                              {selectedOrderForDetail.installments}x {selectedOrderForDetail.billingFrequency ? `(${selectedOrderForDetail.billingFrequency})` : ''}
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
+
+                    {(() => {
+                      const boletoSplit = selectedOrderForDetail.paymentSplits?.find(
+                        s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)'
+                      );
+                      const hasBoleto = Boolean(selectedOrderForDetail.asaasUrl) && (
+                        Boolean(boletoSplit) ||
+                        selectedOrderForDetail.paymentMethod === 'Boleto' ||
+                        Boolean(selectedOrderForDetail.paymentMethod?.includes('Boleto'))
+                      );
+                      const isSplit = Boolean(selectedOrderForDetail.paymentSplits && selectedOrderForDetail.paymentSplits.length > 1);
+                      const boletoValue = boletoSplit ? boletoSplit.amount : selectedOrderForDetail.total;
+
+                      if (!hasBoleto || !selectedOrderForDetail.asaasUrl) return null;
+
+                      return (
+                        <div className="mt-2 pt-3 border-t border-slate-100">
+                          <div className="bg-blue-50/80 border border-blue-200/80 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="space-y-0.5">
+                              <span className="text-[10px] font-black text-blue-800 uppercase tracking-wider flex items-center gap-1.5">
+                                <CreditCard size={12} className="text-blue-600" />
+                                {isSplit ? 'Boleto da Diferença (Asaas)' : 'Boleto / Fatura Asaas'}
+                              </span>
+                              <p className="text-xs font-extrabold text-slate-800">
+                                Valor no Boleto: <span className="text-blue-700">R$ {boletoValue.toFixed(2).replace('.', ',')}</span>
+                                {selectedOrderForDetail.installments && selectedOrderForDetail.installments > 1
+                                  ? ` (${selectedOrderForDetail.installments}x de R$ ${(boletoValue / selectedOrderForDetail.installments).toFixed(2).replace('.', ',')})`
+                                  : ''}
+                              </p>
+                              {selectedOrderForDetail.dueDate && (
+                                <p className="text-[10px] text-slate-500 font-semibold">
+                                  1º Vencimento: {new Date(selectedOrderForDetail.dueDate.includes('T') ? selectedOrderForDetail.dueDate : selectedOrderForDetail.dueDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                </p>
+                              )}
+                            </div>
+
+                            <a
+                              href={selectedOrderForDetail.asaasUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-4 py-2.5 bg-[#851b42] hover:bg-[#5e132e] text-white rounded-xl text-[11px] font-black text-center transition-all flex items-center justify-center gap-1.5 shadow-sm shrink-0"
+                            >
+                              <FileText size={13} />
+                              Abrir Boleto / Fatura
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Items List */}

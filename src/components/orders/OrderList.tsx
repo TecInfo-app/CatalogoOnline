@@ -218,24 +218,61 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                 </div>
               </div>
 
-              {order.paymentMethod === 'Boleto' && order.asaasUrl && (
-                <div className="flex items-center gap-2 mt-2 bg-blue-50/70 border border-blue-100/60 p-2.5 rounded-lg">
-                  <Receipt size={14} className="text-blue-600 shrink-0" />
-                  <div className="flex-1 min-w-0 font-sans">
-                    <span className="text-[10px] font-bold text-blue-800 block uppercase tracking-wider">Boleto Parcelado Asaas</span>
-                    <span className="text-[9px] text-slate-500 block font-medium">Vencimento: {order.dueDate ? new Date(order.dueDate + 'T12:00:00').toLocaleDateString('pt-BR') : '---'} &bull; {order.installments || 1}x {order.billingFrequency ? `(${order.billingFrequency})` : ''}</span>
+              {/* Payment splits / method summary in Mosaico mode */}
+              <div className="flex flex-wrap items-center gap-1.5 mt-1 pt-2 border-t border-slate-100/80">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mr-0.5">
+                  Pagamento:
+                </span>
+                {order.paymentSplits && order.paymentSplits.length > 0 ? (
+                  order.paymentSplits.map((s, idx) => (
+                    <span key={idx} className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-200/80">
+                      {s.method}: <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
+                    </span>
+                  ))
+                ) : order.paymentMethod ? (
+                  <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-200/80">
+                    {order.paymentMethod}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-semibold text-slate-400">
+                    Não informado
+                  </span>
+                )}
+              </div>
+
+              {(() => {
+                const boletoSplit = order.paymentSplits?.find(
+                  s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)'
+                );
+                const hasBoleto = Boolean(boletoSplit) || order.paymentMethod === 'Boleto' || Boolean(order.paymentMethod?.includes('Boleto')) || Boolean(order.asaasUrl);
+                const isSplit = Boolean(order.paymentSplits && order.paymentSplits.length > 1);
+                const boletoValue = boletoSplit ? boletoSplit.amount : order.total;
+
+                if (!order.asaasUrl || !hasBoleto) return null;
+
+                return (
+                  <div className="flex items-center gap-2 mt-1 bg-blue-50/70 border border-blue-100/60 p-2.5 rounded-lg">
+                    <Receipt size={14} className="text-blue-600 shrink-0" />
+                    <div className="flex-1 min-w-0 font-sans">
+                      <span className="text-[10px] font-bold text-blue-800 block uppercase tracking-wider">
+                        {isSplit ? `Boleto Asaas (Diferença: R$ ${boletoValue.toFixed(2).replace('.', ',')})` : 'Boleto Parcelado Asaas'}
+                      </span>
+                      <span className="text-[9px] text-slate-500 block font-medium">
+                        Vencimento: {order.dueDate ? new Date((order.dueDate.includes('T') ? order.dueDate : order.dueDate + 'T12:00:00')).toLocaleDateString('pt-BR') : '---'} &bull; {order.installments || 1}x {order.billingFrequency ? `(${order.billingFrequency})` : ''}
+                      </span>
+                    </div>
+                    <a
+                      href={order.asaasUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded text-[9px] font-extrabold transition-colors shrink-0 uppercase tracking-wide flex items-center gap-1"
+                    >
+                      Ver Boleto
+                    </a>
                   </div>
-                  <a
-                    href={order.asaasUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded text-[9px] font-extrabold transition-colors shrink-0 uppercase tracking-wide flex items-center gap-1"
-                  >
-                    Ver Boleto
-                  </a>
-                </div>
-              )}
+                );
+              })()}
               
               <div className="flex justify-between items-end mt-4 pt-4 border-t border-slate-100">
                 <div className="flex items-center gap-1 text-sm text-slate-500">
@@ -303,14 +340,25 @@ export function OrderList({ orders, onCreateNew, onEditOrder, onDeleteOrder, can
                     </td>
                     <td className="py-3.5 px-4">
                       {order.paymentSplits && order.paymentSplits.length > 0 ? (
-                        <div className="flex flex-wrap gap-1 max-w-xs">
+                        <div className="flex flex-wrap items-center gap-1.5 max-w-xs">
                           {order.paymentSplits.map((s, idx) => (
                             <span key={idx} className="bg-slate-100 text-slate-800 font-bold px-2 py-0.5 rounded text-[10px] border border-slate-200/80 whitespace-nowrap">
                               {s.method}: <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
                             </span>
                           ))}
+                          {order.asaasUrl && (order.paymentSplits.some(s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)') || order.paymentMethod?.includes('Boleto')) && (
+                            <a
+                              href={order.asaasUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded text-[10px] font-extrabold inline-flex items-center gap-1 whitespace-nowrap"
+                            >
+                              <Receipt size={11} /> Ver Boleto
+                            </a>
+                          )}
                         </div>
-                      ) : order.paymentMethod === 'Boleto' && order.asaasUrl ? (
+                      ) : (order.paymentMethod === 'Boleto' || order.paymentMethod?.includes('Boleto')) && order.asaasUrl ? (
                         <div className="flex items-center gap-2">
                           <span className="bg-blue-50 text-blue-800 font-bold px-2 py-0.5 rounded text-[10px] border border-blue-100">
                             Boleto Asaas

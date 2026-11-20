@@ -171,7 +171,9 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           setPaymentSplits([]);
           setIsSplitPayment(false);
         }
-        setDueDate(orderToEdit.dueDate || '');
+        const nextMonthFallback = new Date();
+        nextMonthFallback.setDate(nextMonthFallback.getDate() + 30);
+        setDueDate(orderToEdit.dueDate || nextMonthFallback.toISOString().split('T')[0]);
         setInstallments(orderToEdit.installments || 1);
         setBillingFrequency(orderToEdit.billingFrequency || 'mensal');
         setRepresentedName(orderToEdit.representedName || '');
@@ -536,6 +538,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
       dueDate: undefined as string | undefined,
       installments: undefined as number | undefined,
       asaasPaymentId: undefined as string | undefined,
+      asaasInstallmentId: undefined as string | undefined,
+      asaasPaymentIds: undefined as string[] | undefined,
       asaasUrl: undefined as string | undefined,
       asaasStatus: undefined as 'PENDING' | 'RECEIVED' | 'CONFIRMED' | 'OVERDUE' | 'REFUNDED' | 'SIMULATED' | undefined
     };
@@ -679,8 +683,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
               }
 
               payData = {
-                installment: paymentIds[0],
                 id: paymentIds[0],
+                paymentIds: paymentIds,
                 invoiceUrl: invoiceUrl
               };
             }
@@ -713,10 +717,16 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             payData = await createPayRes.json();
           }
 
+          const allPaymentIds: string[] = Array.isArray(payData.paymentIds)
+            ? payData.paymentIds
+            : (payData.id ? [payData.id] : []);
+
           asaasData = {
             dueDate: dueDate,
             installments: installments,
             asaasPaymentId: payData.installment || payData.id || '',
+            asaasInstallmentId: payData.installment || undefined,
+            asaasPaymentIds: allPaymentIds.length > 0 ? allPaymentIds : undefined,
             asaasUrl: payData.invoiceUrl || payData.bankSlipUrl || `https://sandbox.asaas.com/simulado/fatura?id=${payData.id}`,
             asaasStatus: 'PENDING'
           };
@@ -729,6 +739,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             dueDate: dueDate,
             installments: installments,
             asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
+            asaasInstallmentId: undefined,
+            asaasPaymentIds: undefined,
             asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${valueToBill}&installments=${installments}&frequency=${billingFrequency}`,
             asaasStatus: 'SIMULATED'
           };
@@ -742,6 +754,8 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
           dueDate: dueDate,
           installments: installments,
           asaasPaymentId: `sim_${Math.random().toString(36).substr(2, 9)}`,
+          asaasInstallmentId: undefined,
+          asaasPaymentIds: undefined,
           asaasUrl: `https://sandbox.asaas.com/simulado/fatura?id=${Math.floor(Math.random()*1000000)}&value=${boletoSplitAmount}&installments=${installments}&frequency=${billingFrequency}`,
           asaasStatus: 'SIMULATED'
         };
@@ -1610,7 +1624,11 @@ export function OrderForm({ userEmail, orderToEdit, onSave, onCancel, onNavigate
             }
             const itemList = orderItems.map(i => `${i.quantity}x ${i.product.name} (R$ ${(i.price ?? i.product.price).toFixed(2).replace('.', ',')})`).join('\n');
             const totalStr = `R$ ${totalValue.toFixed(2).replace('.', ',')}`;
-            const message = `Olá ${selectedClient?.name || ''},\n\nSegue o resumo do seu pedido #${orderNumber || 'Auto'}:\n\n${itemList}\n\n*Total: ${totalStr}*\nTipo: ${orderType}\nPagamento: ${paymentMethod || 'Não informado'}\n\nObrigado!`;
+            const paymentText = finalPaymentMethodString || paymentMethod || 'Não informado';
+            const boletoInfoText = hasBoletoInSplits && dueDate
+              ? `\nBoleto Asaas: R$ ${boletoSplitAmount.toFixed(2).replace('.', ',')} (${installments}x - 1º venc. ${new Date(dueDate + 'T12:00:00').toLocaleDateString('pt-BR')})`
+              : '';
+            const message = `Olá ${selectedClient?.name || ''},\n\nSegue o resumo do seu pedido #${orderNumber || 'Auto'}:\n\n${itemList}\n\n*Total: ${totalStr}*\nTipo: ${orderType}\nPagamento: ${paymentText}${boletoInfoText}\n\nObrigado!`;
             
             const text = encodeURIComponent(message);
             const url = phone ? `https://wa.me/${phone}?text=${text}` : `https://wa.me/?text=${text}`;

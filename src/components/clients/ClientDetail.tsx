@@ -544,19 +544,29 @@ export function ClientDetail({ client, userEmail, onBack, onUpdate, onEdit, onNa
                         {order.itemsCount} {order.itemsCount === 1 ? 'item' : 'itens'} &bull; Total: <strong>R$ {order.total.toFixed(2).replace('.', ',')}</strong>
                       </p>
                     </div>
-                    {order.paymentSplits && order.paymentSplits.length > 0 ? (
-                      <div className="flex flex-wrap gap-1 max-w-xs justify-end">
-                        {order.paymentSplits.map((s, idx) => (
+                    <div className="flex flex-wrap items-center gap-1.5 max-w-xs justify-end">
+                      {order.paymentSplits && order.paymentSplits.length > 0 ? (
+                        order.paymentSplits.map((s, idx) => (
                           <span key={idx} className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded border border-slate-200/80">
                             {s.method}: <span className="text-[#851b42]">R$ {s.amount.toFixed(2).replace('.', ',')}</span>
                           </span>
-                        ))}
-                      </div>
-                    ) : order.paymentMethod ? (
-                      <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">
-                        {order.paymentMethod}
-                      </span>
-                    ) : null}
+                        ))
+                      ) : order.paymentMethod ? (
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2.5 py-1 rounded-lg">
+                          {order.paymentMethod}
+                        </span>
+                      ) : null}
+                      {order.asaasUrl && (order.paymentMethod === 'Boleto' || order.paymentMethod?.includes('Boleto') || order.paymentSplits?.some(s => s.method === 'Boleto' || s.method === 'Boleto (Asaas)')) && (
+                        <a
+                          href={order.asaasUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-extrabold bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-0.5 rounded inline-flex items-center gap-1 transition-colors"
+                        >
+                          <FileText size={11} /> Ver Boleto
+                        </a>
+                      )}
+                    </div>
                   </div>
                 ))}
 
